@@ -1,0 +1,27 @@
+
+# Virtual Environment
+.env
+.flaskenv
+
+# Editors
+.vscode/
+.idea/
+
+# FastAPI/Pydantic specific
+.mypy_cache/
+pytest_cache/
+
+# Database (if applicable)
+*.sqlite3
+*.db
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# files
+*.txt
+venv/
