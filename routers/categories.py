@@ -31,7 +31,7 @@ async def get_all_categories() -> list[CategoryOut]:
     return categories_mock_data
 
 
-@router.get("/{category_id}")
+@router.get("/{category_id}", status_code=status.HTTP_404_NOT_FOUND)
 async def get_category_by_id(category_id: int) -> CategoryOut:
     """Return a single category"""
     for category in categories_mock_data:
@@ -79,4 +79,4 @@ async def remove_category(category_id: int):
         if category["id"] == category_id:
             categories_mock_data.pop(index)
             return Response(status_code=status.HTTP_204_NO_CONTENT)
-    raise HTTPException(status_code=404, detail="Category not found")
+    raise HTTPException(status_code=204, detail="No COntent")
