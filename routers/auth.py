@@ -6,19 +6,24 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from passlib.context import CryptContext
 
 from jose import JWTError, jwt
-from schema.user import UserCreate, UserOut, Token
+from schema.user import UserCreate, UserDB, UserOut, Token
 
-router = APIRouter(prefix="/api/auth")
+router = APIRouter(
+    prefix="/api/auth",
+    tags=["auth"])
 
 SECRET_KEY = "793d5117a7cf19f5ce87e7798ade10ddcbf883836aab149d0972bac514b73b44"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 90
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl="/api/auth/token",
+    scopes={"read": "Read access", "write": "Write access"}
+)
 
-mock_user = {
+mock_user_data = {
     "joshuamangi@gmail.com": {
         "id": 1,
         "first_name": "Joshua",
@@ -30,11 +35,11 @@ mock_user = {
 }
 
 
-def get_user(email: str) -> Optional[UserOut]:
-    """Method used to return a user from email"""
-    user = mock_user.get(email)
+def get_user(email: str) -> Optional[UserDB]:
+    """Returns user with specified email"""
+    user = mock_user_data.get(email)
     if user:
-        return UserOut(**user)
+        return UserDB(**user)
     return None
 
 
@@ -61,8 +66,9 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
-def get_current_user(token: str = Depends(oauth2_scheme)) -> UserCreate:
-    """Method for getting current user from authenticated token"""
+def get_current_user(
+    token: str = Depends(oauth2_scheme)
+) -> UserOut:  # Expose only safe fields
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -74,14 +80,14 @@ def get_current_user(token: str = Depends(oauth2_scheme)) -> UserCreate:
         user_id: int = payload.get("user_id")
         if email is None or user_id is None:
             raise credentials_exception
-    except JWTError as could_not_validate:
-        raise credentials_exception from could_not_validate
+    except JWTError:
+        raise credentials_exception
 
     user = get_user(email)
     if user is None or user.id != user_id:
         raise credentials_exception
 
-    return user
+    return UserOut(**user.model_dump())
 
 
 @router.post("/token", response_model=Token)
@@ -105,8 +111,8 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@router.get("/users/me", response_model=UserCreate)
-async def read_users_me(current_user: UserCreate = Depends(get_current_user)):
+@router.get("/users/me", response_model=UserOut)
+async def read_users_me(current_user: UserDB = Depends(get_current_user)):
     """
         Endpoint for returning current user using the
         get_current_user depency and returns authenticated
@@ -115,6 +121,26 @@ async def read_users_me(current_user: UserCreate = Depends(get_current_user)):
     return current_user
 
 
-# Endpoint for creating User in DB returns Created
+@router.post("/", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+async def register(user: UserCreate):
+    """Endpoint for creating User in DB returns Created User"""
+    if user.email in mock_user_data:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username already registered"
+        )
+    new_id = max([u["id"] for u in mock_user_data.values()], default=0) + 1
+
+    new_user = UserDB(
+        id=new_id,
+        first_name=user.first_name,
+        last_name=user.last_name,
+        email=user.email,
+        hashed_password=pwd_context.hash(user.password),
+        created_at=datetime.utcnow()
+    )
+    mock_user_data[user.email] = new_user.model_dump()
+    return UserOut(**new_user.model_dump())
+
 # Enpoint for editing user returns Edited User
 # Endpoint for removing user returns No content or message
