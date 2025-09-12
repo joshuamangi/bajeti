@@ -1,9 +1,13 @@
-"""Handles Editing User and Deletion Operations"""
+# routers/users.py
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
 from passlib.context import CryptContext
+
+from data.db.db import get_db
+from data.db.models.models import User
 from routers.auth import get_current_user
-from schema.user import UserCreate, UserOut, UserUpdate
+from schema.user import UserUpdate, UserOut
 
 router = APIRouter(
     prefix="/api/users",
@@ -12,53 +16,47 @@ router = APIRouter(
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-mock_user_data = {
-    "joshuamangi@gmail.com": {
-        "id": 1,
-        "first_name": "Joshua",
-        "last_name": "Masumbuo",
-        "email": "joshuamangi@gmail.com",
-        "hashed_password": pwd_context.hash("password123"),
-        "created_at": datetime.utcnow()
-    }
-}
 
-
-@router.put("/me")
+@router.put("/me", response_model=UserOut)
 async def update_user(
     updates: UserUpdate,
-    current_user: UserCreate = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
     """
     Update the logged-in user's profile.
     Only allows updating first_name, last_name, email, or password.
     """
-    stored_user = mock_user_data.get(current_user.email)
-    if not stored_user:
+    user = db.query(User).filter(User.id == current_user.id).first()
+    if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         )
 
-    # Keep track of the key (email) since it might change
-    current_email = current_user.email
+    # check for duplicate email
+    if updates.email and updates.email != user.email:
+        email_exists = db.query(User).filter(
+            User.email == updates.email).first()
+        if email_exists:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already exists"
+            )
+        user.email = updates.email
 
     if updates.first_name:
-        stored_user["first_name"] = updates.first_name
+        user.first_name = updates.first_name
     if updates.last_name:
-        stored_user["last_name"] = updates.last_name
-    if updates.email:
-        # check for duplicates
-        if updates.email in mock_user_data:
-            raise HTTPException(status_code=400, detail="Email already exists")
-        # move user record under new email
-        mock_user_data[updates.email] = mock_user_data.pop(current_email)
-        current_email = updates.email
-        stored_user["email"] = updates.email
+        user.last_name = updates.last_name
     if updates.password:
-        stored_user["hashed_password"] = pwd_context.hash(updates.password)
+        user.hashed_password = pwd_context.hash(updates.password)
 
-    stored_user["updated_at"] = datetime.utcnow()
-    mock_user_data[current_email] = stored_user
+    # update timestamp (SQLAlchemy onupdate also covers this)
+    user.updated_at = datetime.utcnow()
 
-    return UserOut(**stored_user)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    return user

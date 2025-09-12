@@ -1,7 +1,10 @@
 # This is a simple budget API that helps track categories like rent and petrol and adds limits
 
 from fastapi import FastAPI
+from data.db.db import engine, Base
 from routers import auth, categories, expenses, users
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Bajeti")
 

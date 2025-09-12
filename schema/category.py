@@ -21,6 +21,7 @@ class CategoryOut(CategoryBase):
     id: int
     user_id: int
     created_at: datetime
+    updated_at: datetime
 
     class Config:
         """defines a class that allows creation of SQL Alchemy objects"""

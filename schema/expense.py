@@ -28,6 +28,7 @@ class ExpenseOut(ExpenseBase):
     category_id: int
     user_id: int
     created_at: datetime
+    updated_at: datetime
 
     class Config:
         """describes the class that allows sqlalchemy objects"""

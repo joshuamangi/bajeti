@@ -10,12 +10,11 @@ engine = create_engine(
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-Base = declarative_base
-
-# Dependency injection
+Base = declarative_base()
 
 
 def get_db():
+    """Returns the database for Dependency injection"""
     db = SessionLocal()
     try:
         yield db

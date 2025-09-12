@@ -25,6 +25,7 @@ class UserDB(UserBase):
     """Internal model with hashed password (not exposed to clients)"""
     id: int
     created_at: datetime
+    updated_at: datetime
     hashed_password: str
 
 
@@ -32,6 +33,7 @@ class UserOut(UserBase):
     """Response model for user info"""
     id: int
     created_at: datetime
+    updated_at: datetime
 
 
 class UserUpdate(BaseModel):
