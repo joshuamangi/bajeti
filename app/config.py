@@ -1,0 +1,18 @@
+"""Configuration settings class"""
+from functools import lru_cache
+from pydantic_settings import BaseSettings
+
+
+class Settings(BaseSettings):
+    """Application COnfigurations pulled from .env"""
+    SECRET_KEY: str
+    ALGORITHM: str
+    ACCESS_TOKEN_EXPIRE_MINUTES: int
+
+    class Config:
+        """Pydantic class for telling it to load .env"""
+        env_file = ".env"
+
+
+settings = Settings()
+print("DEBUG:", settings.model_dump())
