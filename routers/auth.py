@@ -141,7 +141,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
     Request:
         {
             "username": "user1@example.com",
-            "password": "password123"
+            "password": "test123"
         }
 
     Returns:

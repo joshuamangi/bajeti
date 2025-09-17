@@ -89,46 +89,38 @@ def login_page(request: Request):
 
 
 @router.post("/login")
-async def login_user(
-        response: RedirectResponse,
-        email: str = Form(...),
-        password: str = Form(...)):
-    """Login User via API"""
+async def login_user(username: str = Form(...), password: str = Form(...)):
+    """Login user using the API auth/token route"""
     async with httpx.AsyncClient() as client:
-        api_response = await client.post("http://localhost:8000/api/auth/token",
-                                         data={
-                                             "username": email,
-                                             "password": password
-                                         })
-        if api_response.status_code == 200:
-            token_data = api_response.json()
-            response = RedirectResponse(url="/dashboard", status_code=303)
-            response.set_cookie(
-                key="access_token",
-                value=token_data["access_token"],
-                httponly=True,
-                max_age=1800,  # 30 minutes
-                expires=1800,
-                path="/"
-            )
-            return response
-        else:
-            return templates.TemplateResponse(
-                "login.html",
-                {
-                    "request": {},
-                    "error": "Invalid credentials",
-                    "email": email
-                }, status_code=400,
-            )
+        response = await client.post(
+            "http://localhost:8000/api/auth/token",  # adjust if different host/port
+            data={"username": username, "password": password}
+        )
+
+    if response.status_code != 200:
+        return RedirectResponse(url="/login?error=InvalidCredentials", status_code=303)
+
+    token_data = response.json()
+    access_token = token_data["access_token"]
+
+    # ✅ return token in template or redirect with query param
+    return RedirectResponse(f"/dashboard?token={access_token}", status_code=303)
 
 
 @router.get("/dashboard", response_class=HTMLResponse)
-def dashboard(request: Request):
-    """Main dashboard"""
-    current_user: User = Depends(get_current_user)
+async def dashboard(request: Request, token: str):
+    """Main dashboard - requires JWT token in query param"""
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            "http://localhost:8000/api/auth/users/me",
+            headers={"Authorization": f"Bearer {token}"}
+        )
+
+    if response.status_code != 200:
+        return RedirectResponse(url="/login", status_code=303)
+
+    user = response.json()
     return templates.TemplateResponse(
         "dashboard.html",
-        # replace with real user later
-        {"request": request, "user": current_user}
+        {"request": request, "user": user, "token": token}
     )
