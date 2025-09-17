@@ -1,5 +1,4 @@
 """Configuration settings class"""
-from functools import lru_cache
 from pydantic_settings import BaseSettings
 
 
@@ -15,4 +14,3 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-print("DEBUG:", settings.model_dump())
