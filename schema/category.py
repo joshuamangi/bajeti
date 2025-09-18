@@ -8,7 +8,7 @@ from pydantic import BaseModel
 class CategoryBase(BaseModel):
     """defines the structure of Category Base"""
     name: str
-    limit_amount: int
+    limit_amount: float
 
 
 class CategoryCreate(CategoryBase):
