@@ -18,6 +18,7 @@ logging.basicConfig(level=logging.INFO)
 load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
+API_BASE_URL = os.getenv("API_BASE_URL")
 
 # Setup templates
 templates = Jinja2Templates(directory="app/templates")
@@ -79,7 +80,7 @@ async def register_user(
 
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            "http://localhost:8000/api/auth/",
+            f"{API_BASE_URL}/api/auth/",
             json={
                 "first_name": first_name,
                 "last_name": last_name,
@@ -116,7 +117,7 @@ async def login_user(request: Request, username: str = Form(...), password: str 
     """Login user using the API auth/token route"""
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            "http://localhost:8000/api/auth/token",
+            f"{API_BASE_URL}/api/auth/token",
             data={"username": username, "password": password}
         )
 
@@ -139,7 +140,7 @@ async def dashboard(request: Request, token: str):
     """Main dashboard - requires JWT token in query param"""
     async with httpx.AsyncClient() as client:
         user_response = await client.get(
-            "http://localhost:8000/api/auth/users/me",
+            f"{API_BASE_URL}/api/auth/users/me",
             headers={"Authorization": f"Bearer {token}"}
         )
 
@@ -151,7 +152,7 @@ async def dashboard(request: Request, token: str):
 
         # Fetch categories + stats (current month)
         categories_response = await client.get(
-            "http://localhost:8000/api/categories/with-stats",
+            f"{API_BASE_URL}/api/categories/with-stats",
             headers={"Authorization": f"Bearer {token}"})
         if categories_response.status_code != 200:
             logger.error(
@@ -173,7 +174,7 @@ async def dashboard(request: Request, token: str):
 
     # Fetch categories
     #     categories_response = await client.get(
-    #         "http://localhost:8000/api/categories/",
+    #         f"{API_BASE_URL}/api/categories/",
     #         headers={"Authorization": f"Bearer {token}"}
     #     )
     #     categories = categories_response.json(
@@ -202,7 +203,7 @@ async def add_category(
     """Add category via form on dashboard"""
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            "http://localhost:8000/api/categories/",
+            f"{API_BASE_URL}/api/categories/",
             json={"name": name, "limit_amount": limit_amount},
             headers={"Authorization": f"Bearer {token}"}
         )
@@ -235,7 +236,7 @@ async def edit_category(
     """Edit category via form on dashboard"""
     async with httpx.AsyncClient() as client:
         response = await client.put(
-            f"http://localhost:8000/api/categories/{category_id}",
+            f"{API_BASE_URL}/api/categories/{category_id}",
             json={"name": name, "limit_amount": limit_amount},
             headers={"Authorization": f"Bearer {token}"}
         )
@@ -266,7 +267,7 @@ async def delete_category(
     """Delete category via form on dashboard"""
     async with httpx.AsyncClient() as client:
         response = await client.delete(
-            f"http://localhost:8000/api/categories/{category_id}",
+            f"{API_BASE_URL}/api/categories/{category_id}",
             headers={"Authorization": f"Bearer {token}"}
         )
 
@@ -306,7 +307,7 @@ async def add_expense(
         payload["month"] = month
 
     async with httpx.AsyncClient() as client:
-        response = await client.post("http://localhost:8000/api/expenses/",
+        response = await client.post(f"{API_BASE_URL}/api/expenses/",
                                      json=payload, headers={"Authorization": f"Bearer {token}"})
 
     if response.status_code == 201:
@@ -340,7 +341,7 @@ async def edit_expense(
 
     async with httpx.AsyncClient() as client:
         response = await client.put(
-            f"http://localhost:8000/api/expenses/{expense_id}",
+            f"{API_BASE_URL}/api/expenses/{expense_id}",
             json=payload, headers={"Authorization": f"Bearer {token}"})
 
     if response.status_code == 200:
@@ -365,7 +366,7 @@ async def delete_expense(
     """Deletes an expense entry"""
     async with httpx.AsyncClient() as client:
         response = await client.delete(
-            f"http://localhost:8000/api/expenses/{expense_id}",
+            f"{API_BASE_URL}/api/expenses/{expense_id}",
             headers={"Authorization": f"Bearer {token}"})
 
     if response.status_code == 204:

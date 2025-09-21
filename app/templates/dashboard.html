@@ -159,16 +159,16 @@
           <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">+ Add New Category</button>
         </td>
       </tr>
-    </tbody>
-    <tfoot class="d-none d-md-table-footer-group">
-      <tr>
-        <th>Total</th>
-        <th>{{ categories_with_stats | sum(attribute='limit_amount') }}</th>
-        <th></th>
-        <th>{{ categories_with_stats | sum(attribute='balance') }}</th>
-        <th></th>
+
+      <!-- ✅ Totals Row -->
+      <tr class="table-secondary fw-bold">
+        <td>Total</td>
+        <td>{{ categories_with_stats | sum(attribute='limit_amount') }}</td>
+        <td></td>
+        <td>{{ categories_with_stats | sum(attribute='balance') }}</td>
+        <td></td>
       </tr>
-    </tfoot>
+    </tbody>
   </table>
 </div>
 
@@ -225,7 +225,6 @@
                 <label>Month (YYYY-MM)</label>
                 <input class="form-control" name="month" value="{{ e.month }}" />
               </div>
-              <!-- ✅ NEW category dropdown -->
               <div class="mb-2">
                 <label>Category</label>
                 <select class="form-control" name="category_id" required>
@@ -250,7 +249,7 @@
 <style>
 /* Mobile-friendly stacked table */
 @media (max-width: 768px) {
-  table thead, table tfoot { 
+  table thead { 
     display: none; 
   }
   table tbody tr {
@@ -276,14 +275,21 @@
     margin-right: .5rem;
     color: #555;
   }
+
+  /* Totals row special case */
+  table tbody tr.table-secondary td {
+    display: block;
+    text-align: right;
+    font-weight: bold;
+  }
+  table tbody tr.table-secondary td:first-child {
+    text-align: left;
+  }
 }
 
 @media (min-width: 769px) {
   table thead {
     display: table-header-group;
-  }
-  table tfoot {
-    display: table-footer-group;
   }
 }
 </style>
