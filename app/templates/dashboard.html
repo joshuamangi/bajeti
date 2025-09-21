@@ -28,7 +28,11 @@
         <td data-label="Category" class="d-block d-md-table-cell fw-bold">{{ cat.name }}</td>
         <td data-label="Limit" class="d-block d-md-table-cell">{{ cat.limit_amount }}</td>
         <td data-label="Expenses" class="d-block d-md-table-cell">
-          <a href="#" data-bs-toggle="modal" data-bs-target="#expensesModal{{ cat.id }}">
+          <a href="#" data-bs-toggle="modal" data-bs-target="#expensesModal{{ cat.id }}" 
+          class = "
+          {% if cat.expense_count == 0 %} text-danger
+         {% elif cat.expense_count > 0 %} text-primary
+         {% endif %}">
             {{ cat.expense_count }}
           </a>
         </td>
