@@ -1,3 +1,4 @@
+from decimal import Decimal
 import logging
 from datetime import datetime
 
@@ -5,9 +6,9 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from data.db.db import get_db
-from data.db.models.models import Category
+from data.db.models.models import Category, Expense
 from routers.auth import get_current_user
-from schema.category import CategoryBase, CategoryOut
+from schema.category import CategoryBase, CategoryOut, CategoryStats
 from schema.user import UserOut
 
 # Setup logging
@@ -28,6 +29,68 @@ async def get_all_categories(
     logger.info(
         "Fetched %d categories for user %d", len(categories), current_user.id)
     return categories
+
+
+@router.get("/with-stats", response_model=list[CategoryStats])
+async def get_categories_with_stats(
+    db: Session = Depends(get_db),
+    current_user: UserOut = Depends(get_current_user)
+):
+    """
+   Return categories plus aggregated stats for the current month:
+   - expense_count
+   - total_spend
+   - the list of expenses for that month
+   """
+    current_year_month = datetime.utcnow().strftime("%Y-%m")
+    logger.info("Fetching categories with stats for user %d for month %s",
+                current_user.id, current_year_month)
+    categories = db.query(Category).filter(
+        Category.user_id == current_user.id).all()
+
+    result = []
+    for category in categories:
+        expenses = db.query(Expense).filter(
+            Expense.user_id == current_user.id,
+            Expense.category_id == category.id,
+            Expense.month == current_year_month
+        ).all()
+
+        total_spend = sum(Decimal(str(exp.amount)) for exp in expenses)
+        expense_count = len(expenses)
+
+        # Build dictionaries - FASTAPI will convert datetimes on response
+        expenses_list = [
+            {
+                "id": exp.id,
+                "amount": float(exp.amount),
+                "month": exp.month,
+                "description": exp.description,
+                "category_id": exp.category_id,
+                "user_id": exp.user_id,
+                "created_at": exp.created_at,
+                "updated_at": exp.updated_at,
+            }
+            for exp in expenses
+        ]
+
+        balance = category.limit_amount - total_spend
+
+        result.append({
+            "id": category.id,
+            "name": category.name,
+            "limit_amount": float(category.limit_amount) if category.limit_amount is not None else None,
+            "user_id": category.user_id,
+            "created_at": category.created_at,
+            "updated_at": category.updated_at,
+            "expense_count": expense_count,
+            "balance": balance,
+            "expenses": expenses_list
+        })
+
+    logger.info("Returning %d categories with stats for user_id=%s",
+                len(result), current_user.id)
+    return result
 
 
 @router.get("/{category_id}", response_model=CategoryOut)

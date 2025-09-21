@@ -1,8 +1,291 @@
-{% extends "base.html"%}
+{% extends "base.html" %}
 {% block content %}
-<h2>Dashboard</h2>
-<p>Welcome {{ user.first_name }} {{ user.last_name }}!</p>
-<p>This is your dashboard where you can manage your budget and expenses.</p>
+<h2 class="mb-3">Dashboard</h2>
 
-{% include "categories.html" %}
+{% if error %}
+<div class="alert alert-danger">{{ error }}</div>
+{% endif %}
+
+<div class="mb-3">
+  <strong>Welcome, {{ user.first_name }} {{ user.last_name }}</strong>
+</div>
+
+<div class="table-responsive">
+  <table class="table table-bordered table-striped align-middle">
+    <thead>
+      <tr>
+        <th>Category</th>
+        <th>Limit</th>
+        <th>Expenses</th>
+        <th>Balance</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for cat in categories_with_stats %}
+      <tr class="d-block d-md-table-row mb-3 mb-md-0 border rounded shadow-sm">
+        <td data-label="Category" class="d-block d-md-table-cell fw-bold">{{ cat.name }}</td>
+        <td data-label="Limit" class="d-block d-md-table-cell">{{ cat.limit_amount }}</td>
+        <td data-label="Expenses" class="d-block d-md-table-cell">
+          <a href="#" data-bs-toggle="modal" data-bs-target="#expensesModal{{ cat.id }}">
+            {{ cat.expense_count }}
+          </a>
+        </td>
+        <td data-label="Balance" class="d-block d-md-table-cell 
+          {% if cat.balance < 0 %} bg-danger text-white 
+          {% elif cat.balance >= 0 %} bg-success text-white 
+          {% endif %}">
+          {% if cat.balance < 0 %}
+            Over by {{ -cat.balance }}
+          {% else %}
+            Remaining {{ cat.balance }}
+          {% endif %}
+        </td>
+        <td data-label="Actions" class="d-block d-md-table-cell">
+          <!-- add expense -->
+          <button class="btn btn-sm btn-success mb-1" data-bs-toggle="modal" data-bs-target="#addExpenseModal{{ cat.id }}">+ Expense</button>
+
+          <!-- edit category -->
+          <button class="btn btn-sm btn-secondary mb-1" data-bs-toggle="modal" data-bs-target="#editCategoryModal{{ cat.id }}">Edit</button>
+
+          <!-- delete -->
+          <form method="POST" action="/dashboard/categories/{{ cat.id }}/delete" style="display:inline;">
+            <input type="hidden" name="token" value="{{ token }}">
+            <button class="btn btn-sm btn-danger mb-1" type="submit" onclick="return confirm('Delete category?')">Delete</button>
+          </form>
+        </td>
+      </tr>
+
+      {# -- Expenses Modal -- #}
+      <div class="modal fade" id="expensesModal{{ cat.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Expenses — {{ cat.name }}</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              {% if cat.expenses %}
+              <ul class="list-group">
+                {% for e in cat.expenses %}
+                <li class="list-group-item d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+                  <div>
+                    <strong>{{ e.amount }}</strong> — {{ e.description or "(no desc)" }} 
+                    <small class="text-muted">({{ e.month }})</small>
+                  </div>
+                  <div class="mt-2 mt-md-0">
+                    <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editExpenseModal{{ e.id }}">Edit</button>
+                    <form method="POST" action="/dashboard/expenses/{{ e.id }}/delete" style="display:inline;">
+                      <input type="hidden" name="token" value="{{ token }}">
+                      <button class="btn btn-sm btn-danger" type="submit" onclick="return confirm('Delete expense?')">Delete</button>
+                    </form>
+                  </div>
+                </li>
+                {% endfor %}
+              </ul>
+              {% else %}
+              <p>No expenses for this month.</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {# -- Add Expense Modal -- #}
+      <div class="modal fade" id="addExpenseModal{{ cat.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <form method="POST" action="/dashboard/expenses">
+              <div class="modal-header">
+                <h5 class="modal-title">Add Expense to {{ cat.name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <input type="hidden" name="category_id" value="{{ cat.id }}">
+                <input type="hidden" name="token" value="{{ token }}">
+                <div class="mb-2">
+                  <label>Amount</label>
+                  <input class="form-control" name="amount" type="number" step="0.01" required>
+                </div>
+                <div class="mb-2">
+                  <label>Description</label>
+                  <input class="form-control" name="description">
+                </div>
+                <div class="mb-2">
+                  <label>Month</label>
+                  <input class="form-control" name="month" placeholder="YYYY-MM" value="{{ now }}">
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button class="btn btn-primary" type="submit">Add Expense</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      {# -- Edit Category Modal -- #}
+      <div class="modal fade" id="editCategoryModal{{ cat.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <form method="POST" action="/dashboard/categories/{{ cat.id }}/edit">
+              <div class="modal-header">
+                <h5 class="modal-title">Edit Category</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <input type="hidden" name="token" value="{{ token }}">
+                <div class="mb-2">
+                  <label>Name</label>
+                  <input class="form-control" name="name" value="{{ cat.name }}" required>
+                </div>
+                <div class="mb-2">
+                  <label>Limit</label>
+                  <input class="form-control" name="limit_amount" type="number" value="{{ cat.limit_amount }}">
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button class="btn btn-primary" type="submit">Save</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      {% endfor %}
+
+      <tr>
+        <td colspan="5">
+          <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">+ Add New Category</button>
+        </td>
+      </tr>
+    </tbody>
+    <tfoot class="d-none d-md-table-footer-group">
+      <tr>
+        <th>Total</th>
+        <th>{{ categories_with_stats | sum(attribute='limit_amount') }}</th>
+        <th></th>
+        <th>{{ categories_with_stats | sum(attribute='balance') }}</th>
+        <th></th>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+
+<!-- Add Category Modal -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="/dashboard/categories">
+        <div class="modal-header">
+          <h5 class="modal-title">Add Category</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="token" value="{{ token }}">
+          <div class="mb-2">
+            <label>Name</label>
+            <input class="form-control" name="name" required>
+          </div>
+          <div class="mb-2">
+            <label>Limit</label>
+            <input class="form-control" name="limit_amount" type="number" step="0.01">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" type="submit">Add Category</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{# ---- Edit Expense Modals ---- #}
+{% for cat in categories_with_stats %}
+  {% for e in cat.expenses %}
+    <div class="modal fade" id="editExpenseModal{{ e.id }}" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <form method="POST" action="/dashboard/expenses/{{ e.id }}/edit">
+            <div class="modal-header">
+              <h5 class="modal-title">Edit Expense</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <input type="hidden" name="token" value="{{ token }}">
+              <div class="mb-2">
+                <label>Amount</label>
+                <input class="form-control" name="amount" value="{{ e.amount }}" required />
+              </div>
+              <div class="mb-2">
+                <label>Description</label>
+                <input class="form-control" name="description" value="{{ e.description }}" />
+              </div>
+              <div class="mb-2">
+                <label>Month (YYYY-MM)</label>
+                <input class="form-control" name="month" value="{{ e.month }}" />
+              </div>
+              <!-- ✅ NEW category dropdown -->
+              <div class="mb-2">
+                <label>Category</label>
+                <select class="form-control" name="category_id" required>
+                  {% for c in categories_with_stats %}
+                    <option value="{{ c.id }}" {% if c.id == e.category_id %}selected{% endif %}>
+                      {{ c.name }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-primary" type="submit">Save</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+{% endfor %}
+
+<style>
+/* Mobile-friendly stacked table */
+@media (max-width: 768px) {
+  table thead, table tfoot { 
+    display: none; 
+  }
+  table tbody tr {
+    display: block;
+    margin-bottom: 1rem;
+    border: 1px solid #dee2e6;
+    border-radius: .5rem;
+    padding: .5rem;
+  }
+  table tbody td {
+    display: flex;
+    justify-content: space-between;
+    padding: .5rem .75rem;
+    border: none !important;
+    border-bottom: 1px solid #dee2e6;
+  }
+  table tbody td:last-child {
+    border-bottom: none;
+  }
+  table tbody td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    margin-right: .5rem;
+    color: #555;
+  }
+}
+
+@media (min-width: 769px) {
+  table thead {
+    display: table-header-group;
+  }
+  table tfoot {
+    display: table-footer-group;
+  }
+}
+</style>
+
 {% endblock %}

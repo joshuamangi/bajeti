@@ -3,17 +3,15 @@
 from datetime import datetime
 
 from pydantic import BaseModel
+from typing import List, Optional
+
+from schema.expense import ExpenseOut
 
 
 class CategoryBase(BaseModel):
     """defines the structure of Category Base"""
     name: str
     limit_amount: float
-
-
-class CategoryCreate(CategoryBase):
-    """defines the structure of the creation of a catrgory"""
-    user_id: int
 
 
 class CategoryOut(CategoryBase):
@@ -26,3 +24,10 @@ class CategoryOut(CategoryBase):
     class Config:
         """defines a class that allows creation of SQL Alchemy objects"""
         orm_mode = True
+
+
+class CategoryStats(CategoryOut):
+    """Category plus aggregated stats for dashboard"""
+    expense_count: int
+    balance: float
+    expenses: List[ExpenseOut]

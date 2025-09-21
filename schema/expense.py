@@ -19,7 +19,7 @@ class ExpenseBase(BaseModel):
 class ExpenseCreate(ExpenseBase):
     """describes the structure for the creation of an expense"""
     category_id: int
-    user_id: int
+    # user_id: int
 
 
 class ExpenseOut(ExpenseBase):
@@ -28,7 +28,7 @@ class ExpenseOut(ExpenseBase):
     category_id: int
     user_id: int
     created_at: datetime
-    updated_at: datetime
+    updated_at: Optional[datetime] = None
 
     class Config:
         """describes the class that allows sqlalchemy objects"""
