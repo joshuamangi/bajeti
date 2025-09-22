@@ -5,7 +5,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./bajeti.db:/app/bajeti.db   # persist sqlite db
+      - ./data:/app/data                # persist entire data folder
       - ./app/templates:/app/app/templates   # hot-reload templates
       - ./app/static:/app/app/static         # static files
     env_file:
