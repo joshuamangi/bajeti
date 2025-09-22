@@ -11,11 +11,3 @@ services:
     env_file:
       - .env
     restart: unless-stopped
-  ngrok:
-    image: wernight/ngrok
-    container_name: bajeti_ngrok
-    command: http bajeti_app:8000
-    depends_on:
-      - bajeti_app
-    env_file:
-      - .env
