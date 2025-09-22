@@ -23,5 +23,4 @@ pytest_cache/
 Thumbs.db
 
 # files
-*.txt
 venv/
