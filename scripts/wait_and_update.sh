@@ -1,4 +1,5 @@
 #!/bin/bash
+PATH=/usr/local/bin:/usr/bin:/bin
 LOGFILE="/var/log/ngrok-dns.log"
 
 log() {
