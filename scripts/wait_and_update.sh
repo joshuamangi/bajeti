@@ -1,6 +1,9 @@
 #!/bin/bash
 PATH=/usr/local/bin:/usr/bin:/bin
-LOGFILE="/var/log/ngrok-dns.log"
+LOGDIR="/home/joshuamangi/projects/bajeti/logs"
+LOGFILE="$LOGDIR/ngrok-dns.log"
+
+mkdir -p "$LOGDIR"
 
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOGFILE"
