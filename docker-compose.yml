@@ -12,7 +12,7 @@ services:
       - .env
     restart: unless-stopped
     networks:
-      - bajeti-networks
+      - bajeti-net
     
   # Cloudflare tunnel
   cloudflared:
