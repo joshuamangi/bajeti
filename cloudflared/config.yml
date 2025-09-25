@@ -1,0 +1,7 @@
+tunnel: 9e802324-dfa8-4310-94e8-0a573dcc5e14
+credentials-file: /root/.cloudflared/9e802324-dfa8-4310-94e8-0a573dcc5e14.json
+
+ingress:
+  - hostname: bajeti.techjamaa.com
+    service: http://bajeti_app:8000
+  - service: http_status:404
