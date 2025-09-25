@@ -11,3 +11,23 @@ services:
     env_file:
       - .env
     restart: unless-stopped
+    networks:
+      - bajeti-networks
+    
+  # Cloudflare tunnel
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    restart: unless-stopped
+    user: "0"  # run as root so it can read certs
+    command: tunnel --config /root/.cloudflared/config.yml run bajeti
+    volumes:
+      - ./cloudflared:/root/.cloudflared
+    depends_on:
+      - bajeti_app
+    networks:
+      - bajeti-net
+
+networks:
+  bajeti-net:
+    driver: bridge

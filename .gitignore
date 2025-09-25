@@ -1,4 +1,3 @@
-
 # Virtual Environment
 .env
 .flaskenv
@@ -25,3 +24,7 @@ Thumbs.db
 # files
 venv/
 __pycache__/
+
+# Cloudflared secrets (ignore cert + tunnel credentials, but not config.yml)
+cloudflared/cert.pem
+cloudflared/*.json
