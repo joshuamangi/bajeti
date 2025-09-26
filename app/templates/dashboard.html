@@ -5,12 +5,43 @@
 <div class="alert alert-danger">{{ error }}</div>
 {% endif %}
 
-<h1 class="display-6">{{current_month}}'s Budget</h1>
+<h1 class="display-6">{{ current_month }}'s Budget</h1>
 
 <div class="mb-3 float-right">
   <strong>Welcome, {{ user.first_name }} {{ user.last_name }}</strong>
 </div>
 
+<!-- ✅ Summary & Add Category -->
+<div class="row mb-3">
+  <div class="col-md-3 col-6">
+    <div class="card text-center shadow-sm">
+      <div class="card-body p-2">
+        <h6 class="card-title mb-1">Total Limit</h6>
+        <p class="card-text fw-bold">
+          {{ categories_with_stats | sum(attribute='limit_amount') }}
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 col-6">
+    <div class="card text-center shadow-sm">
+      <div class="card-body p-2">
+        <h6 class="card-title mb-1">Total Balance</h6>
+        <p class="card-text fw-bold 
+          {% if categories_with_stats | sum(attribute='balance') < 0 %} text-danger {% else %} text-success {% endif %}">
+          {{ categories_with_stats | sum(attribute='balance') }}
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 col-12 mt-2 mt-md-0">
+    <button class="btn btn-info w-100" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+      + Add New Category
+    </button>
+  </div>
+</div>
+
+<!-- ✅ Categories Table -->
 <div class="table-responsive">
   <table class="table table-bordered table-striped align-middle">
     <thead>
@@ -25,52 +56,58 @@
     <tbody>
       {% for cat in categories_with_stats %}
       <tr class="d-block d-md-table-row mb-3 mb-md-0 border rounded shadow-sm">
-        <td data-label="Category" class="d-block d-md-table-cell fw-bold">{{ cat.name }}</td>
-        <td data-label="Limit" class="d-block d-md-table-cell">{{ cat.limit_amount }}</td>
-        <td data-label="Expenses" class="d-block d-md-table-cell">
+        <td data-label="Category" class="fw-bold">{{ cat.name }}</td>
+        <td data-label="Limit">{{ cat.limit_amount }}</td>
+        <td data-label="Expenses">
           <a href="#" data-bs-toggle="modal" data-bs-target="#expensesModal{{ cat.id }}" 
-          class="{% if cat.expense_count == 0 %} text-danger {% else %} text-primary {% endif %}">
+             class="{% if cat.expense_count == 0 %} text-danger {% else %} text-primary {% endif %}">
             {{ cat.expense_count }}
           </a>
         </td>
-        <td data-label="Balance" class="d-block d-md-table-cell 
-          {% if cat.balance < 0 %} bg-danger text-white 
-          {% else %} bg-success text-white {% endif %}">
+        <td data-label="Balance" class="{% if cat.balance < 0 %} bg-danger text-white {% else %} bg-success text-white {% endif %}">
           {% if cat.balance < 0 %}
             Over by {{ -cat.balance }}
           {% else %}
             Remaining {{ cat.balance }}
           {% endif %}
         </td>
-        <td data-label="Actions" class="d-block d-md-table-cell">
-          <!-- add expense -->
-          <button class="btn btn-sm btn-outline-primary mb-1" data-bs-toggle="modal" data-bs-target="#addExpenseModal{{ cat.id }}">+ Expense</button>
+        <td data-label="Actions">
+          <div class="d-flex flex-wrap gap-1 justify-content-start">
+            <!-- ✅ Quick Expense -->
+            <form method="POST" action="/dashboard/expenses" class="flex-fill"
+                  onsubmit="return confirm('Add quick expense of {{ cat.limit_amount }} to {{ cat.name }}?')">
+              <input type="hidden" name="category_id" value="{{ cat.id }}">
+              <input type="hidden" name="amount" value="{{ cat.limit_amount }}">
+              <input type="hidden" name="description" value="Quick Expense">
+              <input type="hidden" name="month" value="{{ now }}">
+              <button class="btn btn-sm btn-outline-success w-30">⚡ Quick</button>
+            </form>
 
-          <!-- edit category -->
-          <button class="btn btn-sm btn-secondary mb-1" data-bs-toggle="modal" data-bs-target="#editCategoryModal{{ cat.id }}">Edit</button>
+            <!-- Add expense -->
+            <button class="btn btn-sm btn-outline-primary w-30 flex-fill" 
+                    data-bs-toggle="modal" 
+                    data-bs-target="#addExpenseModal{{ cat.id }}">
+              + Expense
+            </button>
 
-          <!-- delete -->
-          <form method="POST" action="/dashboard/categories/{{ cat.id }}/delete" style="display:inline;">
-            <button class="btn btn-sm btn-danger mb-1" type="submit" onclick="return confirm('Delete category?')">Delete</button>
-          </form>
+            <!-- Edit category -->
+            <button class="btn btn-sm btn-warning w-30 flex-fill" 
+                    data-bs-toggle="modal" 
+                    data-bs-target="#editCategoryModal{{ cat.id }}">
+              🪛
+            </button>
+
+            <!-- Delete category -->
+            <form method="POST" action="/dashboard/categories/{{ cat.id }}/delete" class="flex-fill">
+              <button class="btn btn-sm btn-danger w-30" type="submit" onclick="return confirm('Delete category?')">
+                🗑️
+              </button>
+            </form>
+          </div>
         </td>
+
       </tr>
       {% endfor %}
-
-      <tr>
-        <td colspan="5">
-          <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#addCategoryModal">+ Add New Category</button>
-        </td>
-      </tr>
-
-      <!-- ✅ Totals Row -->
-      <tr class="table-secondary fw-bold">
-        <td>Total</td>
-        <td>{{ categories_with_stats | sum(attribute='limit_amount') }}</td>
-        <td></td>
-        <td>{{ categories_with_stats | sum(attribute='balance') }}</td>
-        <td></td>
-      </tr>
     </tbody>
   </table>
 </div>
@@ -103,7 +140,7 @@
 </div>
 
 {# ----------------------------- #}
-{# All other modals moved here   #}
+{# All other modals stay the same #}
 {# ----------------------------- #}
 
 {% for cat in categories_with_stats %}
@@ -122,7 +159,7 @@
             {% for e in cat.expenses %}
             <li class="list-group-item d-flex flex-column flex-md-row justify-content-between align-items-md-center">
               <div>
-                <strong>{{ e.amount }}</strong> — {{ e.description or "(no desc)" }} 
+                <strong>{{ e.amount }}</strong> — {{ e.description or "(no desc)" }}
                 <small class="text-muted">({{ e.month }})</small>
               </div>
               <div class="mt-2 mt-md-0">
@@ -201,47 +238,47 @@
     </div>
   </div>
 
-  {# Edit Expense Modals per expense #}
+  <!-- Edit Expense Modals -->
   {% for e in cat.expenses %}
-    <div class="modal fade" id="editExpenseModal{{ e.id }}" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <form method="POST" action="/dashboard/expenses/{{ e.id }}/edit">
-            <div class="modal-header">
-              <h5 class="modal-title">Edit Expense</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+  <div class="modal fade" id="editExpenseModal{{ e.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form method="POST" action="/dashboard/expenses/{{ e.id }}/edit">
+          <div class="modal-header">
+            <h5 class="modal-title">Edit Expense</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-2">
+              <label>Amount</label>
+              <input class="form-control" name="amount" value="{{ e.amount }}" required>
             </div>
-            <div class="modal-body">
-              <div class="mb-2">
-                <label>Amount</label>
-                <input class="form-control" name="amount" value="{{ e.amount }}" required />
-              </div>
-              <div class="mb-2">
-                <label>Description</label>
-                <input class="form-control" name="description" value="{{ e.description }}" />
-              </div>
-              <div class="mb-2">
-                <label>Month (YYYY-MM)</label>
-                <input class="form-control" name="month" value="{{ e.month }}" />
-              </div>
-              <div class="mb-2">
-                <label>Category</label>
-                <select class="form-control" name="category_id" required>
-                  {% for c in categories_with_stats %}
-                    <option value="{{ c.id }}" {% if c.id == e.category_id %}selected{% endif %}>
-                      {{ c.name }}
-                    </option>
-                  {% endfor %}
-                </select>
-              </div>
+            <div class="mb-2">
+              <label>Description</label>
+              <input class="form-control" name="description" value="{{ e.description }}">
             </div>
-            <div class="modal-footer">
-              <button class="btn btn-primary" type="submit">Save</button>
+            <div class="mb-2">
+              <label>Month (YYYY-MM)</label>
+              <input class="form-control" name="month" value="{{ e.month }}">
             </div>
-          </form>
-        </div>
+            <div class="mb-2">
+              <label>Category</label>
+              <select class="form-control" name="category_id" required>
+                {% for c in categories_with_stats %}
+                <option value="{{ c.id }}" {% if c.id == e.category_id %}selected{% endif %}>
+                  {{ c.name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-primary" type="submit">Save</button>
+          </div>
+        </form>
       </div>
     </div>
+  </div>
   {% endfor %}
 {% endfor %}
 
@@ -270,15 +307,6 @@
     margin-right: .5rem;
     color: #555;
   }
-  table tbody tr.table-secondary td {
-    display: block;
-    text-align: right;
-    font-weight: bold;
-  }
-  table tbody tr.table-secondary td:first-child { text-align: left; }
-}
-@media (min-width: 769px) {
-  table thead { display: table-header-group; }
 }
 </style>
 
