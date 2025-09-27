@@ -1,28 +1,4 @@
-body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    background: #f9fafb;
-}
-
-header {
-    background: #2563eb;
-    color: white;
-    padding: 1rem;
-}
-
-nav a {
-    color: white;
-    margin-right: 1rem;
-    text-decoration: none;
-}
-
-main {
-    padding: 2rem;
-}
-
-form {
-    background: white;
-    padding: 1rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+.blurred {
+    filter: blur(6px);
+    user-select: none;
 }
