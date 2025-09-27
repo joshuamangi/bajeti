@@ -91,7 +91,7 @@ async def register_user(
         return templates.TemplateResponse(
             "register.html",
             {
-                "request": request,   # ✅ fixed
+                "request": request,
                 "error": "Passwords do not match",
                 "email": email,
                 "first_name": first_name,
@@ -124,6 +124,7 @@ async def register_user(
                     "email": email,
                     "first_name": first_name,
                     "last_name": last_name,
+                    "show_menu": False
                 },
                 status_code=response.status_code,
             )
@@ -248,9 +249,8 @@ async def add_category(
                 "error": "Category creation failed",
                 "token": token,
                 "categories": [],
-                "user": None,  # prevent Jinja crash,
+                "user": None,
                 "show_menu": True
-
             },
             status_code=response.status_code,
         )
@@ -284,7 +284,7 @@ async def edit_category(
                 "error": "Category update failed",
                 "token": token,
                 "categories": [],
-                "user": None,  # prevent Jinja crash,
+                "user": None,
                 "show_menu": True
             },
             status_code=response.status_code,
@@ -316,7 +316,7 @@ async def delete_category(
                 "error": "Category deletion failed",
                 "token": token,
                 "categories": [],
-                "user": None,  # prevent Jinja crash,
+                "user": None,
                 "show_menu": True
             },
             status_code=response.status_code,
@@ -356,7 +356,8 @@ async def add_expense(
                                           "error": "Expense creation failed",
                                           "token": token,
                                           "user": None,
-                                          "categories_with_stats": []
+                                          "categories_with_stats": [],
+                                          "show_menu": True
                                       }, status_code=response.status_code)
 
 
@@ -392,7 +393,8 @@ async def edit_expense(
             "error": "Expense update failed",
             "token": token,
             "user": None,
-            "categories_with_stats": []
+            "categories_with_stats": [],
+            "show_menu": True
         },
         status_code=response.status_code)
 
@@ -420,6 +422,7 @@ async def delete_expense(
             "error": "Expense deletion failed",
             "token": token,
             "user": None,
-            "categories_with_stats": []
+            "categories_with_stats": [],
+            "show_menu": True
         },
         status_code=response.status_code)
