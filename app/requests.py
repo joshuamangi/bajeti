@@ -73,7 +73,7 @@ def welcome(request: Request):
 @router.get("/register", response_class=HTMLResponse)
 def register_page(request: Request):
     """Register Page"""
-    return templates.TemplateResponse("register.html", {"request": request})
+    return templates.TemplateResponse("register.html", {"request": request, "show_menu": False})
 
 
 @router.post("/register")
@@ -96,6 +96,7 @@ async def register_user(
                 "email": email,
                 "first_name": first_name,
                 "last_name": last_name,
+                "show_menu": False
             },
             status_code=400,
         )
@@ -131,7 +132,8 @@ async def register_user(
 @router.get("/login", response_class=HTMLResponse)
 def login_page(request: Request):
     """Login Page"""
-    return templates.TemplateResponse("login.html", {"request": request})
+    return templates.TemplateResponse("login.html",
+                                      {"request": request, "show_menu": False})
 
 
 @router.post("/login")
@@ -147,7 +149,10 @@ async def login_user(request: Request, username: str = Form(...), password: str 
         logger.warning("Login failed for username=%s", username)
         return templates.TemplateResponse(
             "login.html",
-            {"request": request, "error": "Invalid credentials", "username": username},
+            {"request": request,
+             "error": "Invalid credentials",
+             "username": username,
+             "show_menu": False},
             status_code=401,
         )
 
@@ -208,7 +213,8 @@ async def dashboard(request: Request, token: str = Depends(get_current_user)):
             "categories_with_stats": categories_with_stats,
             "token": token,
             "current_month": current_month,
-            "now": datetime.now().strftime("%Y-%m")
+            "now": datetime.now().strftime("%Y-%m"),
+            "show_menu": True
         }
     )
 
@@ -242,7 +248,9 @@ async def add_category(
                 "error": "Category creation failed",
                 "token": token,
                 "categories": [],
-                "user": None,  # prevent Jinja crash
+                "user": None,  # prevent Jinja crash,
+                "show_menu": True
+
             },
             status_code=response.status_code,
         )
@@ -276,7 +284,8 @@ async def edit_category(
                 "error": "Category update failed",
                 "token": token,
                 "categories": [],
-                "user": None,  # prevent Jinja crash
+                "user": None,  # prevent Jinja crash,
+                "show_menu": True
             },
             status_code=response.status_code,
         )
@@ -307,7 +316,8 @@ async def delete_category(
                 "error": "Category deletion failed",
                 "token": token,
                 "categories": [],
-                "user": None,  # prevent Jinja crash
+                "user": None,  # prevent Jinja crash,
+                "show_menu": True
             },
             status_code=response.status_code,
         )
