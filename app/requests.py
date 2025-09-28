@@ -134,7 +134,7 @@ async def register_user(
 def login_page(request: Request):
     """Login Page"""
     return templates.TemplateResponse("login.html",
-                                      {"request": request, "show_menu": True})
+                                      {"request": request, "show_menu": False})
 
 
 @router.post("/login")
