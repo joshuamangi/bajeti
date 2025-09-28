@@ -23,43 +23,20 @@
         <a class="navbar-brand fw-bold" href="/">Bajeti</a>
 
         {% if show_menu %}
-          <!--  Hamburger Menu -->
-          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMenu"
-                  aria-controls="navbarMenu" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-          </button>
-
-          <!-- Menu Items -->
-          <div class="collapse navbar-collapse justify-content-end" id="navbarMenu">
-            <ul class="navbar-nav mb-2 mb-lg-0">
-              <!-- Analysis -->
-              <li class="nav-item">
-                <a class="nav-link" href="/analysis">
-                  <i class="bi bi-graph-up"></i> Analysis
-                </a>
-              </li>
-              <!-- Logout -->
-              <li class="nav-item">
-                <a class="nav-link text-danger" href="/logout">
-                  <i class="bi bi-box-arrow-right"></i> Logout
-                </a>
-              </li>
-            </ul>
+         <div class="collapse" id="navbarToggleExternalContent" data-bs-theme="dark">
+          <div class="bg-dark p-4">
+            <h5 class="text-body-emphasis h4">Collapsed content</h5>
+            <span class="text-body-secondary">Toggleable via the navbar brand.</span>
           </div>
+        </div>
+        <nav class="navbar navbar-dark bg-dark">
+          <div class="container-fluid">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarToggleExternalContent" aria-controls="navbarToggleExternalContent" aria-expanded="false" aria-label="Toggle navigation">
+              <span class="navbar-toggler-icon"></span>
+            </button>
+          </div>
+        </nav>
         {% endif %}
-      </div>
-    </nav>
-    <div class="collapse" id="navbarToggleExternalContent" data-bs-theme="dark">
-      <div class="bg-dark p-4">
-        <h5 class="text-body-emphasis h4">Collapsed content</h5>
-        <span class="text-body-secondary">Toggleable via the navbar brand.</span>
-      </div>
-    </div>
-    <nav class="navbar navbar-dark bg-dark">
-      <div class="container-fluid">
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarToggleExternalContent" aria-controls="navbarToggleExternalContent" aria-expanded="false" aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
-        </button>
       </div>
     </nav>
     <!-- Main Content -->
