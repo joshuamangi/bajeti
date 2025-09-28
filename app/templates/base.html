@@ -23,29 +23,29 @@
         <a class="navbar-brand fw-bold" href="/">Bajeti</a>
 
         {% if show_menu %}
-        <!--  Hamburger Menu -->
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMenu"
-                aria-controls="navbarMenu" aria-expanded="false" aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
-        </button>
+          <!--  Hamburger Menu -->
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMenu"
+                  aria-controls="navbarMenu" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
 
-        <!-- Menu Items -->
-        <div class="collapse navbar-collapse justify-content-end" id="navbarMenu">
-          <ul class="navbar-nav mb-2 mb-lg-0">
-            <!-- Analysis -->
-            <li class="nav-item">
-              <a class="nav-link" href="/analysis">
-                <i class="bi bi-graph-up"></i> Analysis
-              </a>
-            </li>
-            <!-- Logout -->
-            <li class="nav-item">
-              <a class="nav-link text-danger" href="/logout">
-                <i class="bi bi-box-arrow-right"></i> Logout
-              </a>
-            </li>
-          </ul>
-        </div>
+          <!-- Menu Items -->
+          <div class="collapse navbar-collapse justify-content-end" id="navbarMenu">
+            <ul class="navbar-nav mb-2 mb-lg-0">
+              <!-- Analysis -->
+              <li class="nav-item">
+                <a class="nav-link" href="/analysis">
+                  <i class="bi bi-graph-up"></i> Analysis
+                </a>
+              </li>
+              <!-- Logout -->
+              <li class="nav-item">
+                <a class="nav-link text-danger" href="/logout">
+                  <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+              </li>
+            </ul>
+          </div>
         {% endif %}
       </div>
     </nav>
