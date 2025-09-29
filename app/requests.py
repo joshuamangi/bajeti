@@ -73,7 +73,7 @@ def welcome(request: Request):
 @router.get("/register", response_class=HTMLResponse)
 def register_page(request: Request):
     """Register Page"""
-    return templates.TemplateResponse("register.html", {"request": request, "show_menu": False})
+    return templates.TemplateResponse("register.html", {"request": request, })
 
 
 @router.post("/register")
@@ -96,7 +96,6 @@ async def register_user(
                 "email": email,
                 "first_name": first_name,
                 "last_name": last_name,
-                "show_menu": False
             },
             status_code=400,
         )
@@ -124,7 +123,6 @@ async def register_user(
                     "email": email,
                     "first_name": first_name,
                     "last_name": last_name,
-                    "show_menu": False
                 },
                 status_code=response.status_code,
             )
@@ -134,7 +132,7 @@ async def register_user(
 def login_page(request: Request):
     """Login Page"""
     return templates.TemplateResponse("login.html",
-                                      {"request": request, "show_menu": False})
+                                      {"request": request, })
 
 
 @router.post("/login")
@@ -153,7 +151,7 @@ async def login_user(request: Request, username: str = Form(...), password: str 
             {"request": request,
              "error": "Invalid credentials",
              "username": username,
-             "show_menu": False},
+             },
             status_code=401,
         )
 
@@ -164,7 +162,15 @@ async def login_user(request: Request, username: str = Form(...), password: str 
         key="access_token",
         value=access_token,
         httponly=True,
-        max_age=86400)
+        max_age=86400
+    )
+
+    response.set_cookie(
+        key="show_menu",
+        value="1",
+        httponly=False,
+        max_age=86400
+    )
 
     return response
 
@@ -174,6 +180,7 @@ def logout():
     """Clear the auth cookie and redirect to login"""
     response = RedirectResponse(url="/login", status_code=303)
     response.delete_cookie("access_token")
+    response.delete_cookie("show_menu")
     return response
 
 
@@ -215,7 +222,6 @@ async def dashboard(request: Request, token: str = Depends(get_current_user)):
             "token": token,
             "current_month": current_month,
             "now": datetime.now().strftime("%Y-%m"),
-            "show_menu": True
         }
     )
 
@@ -250,7 +256,6 @@ async def add_category(
                 "token": token,
                 "categories": [],
                 "user": None,
-                "show_menu": True
             },
             status_code=response.status_code,
         )
@@ -285,7 +290,6 @@ async def edit_category(
                 "token": token,
                 "categories": [],
                 "user": None,
-                "show_menu": True
             },
             status_code=response.status_code,
         )
@@ -317,7 +321,6 @@ async def delete_category(
                 "token": token,
                 "categories": [],
                 "user": None,
-                "show_menu": True
             },
             status_code=response.status_code,
         )
@@ -357,7 +360,6 @@ async def add_expense(
                                           "token": token,
                                           "user": None,
                                           "categories_with_stats": [],
-                                          "show_menu": True
                                       }, status_code=response.status_code)
 
 
@@ -394,7 +396,6 @@ async def edit_expense(
             "token": token,
             "user": None,
             "categories_with_stats": [],
-            "show_menu": True
         },
         status_code=response.status_code)
 
@@ -423,6 +424,5 @@ async def delete_expense(
             "token": token,
             "user": None,
             "categories_with_stats": [],
-            "show_menu": True
         },
         status_code=response.status_code)
