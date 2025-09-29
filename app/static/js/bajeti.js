@@ -19,13 +19,3 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 
-document.addEventListener("DOMContentLoaded", function () {
-    function getCookie(name) {
-        let match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
-        return match ? match[2] : null;
-    }
-
-    if (getCookie("show_menu") === "1") {
-        document.getElementById("navbarMenuWrapper").classList.remove("d-none");
-    }
-});
