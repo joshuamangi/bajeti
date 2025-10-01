@@ -12,12 +12,14 @@
     <strong>Welcome, {{ user.first_name }} {{ user.last_name }}</strong>
   </div>
   <div>
-    <button id="toggleVisibility" class="btn btn-outline-secondary btn-sm">
+    <button id="toggleVisibility" class="btn btn-outline-secondary btn-sm me-2">
       <i class="bi bi-eye-fill"></i>
+    </button>
+    <button id="toggleCompact" class="btn btn-outline-primary btn-sm">
+      <i id="toggleCompactIcon" class="bi bi-list-check"></i>
     </button>
   </div>
 </div>
-
 
 <!-- ✅ Summary & Add Category -->
 <div class="row mb-3">
@@ -51,7 +53,7 @@
 
 <!-- ✅ Categories Table -->
 <div class="table-responsive">
-  <table class="table table-bordered table-striped align-middle">
+  <table id="categoriesTable" class="table table-bordered table-striped align-middle">
     <thead>
       <tr>
         <th>Category</th>
@@ -115,11 +117,30 @@
             </form>
           </div>
         </td>
-
       </tr>
       {% endfor %}
     </tbody>
   </table>
+</div>
+
+<!-- ✅ Compact View (hidden by default) -->
+<div id="compactView" class="row g-2 d-none">
+  {% for cat in categories_with_stats %}
+  <div class="col-12 col-md-6">
+    <div class="card shadow-sm border-left">
+      <div class="card-body d-flex justify-content-between align-items-center">
+        <span class="fw-bold">{{ cat.name }}</span>
+        <span class="{% if cat.balance < 0 %} text-danger {% else %} text-success {% endif %}">
+          {% if cat.balance < 0 %}
+            Over by {{ -cat.balance }}
+          {% else %}
+            Remaining {{ cat.balance }}
+          {% endif %}
+        </span>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
 </div>
 
 <!-- Add Category Modal -->
@@ -318,6 +339,58 @@
     color: #555;
   }
 }
+
+/* Compact view styling */
+#compactView .card {
+  border-left: 5px solid #29e57aff;
+}
+#compactView .card .fw-bold {
+  font-size: 1rem;
+}
+
+/* Active button state */
+#toggleCompact.active {
+  background-color: #0d6efd; /* Bootstrap primary blue */
+  color: #fff;
+  border-color: #0d6efd;
+}
 </style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const toggleCompact = document.getElementById("toggleCompact");
+  const tableWrapper = document.querySelector(".table-responsive");
+  const compactView = document.getElementById("compactView");
+  const icon = document.getElementById("toggleCompactIcon");
+
+  let compactMode = false;
+
+  toggleCompact.addEventListener("click", function () {
+    compactMode = !compactMode;
+
+    if (compactMode) {
+      tableWrapper.classList.add("d-none");
+      compactView.classList.remove("d-none");
+      toggleCompact.classList.add("btn-success");
+    } else {
+      tableWrapper.classList.remove("d-none");
+      compactView.classList.add("d-none");
+      toggleCompact.classList.remove("btn-success");
+    }
+
+    // Toggle icon
+    if (icon.classList.contains("bi-list-check")) {
+      icon.classList.remove("bi-list-check");
+      icon.classList.add("bi-list-columns");
+    } else {
+      icon.classList.remove("bi-list-columns");
+      icon.classList.add("bi-list-check");
+    }
+
+    // Toggle active button styling
+    toggleCompact.classList.toggle("active");
+  });
+});
+</script>
 
 {% endblock %}
