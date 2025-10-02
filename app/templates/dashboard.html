@@ -123,27 +123,45 @@
   </table>
 </div>
 
-<!-- ✅ Compact View (hidden by default) -->
+<!-- ✅ Compact View (hidden by default, with buttons) -->
 <div id="compactView" class="row g-2 d-none">
   {% for cat in categories_with_stats %}
   <div class="col-12 col-md-6">
     <div class="card shadow-sm border-left">
       <div class="card-body d-flex justify-content-between align-items-center">
         <span class="fw-bold">{{ cat.name }}</span>
-        <span class="{% if cat.balance < 0 %} text-danger {% else %} text-success {% endif %}">
-          {% if cat.balance < 0 %}
-            Over by {{ -cat.balance }}
-          {% else %}
-            Remaining {{ cat.balance }}
-          {% endif %}
-        </span>
+        <div class="d-flex align-items-center gap-2">
+          <span class="{% if cat.balance < 0 %} text-danger {% else %} text-success {% endif %}">
+            {% if cat.balance < 0 %}
+              Over by {{ -cat.balance }}
+            {% else %}
+              Remaining {{ cat.balance }}
+            {% endif %}
+          </span>
+          <!-- Quick Expense -->
+          <form method="POST" action="/dashboard/expenses" 
+                onsubmit="return confirm('Add quick expense of {{ cat.limit_amount }} to {{ cat.name }}?')">
+            <input type="hidden" name="category_id" value="{{ cat.id }}">
+            <input type="hidden" name="amount" value="{{ cat.limit_amount }}">
+            <input type="hidden" name="description" value="Quick Expense">
+            <input type="hidden" name="month" value="{{ now }}">
+            <button class="btn btn-sm btn-outline-success" title="Quick Expense">⚡</button>
+          </form>
+          <!-- Add Expense -->
+          <button class="btn btn-sm btn-outline-primary" 
+                  data-bs-toggle="modal" 
+                  data-bs-target="#addExpenseModal{{ cat.id }}"
+                  title="Add Expense">
+            +
+          </button>
+        </div>
       </div>
     </div>
   </div>
   {% endfor %}
 </div>
 
-<!-- Add Category Modal -->
+<!-- ✅ Add Category Modal -->
 <div class="modal fade" id="addCategoryModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -170,10 +188,7 @@
   </div>
 </div>
 
-{# ----------------------------- #}
-{# All other modals stay the same #}
-{# ----------------------------- #}
-
+<!-- ✅ Expense/Category Modals -->
 {% for cat in categories_with_stats %}
 
   <!-- Expenses Modal -->
@@ -347,10 +362,11 @@
 #compactView .card .fw-bold {
   font-size: 1rem;
 }
+#compactView .btn { padding: 0.25rem 0.5rem; min-width: 34px; }
 
 /* Active button state */
 #toggleCompact.active {
-  background-color: #0d6efd; /* Bootstrap primary blue */
+  background-color: #0d6efd;
   color: #fff;
   border-color: #0d6efd;
 }
@@ -379,13 +395,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // Toggle icon
-    if (icon.classList.contains("bi-list-check")) {
-      icon.classList.remove("bi-list-check");
-      icon.classList.add("bi-list-columns");
-    } else {
-      icon.classList.remove("bi-list-columns");
-      icon.classList.add("bi-list-check");
-    }
+    icon.classList.toggle("bi-list-check");
+    icon.classList.toggle("bi-list-columns");
 
     // Toggle active button styling
     toggleCompact.classList.toggle("active");
