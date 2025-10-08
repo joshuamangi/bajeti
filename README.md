@@ -45,3 +45,22 @@ sudo systemctl enable ngrok
 sudo systemctl start ngrok
 
 check if service is running sudo systemctl status ngrok
+
+[Requirements]
+execute this command
+pip freeze > requirements.txt\n
+
+[Migrations]
+Install alembic using pip install alembic
+Configure the env.py file by importing the Base and the models and adding Base.metadata to the target_metadata
+
+from data.db.db import Base  # import your Base
+from data.db.models import models
+target_metadata = Base.metadata
+
+Edit the alembic.ini file with the sqlitedriver
+sqlalchemy.url = sqlite:///data/db/data/bajeti.db
+
+Generate the Migration Script
+alembic revision --autogenerate -m "Add security_answer column to users"
+alembic upgrade head

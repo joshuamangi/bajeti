@@ -19,6 +19,7 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     """Request model for user creation (includes password)"""
     password: str
+    security_answer: Optional[str] = None
 
 
 class UserDB(UserBase):
@@ -34,6 +35,7 @@ class UserOut(UserBase):
     id: int
     created_at: datetime
     updated_at: datetime
+    security_answer: Optional[str] = None
 
 
 class UserUpdate(BaseModel):
@@ -42,3 +44,11 @@ class UserUpdate(BaseModel):
     last_name: Optional[str] = None
     email: Optional[str] = None
     password: Optional[str] = None
+    security_answer: Optional[str] = None
+
+
+class PasswordResetRequest(BaseModel):
+    """Schemafor resetting the password"""
+    email: str
+    security_answer: str
+    new_password: str

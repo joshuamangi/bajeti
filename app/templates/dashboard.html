@@ -1,10 +1,20 @@
 {% extends "base.html" %}
 {% block content %}
 
+{% if user.security_answer is none or user.security_answer == '' %}
+<div class="alert alert-warning alert-dismissible fade show mt-2 shadow-sm" role="alert">
+  <i class="bi bi-exclamation-triangle-fill"></i>
+  <strong>Important:</strong> Please set your <em>Security Question</em> from your Profile (☰ → Account → Profile) 
+  to help protect your account and enable password recovery.
+  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endif %}
+
 {% if error %}
 <div class="alert alert-danger">{{ error }}</div>
 {% endif %}
-
+<body>
+</body>
 <h1 class="display-6">{{ current_month }}'s Budget</h1>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -401,6 +411,15 @@ document.addEventListener("DOMContentLoaded", function () {
     // Toggle active button styling
     toggleCompact.classList.toggle("active");
   });
+});
+document.addEventListener("DOMContentLoaded", function () {
+  const alert = document.querySelector('.alert-warning');
+  if (alert) {
+    setTimeout(() => {
+      const bsAlert = new bootstrap.Alert(alert);
+      bsAlert.close();
+    }, 20000); // disappears after 8 seconds
+  }
 });
 </script>
 

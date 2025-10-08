@@ -156,6 +156,7 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
         last_name=user.last_name,
         email=user.email,
         hashed_password=pwd_context.hash(user.password),
+        security_answer=user.security_answer,
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow()
     )

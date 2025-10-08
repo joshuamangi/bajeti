@@ -14,6 +14,11 @@ services:
     networks:
       - bajeti-net
     
+    command: >
+      bash -c "
+        alembic upgrade head &&
+        uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    
   # Cloudflare tunnel
   cloudflared:
     image: cloudflare/cloudflared:latest
@@ -31,3 +36,9 @@ services:
 networks:
   bajeti-net:
     driver: bridge
+
+command: >
+  bash -c "
+    alembic upgrade head &&
+    uvicorn app.main:app --host 0.0.0.0 --port 8000
+  "

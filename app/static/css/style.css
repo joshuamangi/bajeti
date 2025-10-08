@@ -1,3 +1,9 @@
+/* ensure content isn't hidden by the fixed-top navbar */
+body {
+    padding-top: 70px !important;
+    /* adjust if your navbar height changes */
+}
+
 .blurred {
     filter: blur(6px);
     user-select: none;
