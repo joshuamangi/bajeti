@@ -5,26 +5,24 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./data:/app/data                # persist entire data folder
-      - ./app/templates:/app/app/templates   # hot-reload templates
-      - ./app/static:/app/app/static         # static files
+      - ./data:/app/data
+      - ./app/templates:/app/app/templates
+      - ./app/static:/app/app/static
     env_file:
       - .env
     restart: unless-stopped
     networks:
       - bajeti-net
-    
     command: >
       bash -c "
         alembic upgrade head &&
         uvicorn app.main:app --host 0.0.0.0 --port 8000"
     
-  # Cloudflare tunnel
   cloudflared:
     image: cloudflare/cloudflared:latest
     container_name: cloudflared
     restart: unless-stopped
-    user: "0"  # run as root so it can read certs
+    user: "0"
     command: tunnel --config /root/.cloudflared/config.yml run bajeti
     volumes:
       - ./cloudflared:/root/.cloudflared
@@ -36,9 +34,3 @@ services:
 networks:
   bajeti-net:
     driver: bridge
-
-command: >
-  bash -c "
-    alembic upgrade head &&
-    uvicorn app.main:app --host 0.0.0.0 --port 8000
-  "
