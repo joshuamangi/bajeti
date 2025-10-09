@@ -86,7 +86,7 @@
             {{ cat.expense_count }}
           </a>
         </td>
-        <td data-label="Balance" class="{% if cat.balance < 0 %} bg-danger text-white {% else %} bg-success text-white {% endif %}">
+        <td data-label="Balance" class="{% if cat.balance < 0 %} bg-danger text-white {% else %} bg-success text-white {% endif %} sensitive">
           {% if cat.balance < 0 %}
             Over by {{ -cat.balance }}
           {% else %}
