@@ -17,7 +17,7 @@ up: down clean build
 
 # View logs for cloudflared
 logs_cloudflared:
-	docker compose logs -f cloudflared
+	docker logs -f cloudflared
 
 # Rebuild docker after new deployment
 rebuild:
@@ -27,4 +27,4 @@ rebuild:
 
 # View bajeti logs
 logs_bajeti:
-	docker compose logs -f bajeti_app
+	docker logs -f bajeti_app
