@@ -32,13 +32,19 @@
                  value="{{ user.email }}" required>
         </div>
 
-        <!-- Security Question -->
-        <div class="mb-4">
+        <!-- Security Question with toggle -->
+        <div class="mb-4 position-relative">
           <label for="security_answer" class="form-label fw-semibold">
             Security Answer (for password recovery)
           </label>
-          <input type="text" class="form-control" id="security_answer" name="security_answer"
-                 value="{{ user.security_answer or '' }}" placeholder="What is your childhood best friend's name?">
+          <div class="input-group">
+            <input type="password" class="form-control" id="security_answer" name="security_answer"
+                  value="{{ user.security_answer or '' }}" 
+                  placeholder="What is your childhood best friend's name?">
+            <button type="button" class="btn btn-outline-secondary" id="toggleSecurityAnswer">
+              <i class="bi bi-eye"></i>
+            </button>
+          </div>
         </div>
         <!-- Action Buttons -->
         <div class="d-flex justify-content-between align-items-center flex-wrap">
@@ -100,6 +106,17 @@ document.addEventListener("DOMContentLoaded", function () {
       alert("Passwords do not match!");
     }
   });
+});
+document.getElementById("toggleSecurityAnswer").addEventListener("click", function() {
+  const input = document.getElementById("security_answer");
+  const icon = this.querySelector("i");
+  if (input.type === "password") {
+    input.type = "text";
+    icon.classList.replace("bi-eye", "bi-eye-slash");
+  } else {
+    input.type = "password";
+    icon.classList.replace("bi-eye-slash", "bi-eye");
+  }
 });
 </script>
 
