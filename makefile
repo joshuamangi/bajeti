@@ -16,5 +16,15 @@ up: down clean build
 	docker compose up -d
 
 # View logs for cloudflared
-logs:
+logs_cloudflared:
 	docker compose logs -f cloudflared
+
+# Rebuild docker after new deployment
+rebuild:
+	docker compose down
+	docker compose build --no-cache
+	docker compose up -d
+
+# View bajeti logs
+logs_bajeti:
+	docker compose logs -f bajeti_app
