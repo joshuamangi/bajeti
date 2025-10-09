@@ -40,20 +40,6 @@
           <input type="text" class="form-control" id="security_answer" name="security_answer"
                  value="{{ user.security_answer or '' }}" placeholder="What is your childhood best friend's name?">
         </div>
-
-
-        <!-- 🔒 Password Section -->
-        <hr class="my-4">
-        <div class="mb-3 text-center text-md-start">
-          <h5 class="fw-semibold mb-2">Password Settings</h5>
-          <p class="text-muted small mb-3">
-            If you’ve forgotten your password, click the button below to reset it.
-          </p>
-          <a href="/forgot_password" class="btn btn-outline-warning btn-sm rounded-pill mb-3">
-            <i class="bi bi-question-circle me-1"></i> Forgot Password?
-          </a>
-        </div>
-
         <!-- Action Buttons -->
         <div class="d-flex justify-content-between align-items-center flex-wrap">
           <a href="/dashboard" class="btn btn-outline-secondary mb-2">
@@ -62,6 +48,18 @@
           <button type="submit" class="btn btn-primary mb-2">
             <i class="bi bi-save"></i> Save Changes
           </button>
+        </div>
+
+        <!-- 🔒 Password Section -->
+        <hr class="my-4">
+        <div class="mb-3 text-center text-md-start">
+          <h5 class="fw-semibold mb-2">Password Settings</h5>
+          <p class="text-muted small mb-3">
+            If you want to reset your password, click the button below to reset it.
+          </p>
+          <a href="/forgot_password" class="btn btn-outline-warning btn-sm rounded-pill mb-3">
+            <i class="bi bi-question-circle me-1"></i> Forgot Password?
+          </a>
         </div>
 
       </form>

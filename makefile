@@ -22,7 +22,7 @@ logs_cloudflared:
 # Rebuild docker after new deployment
 rebuild:
 	docker compose down
-	docker compose build --no-cache
+	docker compose build
 	docker compose up -d
 
 # View bajeti logs
