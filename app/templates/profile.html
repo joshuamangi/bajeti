@@ -10,6 +10,7 @@
   <div class="card shadow-sm border-0">
     <div class="card-body">
       <form method="POST" action="/profile/update">
+
         <!-- Name Fields -->
         <div class="row g-3 mb-3">
           <div class="col-md-6">
@@ -31,20 +32,6 @@
                  value="{{ user.email }}" required>
         </div>
 
-        <!-- Password (optional change) -->
-        <div class="row g-3 mb-3">
-          <div class="col-md-6">
-            <label for="password" class="form-label fw-semibold">New Password</label>
-            <input type="password" class="form-control" id="password" name="password"
-                   placeholder="Leave blank to keep current password">
-          </div>
-          <div class="col-md-6">
-            <label for="confirm_password" class="form-label fw-semibold">Confirm Password</label>
-            <input type="password" class="form-control" id="confirm_password" name="confirm_password"
-                   placeholder="Re-enter new password">
-          </div>
-        </div>
-
         <!-- Security Question -->
         <div class="mb-4">
           <label for="security_answer" class="form-label fw-semibold">
@@ -52,6 +39,19 @@
           </label>
           <input type="text" class="form-control" id="security_answer" name="security_answer"
                  value="{{ user.security_answer or '' }}" placeholder="What is your childhood best friend's name?">
+        </div>
+
+
+        <!-- 🔒 Password Section -->
+        <hr class="my-4">
+        <div class="mb-3 text-center text-md-start">
+          <h5 class="fw-semibold mb-2">Password Settings</h5>
+          <p class="text-muted small mb-3">
+            If you’ve forgotten your password, click the button below to reset it.
+          </p>
+          <a href="/forgot_password" class="btn btn-outline-warning btn-sm rounded-pill mb-3">
+            <i class="bi bi-question-circle me-1"></i> Forgot Password?
+          </a>
         </div>
 
         <!-- Action Buttons -->
@@ -63,13 +63,14 @@
             <i class="bi bi-save"></i> Save Changes
           </button>
         </div>
+
       </form>
     </div>
   </div>
 </div>
 
 <style>
-/* Mobile-friendly spacing and card style */
+/* 🔹 Mobile-friendly spacing and readability */
 form .form-label {
   font-size: 0.95rem;
 }
@@ -83,11 +84,14 @@ form .form-label {
   h2 {
     font-size: 1.25rem;
   }
+  .btn {
+    width: 100%;
+  }
 }
 </style>
 
 <script>
-// Optional client-side password validation
+// ✅ Optional password match validation
 document.addEventListener("DOMContentLoaded", function () {
   const form = document.querySelector("form");
   form.addEventListener("submit", function (e) {

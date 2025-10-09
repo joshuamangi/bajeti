@@ -66,3 +66,5 @@ alembic revision --autogenerate -m "Add security_answer column to users"
 alembic upgrade head
 
 scp -r joshuamangi@192.168.1.120:~/projects/bajeti/data/db/data /Volumes/Stuff/Documents/Backup/sqlite
+
+docker compose run --rm --entrypoint bash bajeti_app

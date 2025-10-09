@@ -252,7 +252,6 @@ async def profile_update(request: Request,
         # ✅ Handle success (200 OK from backend)
         return RedirectResponse(url="/dashboard", status_code=303)
     else:
-        # ❌ Handle failure with server feedback
         try:
             error_detail = response.json().get("detail", "Update failed. Try again.")
         except Exception:
@@ -431,3 +430,15 @@ async def delete_expense(request: Request,
         "token": token,
         "categories_with_stats": [],
     })
+
+
+@router.get("/reports", response_class=HTMLResponse)
+async def reports_page(request: Request):
+    """Renders the reports page"""
+    return await render_with_user("reports.html", request)
+
+
+@router.get("/analytics", response_class=HTMLResponse)
+async def reports_page(request: Request):
+    """Renders the reports page"""
+    return await render_with_user("analytics.html", request)
