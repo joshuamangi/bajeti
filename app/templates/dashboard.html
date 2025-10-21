@@ -31,7 +31,7 @@
   </div>
 </div>
 
-<!-- ✅ Summary & Add Category -->
+<!-- Summary & Add Category -->
 <div class="row mb-3">
   <div class="col-md-3 col-6">
     <div class="card text-center shadow-sm">
@@ -61,7 +61,7 @@
   </div>
 </div>
 
-<!-- ✅ Categories Table -->
+<!--Categories Table -->
 <div class="table-responsive">
   <table id="categoriesTable" class="table table-bordered table-striped align-middle">
     <thead>
@@ -133,7 +133,7 @@
   </table>
 </div>
 
-<!-- ✅ Compact View (hidden by default, with buttons) -->
+<!-- Compact View-->
 <div id="compactView" class="row g-2 d-none">
   {% for cat in categories_with_stats %}
   <div class="col-12 col-md-6">
@@ -171,7 +171,7 @@
   {% endfor %}
 </div>
 
-<!-- ✅ Add Category Modal -->
+<!--Add Category Modal -->
 <div class="modal fade" id="addCategoryModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -198,7 +198,7 @@
   </div>
 </div>
 
-<!-- ✅ Expense/Category Modals -->
+<!-- Expense/Category Modals -->
 {% for cat in categories_with_stats %}
 
   <!-- Expenses Modal -->
@@ -418,7 +418,7 @@ document.addEventListener("DOMContentLoaded", function () {
     setTimeout(() => {
       const bsAlert = new bootstrap.Alert(alert);
       bsAlert.close();
-    }, 20000); // disappears after 8 seconds
+    }, 20000); 
   }
 });
 </script>
