@@ -1,0 +1,70 @@
+@import url("/static/css/palette.css");
+@import url("/static/css/main.css");
+
+.d-none {
+    display: none !important;
+}
+
+.p-negative {
+    color: var(--danger);
+}
+
+.p-positive {
+    color: var(--primary);
+}
+
+.p-empty-exp {
+    color: var(--danger);
+    font-weight: 700;
+}
+
+.compact-mode #tableView {
+    display: none !important;
+}
+
+@media (max-width: 768px) {
+    #tableView {
+        display: none;
+    }
+
+    #categoriesTable thead {
+        display: none;
+    }
+
+    #categoriesTable tbody tr {
+        display: block;
+        margin-bottom: 1rem;
+        border: 1px solid var(--border);
+        border-radius: .5rem;
+        padding: .5rem;
+    }
+
+    #categoriesTable tbody td {
+        display: flex;
+        justify-content: space-between;
+        padding: .5rem .75rem;
+        border: none !important;
+        border-bottom: 1px solid var(--border);
+    }
+
+    #categoriesTable tbody td:last-child {
+        border-bottom: none;
+    }
+
+    #categoriesTable tbody td::before {
+        content: attr(data-label);
+        font-weight: 500;
+        margin-right: .5rem;
+        color: var(--text-muted);
+    }
+}
+
+@media (min-width: 769px) {
+    #tableView {
+        display: block;
+    }
+
+    #pDetailCards {
+        display: none;
+    }
+}

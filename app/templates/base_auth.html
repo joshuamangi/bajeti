@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>
+      {% block title %}
+      Bajeti
+      {% endblock %}
+    </title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Google Fonts -->
+    <link
+      rel="preconnect"
+      href="https://fonts.googleapis.com"
+    />
+    <link
+      rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+
+    <!-- App Styles -->
+    <link rel="stylesheet" href="/static/css/palette.css" />
+    <link rel="stylesheet" href="/static/css/main.css" />
+    <link rel="stylesheet" href="/static/css/login.css" />
+    <link rel="stylesheet" href="/static/css/register.css" />
+    <link rel="stylesheet" href="/static/css/forgot_password.css" />
+    <link rel="stylesheet" href="/static/css/modal.css" />
+    <link rel="stylesheet" href="/static/css/alert.css" />
+  </head>
+
+  <body class="p-container light">
+    <header>
+      <div class="p-header-top">
+        <div class="p-header-logo">
+          <a href="/">Bajeti</a>
+        </div>
+      </div>
+    </header>
+
+    <main id="p-main">
+      {% block content %}{% endblock %}
+    </main>
+
+    <script src="/static/js/main.js"></script>
+  </body>
+</html>

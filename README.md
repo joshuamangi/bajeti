@@ -68,3 +68,7 @@ alembic upgrade head
 scp -r joshuamangi@192.168.1.120:~/projects/bajeti/data/db/data /Volumes/Stuff/Documents/Backup/sqlite
 
 docker compose run --rm --entrypoint bash bajeti_app
+
+how to do backups
+mkdir -p recover_backup
+cp -a app/templates recover_backup/templates_before_recover

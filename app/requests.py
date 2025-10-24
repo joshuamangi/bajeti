@@ -221,18 +221,8 @@ async def profile_update(request: Request,
                          first_name: str = Form(...),
                          last_name: str = Form(...),
                          email: str = Form(...),
-                         password: str = Form(...),
-                         confirm_password: str = Form(...),
                          security_answer: str = Form(...)
                          ):
-    if password != confirm_password:
-        return await render_with_user("register.html", request, {
-            "error": "Passwords do not match",
-            "email": email,
-            "first_name": first_name,
-            "last_name": last_name,
-            "security_answer": security_answer
-        })
 
     async with httpx.AsyncClient() as client:
         response = await client.put(
@@ -241,7 +231,6 @@ async def profile_update(request: Request,
                 "first_name": first_name,
                 "last_name": last_name,
                 "email": email,
-                "password": password,
                 "security_answer": security_answer
             },
             headers={
@@ -442,3 +431,9 @@ async def reports_page(request: Request):
 async def reports_page(request: Request):
     """Renders the reports page"""
     return await render_with_user("analytics.html", request)
+
+
+@router.get("/settings", response_class=HTMLResponse)
+async def reports_page(request: Request):
+    """Renders the reports page"""
+    return await render_with_user("settings.html", request)

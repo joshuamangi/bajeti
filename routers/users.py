@@ -69,10 +69,10 @@ async def update_user(
         user.first_name = updates.first_name
     if updates.last_name:
         user.last_name = updates.last_name
-    if updates.password:
-        logger.info(
-            "User %s updated their password (hashed safely).", current_user.id)
-        user.hashed_password = pwd_context.hash(updates.password)
+    # if updates.password:
+    #     logger.info(
+    #         "User %s updated their password (hashed safely).", current_user.id)
+    #     user.hashed_password = pwd_context.hash(updates.password)
     if updates.security_answer:
         logger.info("User %s updated their security answer.", current_user.id)
         user.security_answer = updates.security_answer

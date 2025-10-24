@@ -1,0 +1,50 @@
+@import url(/static/css/palette.css);
+@import url(/static/css/main.css);
+@import url(/static/css/login.css);
+
+.p-register-container {
+    width: 400px;
+    height: min-content;
+    border-radius: .8em;
+    display: flex;
+    flex-direction: column;
+    gap: .8rem;
+    color: var(--text);
+    box-shadow: var(--shadow);
+    background: var(--gradient);
+    padding-bottom: 1.2em;
+}
+
+.p-password-field {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.p-password-field input {
+    width: 100%;
+    padding-right: 2.2rem;
+}
+
+.p-eye-toggle {
+    position: absolute;
+    right: .8rem;
+    color: var(--gray60);
+    cursor: pointer;
+    transition: color .2s ease-in-out;
+}
+
+.p-eye-toggle:hover {
+    color: var(--gray0);
+}
+
+.p-password-message {
+    font-size: .85rem;
+    margin-top: -0.5rem;
+    margin-bottom: .5rem;
+}
+
+.p-btn-spinner i {
+    color: white;
+    font-size: 1rem;
+}
