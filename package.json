@@ -1,0 +1,21 @@
+{
+  "name": "api",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "## All this is running in techjamaa00",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "build": "ENVIRONMENT=production node esbuild.config.js",
+    "dev": "ENVIRONMENT=development node esbuild.config.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "dotenv": "^17.2.3",
+    "esbuild": "^0.25.11"
+  }
+}

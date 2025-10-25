@@ -28,3 +28,15 @@ rebuild:
 # View bajeti logs
 logs_bajeti:
 	docker logs -f bajeti_app
+
+# Start dev instance
+dev:
+	docker compose -f docker-compose.dev.yml up --build
+
+# Stop dev instance
+stop-dev:
+	docker compose -f docker-compose.dev.yml down
+
+# Prune dev
+prune-dev:
+	docker system prune -af

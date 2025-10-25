@@ -18,6 +18,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy project files
 COPY . .
 
+# ⬇️ Add this if you pre-build JS/CSS locally or in CI
+COPY app/static/dist ./app/static/dist
+
 # Expose FastAPI port
 EXPOSE 8000
 

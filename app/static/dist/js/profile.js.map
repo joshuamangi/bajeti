@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../js/profile.js"],
+  "sourcesContent": ["document.getElementById(\"toggleSecurityAnswer\").addEventListener(\"click\", function () {\n    const input = document.getElementById(\"security_answer\");\n\n    if (!input) return; // Safety check in case element is missing\n\n    if (input.type === \"password\") {\n        input.type = \"text\";\n        this.classList.replace(\"fa-eye\", \"fa-eye-slash\");\n    } else {\n        input.type = \"password\";\n        this.classList.replace(\"fa-eye-slash\", \"fa-eye\");\n    }\n});\n"],
+  "mappings": ";;AAAA,WAAS,eAAe,sBAAsB,EAAE,iBAAiB,SAAS,WAAY;AAClF,UAAM,QAAQ,SAAS,eAAe,iBAAiB;AAEvD,QAAI,CAAC,MAAO;AAEZ,QAAI,MAAM,SAAS,YAAY;AAC3B,YAAM,OAAO;AACb,WAAK,UAAU,QAAQ,UAAU,cAAc;AAAA,IACnD,OAAO;AACH,YAAM,OAAO;AACb,WAAK,UAAU,QAAQ,gBAAgB,QAAQ;AAAA,IACnD;AAAA,EACJ,CAAC;",
+  "names": []
+}

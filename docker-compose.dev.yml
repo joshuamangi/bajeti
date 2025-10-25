@@ -1,0 +1,23 @@
+version: "3.8"
+
+services:
+  bajeti:
+      build:
+        context: .
+        dockerfile: Dockerfile.dev
+      container_name: bajet_dev
+      env_file: .env
+      ports:
+        - "8000:8000"
+      volumes:
+        - .:/app
+      depends_on:
+        - esbuild
+      command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  esbuild:
+    image: node:20
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: npm run dev

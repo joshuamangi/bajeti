@@ -8,20 +8,19 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 import httpx
 from jose import JWTError, jwt
-from dotenv import load_dotenv
+from app.config import settings, ENVIRONMENT
 
 # Logging setup
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-# Load environment variables
-load_dotenv()
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = os.getenv("ALGORITHM")
-API_BASE_URL = os.getenv("API_BASE_URL")
+SECRET_KEY = settings.SECRET_KEY
+ALGORITHM = settings.ALGORITHM
+API_BASE_URL = settings.API_BASE_URL
 
 # Setup templates
 templates = Jinja2Templates(directory="app/templates")
+templates.env.globals["ENVIRONMENT"] = ENVIRONMENT
 
 router = APIRouter()
 
@@ -82,7 +81,7 @@ async def render_with_user(template_name: str, request: Request, context: dict =
     context.update({"request": request, "user": user})
     return templates.TemplateResponse(template_name, context)
 
-# ---------- Routes ----------
+# ---------------------------------- Routes ---------------------------------
 
 
 @router.get("/", response_class=HTMLResponse)

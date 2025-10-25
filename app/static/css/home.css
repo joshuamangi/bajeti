@@ -1,5 +1,5 @@
-@import url("/static/css/palette.css");
-@import url("/static/css/main.css");
+@import url("./palette.css");
+@import url("./main.css");
 
 .d-none {
     display: none !important;
