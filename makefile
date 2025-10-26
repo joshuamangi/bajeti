@@ -1,42 +1,84 @@
-# Stop and remove old containers if they exist
+# ---------------------------------------
+# 🧱 Docker Compose Shortcuts for Bajeti
+# ---------------------------------------
+
+# Default environment
+ENV ?= prod
+
+# ---------------------------------------
+# 🧩 General Commands
+# ---------------------------------------
+
+# Stop and remove all containers
 down:
-	docker compose down
+	@docker compose down
 
-# Force remove any leftover container with the same name
+# Remove any leftover containers (ignore errors)
 clean:
-	-docker rm -f cloudflared || true
-	-docker rm -f bajeti_app || true
+	@docker rm -f cloudflared bajeti_app 2>/dev/null || true
+	@docker volume prune -f
 
-# Build the app (useful after code changes)
+# Build containers for the selected environment
 build:
-	docker compose build
+ifeq ($(ENV),dev)
+	@docker compose -f docker-compose.dev.yml build
+else
+	@docker compose build
+endif
 
-# Start fresh: remove old, build, then start
-up: down clean build
-	docker compose up -d
+# Start containers
+up:
+ifeq ($(ENV),dev)
+	@docker compose -f docker-compose.dev.yml up --build
+else
+	@docker compose up -d
+endif
 
-# View logs for cloudflared
-logs_cloudflared:
-	docker logs -f cloudflared
+# Full rebuild and restart
+rebuild: down clean build up
 
-# Rebuild docker after new deployment
-rebuild:
-	docker compose down
-	docker compose build
-	docker compose up -d
+# Stop all containers and remove unused resources
+prune:
+	@docker system prune -af --volumes
 
-# View bajeti logs
-logs_bajeti:
-	docker logs -f bajeti_app
+# ---------------------------------------
+# 🧑‍💻 Development Commands
+# ---------------------------------------
 
-# Start dev instance
+# Start dev environment (FastAPI + esbuild)
 dev:
-	docker compose -f docker-compose.dev.yml up --build
+	@docker compose -f docker-compose.dev.yml up --build
 
-# Stop dev instance
+# Stop dev environment
 stop-dev:
-	docker compose -f docker-compose.dev.yml down
+	@docker compose -f docker-compose.dev.yml down
 
-# Prune dev
+# Clean dev containers and images
 prune-dev:
-	docker system prune -af
+	@docker system prune -af
+
+# ---------------------------------------
+# 🚀 Production Commands
+# ---------------------------------------
+
+# Deploy production version (used on Raspberry Pi)
+deploy: down clean
+	@echo "🔧 Building esbuild static assets..."
+	@npm run build || echo "⚠️ Skipping esbuild if not installed"
+	@echo "📦 Building production Docker image..."
+	@docker compose build
+	@echo "🚀 Starting Bajeti app..."
+	@docker compose up -d
+
+# ---------------------------------------
+# 📜 Logs
+# ---------------------------------------
+
+logs:
+	@docker compose logs -f
+
+logs-bajeti:
+	@docker logs -f bajeti_app
+
+logs-cloudflared:
+	@docker logs -f cloudflared

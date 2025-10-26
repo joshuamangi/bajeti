@@ -298,7 +298,6 @@ select {
 .p-summary-card {
   background: var(--gradient-hover);
   padding: .4em;
-  border: var(--border);
   box-shadow: var(--shadow);
   border-radius: .8em;
   width: min-content;
@@ -330,94 +329,177 @@ select {
 }
 .p-detail-cards {
   display: flex;
-  gap: .8em;
-  flex-wrap: wrap;
-  margin: 1em 1em;
-  justify-content: space-around;
+  flex-direction: column;
+  gap: 0.4em;
+  margin: 0.8em;
 }
 .p-detail-card {
-  flex: 2;
+  display: grid;
+  grid-template-columns: 1fr 1fr 2fr;
+  gap: 0.4em;
   background: var(--gradient);
   border-radius: .8em;
   box-shadow: var(--shadow);
+  padding: 0.8em 1em;
+  border-top: 1px solid var(--border, #e0e0e0);
+  border-right: 1px solid var(--border, #e0e0e0);
+  border-bottom: 1px solid var(--border, #e0e0e0);
+  border-left: 0.4em solid var(--primary);
 }
 .p-category-limit {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: var(--gradient-hover);
-  padding: .8em 1em;
-  border-radius: .8em;
-}
-.p-category-limit-name {
-  font-weight: 600;
-  color: var(--text);
-}
-.p-category-limit-amount {
-  font-weight: 500;
-  padding: .2em .8em;
-  color: var(--primary);
-  background: var(--bg-light);
-  border-radius: .4em;
-}
-.p-category-limit-amount:hover {
-  background: var(--primary);
-  color: var(--bg-light);
+  flex-direction: column;
+  justify-content: center;
+  border-radius: 0.8em;
+  gap: 0.1em;
 }
 .p-expense-container {
   display: flex;
+  flex-direction: column;
   justify-content: center;
-  gap: .4em;
-  margin: 0 0 .2em 0;
+  align-items: center;
+  border-radius: 0.8em;
+}
+.p-balance_and_buttons {
+  display: flex;
+  flex-direction: column;
+  border-radius: 0.8em;
+  gap: 0.6em;
+}
+.p-category-limit-name {
+  font-weight: bold;
+  font-size: 0.9em;
+  display: inline-block;
+  padding: 0.1em 0.8em;
+  margin-bottom: 0.8em;
+  border-radius: 0.4em;
+  letter-spacing: 0.3px;
+  width: min-content;
+  background:
+    linear-gradient(
+      145deg,
+      var(--bg-light) 0%,
+      var(--bg-dark) 100%);
+  box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.4), inset -2px -2px 4px rgba(255, 255, 255, 0.1);
+  text-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.6), 1px 1px 1px rgba(255, 255, 255, 0.1);
+  transform: translateY(1px);
+  color: var(--primary);
+}
+.p-category-limit-amount {
+  color: var(--text-muted);
+  font-weight: bold;
+  padding-left: 0.8em;
+}
+.p-expense-amount-name {
+  font-weight: 500;
+  font-size: 0.8em;
 }
 .p-expense-amount {
   color: var(--secondary);
-  font-weight: 600;
+  font-size: 1.1em;
+}
+.p-no-expense {
+  text-align: center;
+  border-radius: 0.8em;
+  margin-top: 1.2em;
 }
 .p-remaining-container {
   display: flex;
-  flex-direction: column;
-  align-content: center;
-  flex-wrap: wrap;
-  gap: .2em;
-  margin: .4em 0 .8em 0;
 }
-.p-remaining-caption {
-  text-align: center;
-  color: var(--text-muted);
+.p-remaining-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: right;
+  text-align: right;
+  width: 100%;
+  gap: 0.4em;
 }
 .p-remaining-amount {
-  background: var(--gradient-hover);
-  padding: .2em .8em;
-  border-radius: .4em;
-  box-shadow: var(--shadow);
-  font-weight: 500;
 }
-.p-remaining-amount:hover {
-  transform: scale(1.05);
+.p-remaining-caption {
+  font-size: 0.8em;
+  align-self: center;
 }
 .p-actions-container {
-  margin: 0 0 .4em 0;
   display: flex;
-  gap: .6em;
-  justify-content: center;
-  padding: .4em .8em;
+  justify-content: right;
+  gap: 0.8em;
 }
-.p-actions-btns {
-  background: var(--primary);
-  font-size: 12px;
-  border-radius: .4em;
+.p-actions-btns-primary {
+  background: var(--bg-light);
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  border-radius: 0.4em;
   width: 40px;
   height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  text-decoration: none;
-  color: var(--bg-light);
-  box-shadow: var(--shadow);
-  transition: background .3s ease, transform .2s ease;
+  transition: transform 0.2s ease, background 0.3s ease;
+}
+.p-actions-btns-secondary {
+  background: var(--bg-light);
+  border: 1px solid var(--secondary);
+  color: var(--secondary);
+  border-radius: 0.4em;
+  width: 40px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease, background 0.3s ease;
+}
+.p-actions-btns-warning {
+  background: var(--bg-light);
+  border: 1px solid var(--warning);
+  color: var(--warning);
+  border-radius: 0.4em;
+  width: 40px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease, background 0.3s ease;
+}
+.p-actions-btns-tertiary {
+  background: var(--bg-light);
+  border: 1px solid var(--tertiary);
+  color: var(--tertiary);
+  border-radius: 0.4em;
+  width: 40px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease, background 0.3s ease;
+}
+.p-actions-btns-danger {
+  background: var(--bg-light);
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  border-radius: 0.4em;
+  width: 40px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease, background 0.3s ease;
+}
+.p-actions-btns-info {
+  background: var(--bg-light);
+  border: 1px solid var(--info);
+  color: var(--info);
+  border-radius: 0.4em;
+  width: 40px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease, background 0.3s ease;
 }
 .p-actions-btns:hover {
+  background: var(--primary);
+  color: var(--bg-light);
   transform: scale(1.05);
 }
 .p-btn-primary {
@@ -428,12 +510,16 @@ select {
 }
 .p-btn-warning {
   background: var(--warning);
+  width: 5.1em;
+  height: 2.7em;
 }
 .p-btn-warning:hover {
   background: color-mix(in oklch, var(--danger) 85%, var(--bg-light));
 }
 .p-btn-danger {
   background: var(--danger);
+  width: 5.1em;
+  height: 2.7em;
 }
 .p-btn-danger:hover {
   background: color-mix(in oklch, var(--danger) 85%, var(--bg-light));
@@ -485,17 +571,6 @@ select {
   text-align: center;
   box-shadow: inset 2px 2px 4px var(--bg-light), inset -2px -2px 4px var(--bg-dark);
   transition: box-shadow .3s ease, color .3s ease;
-}
-.engraved:hover {
-  color: var(--text);
-  box-shadow:
-    inset .5px .5px 1px var(--bg-light),
-    inset -0.5px -0.5px 1px var(--bg-dark),
-    0 1px 4px var(--border-muted);
-}
-.engraved-text {
-  color: var(--text-muted);
-  text-shadow: 1px 1px 2px var(--bg-dark), -1px -1px 2px var(--bg-light);
 }
 
 /* app/static/css/alert.css */
@@ -554,20 +629,6 @@ select {
   font: var(--p);
   cursor: pointer;
   transition: all .2s ease-in-out;
-}
-.p-btn-primary {
-  background: var(--primary);
-  color: var(--bg-light);
-}
-.p-btn-primary:hover {
-  opacity: .9;
-}
-.p-btn-secondary {
-  background: var(--border);
-  color: var(--text);
-}
-.p-btn-secondary:hover {
-  opacity: .8;
 }
 .p-alert-error {
   display: flex;

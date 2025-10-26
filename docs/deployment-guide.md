@@ -229,3 +229,13 @@ deploy.yml (GitHub Actions) CI/CD pipeline that builds + deploys automatically
 DEPLOYMENT-RUNBOOK.md Documentation for manual fallback and clarity
 
 Would you like me to include a versioned static asset build step in this CI/CD pipeline — so each deployment automatically cache-busts JS/CSS (e.g., main.20251024.js)? It integrates beautifully with your esbuild step and Jinja templates.
+
+🔐 5. Set Up GitHub Secrets
+
+In your repo settings → Secrets and variables → Actions → Add:
+
+Secret Description
+PI_SSH_KEY Private SSH key that can connect to your Raspberry Pi (~/.ssh/id_rsa from your Mac)
+GITHUB_TOKEN Provided automatically by GitHub, don’t change it
+
+✅ You must ensure the public key (~/.ssh/id_rsa.pub) is in your Pi’s ~/.ssh/authorized_keys.

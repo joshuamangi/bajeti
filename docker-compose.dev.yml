@@ -5,7 +5,7 @@ services:
       build:
         context: .
         dockerfile: Dockerfile.dev
-      container_name: bajet_dev
+      container_name: bajeti_dev
       env_file: .env
       ports:
         - "8000:8000"

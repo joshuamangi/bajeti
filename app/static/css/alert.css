@@ -64,24 +64,6 @@
     transition: all .2s ease-in-out;
 }
 
-.p-btn-primary {
-    background: var(--primary);
-    color: var(--bg-light);
-}
-
-.p-btn-primary:hover {
-    opacity: .9;
-}
-
-.p-btn-secondary {
-    background: var(--border);
-    color: var(--text);
-}
-
-.p-btn-secondary:hover {
-    opacity: .8;
-}
-
 .p-alert-error {
     display: flex;
     justify-content: center;
