@@ -6,63 +6,62 @@
     <title>{% block title %}Bajeti{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- Font: Manrope and Font Awesome -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!--Local Fonts (optional: if you load via CSS font-face, remove this) -->
+    <link rel="stylesheet" href="{{ url_for('static', path='css/font.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='vendor/fontawesome/fontawesome-free-6.4.0-web/css/all.min.css') }}">
+
 
     {% if ENVIRONMENT == "production" %}
-    <!-- Minified CSS bundle-->
-     <link rel="stylesheet" href="/static/dist/styles.min.css">
+      <!--Bundled (esbuild output) -->
+      <link rel="stylesheet" href="{{ url_for('static', path='dist/index.css') }}">
+      <script src="{{ url_for('static', path='dist/index.js') }}" defer></script>
     {% else %}
-      <!-- Theme styles (keep your existing files) -->
-      <link rel="stylesheet" href="/static/css/palette.css">
-      <link rel="stylesheet" href="/static/css/main.css">
-      <link rel="stylesheet" href="/static/css/home.css">
-      <link rel="stylesheet" href="/static/css/login.css">
-      <link rel="stylesheet" href="/static/css/register.css">
-      <link rel="stylesheet" href="/static/css/profile.css">
-      <link rel="stylesheet" href="/static/css/forgot_password.css">
-      <link rel="stylesheet" href="/static/css/analytics.css">
-      <link rel="stylesheet" href="/static/css/modal.css">
-      <link rel="stylesheet" href="/static/css/alert.css">
+      <!-- 🧩 Development: separate CSS/JS files -->
+      <link rel="stylesheet" href="{{ url_for('static', path='css/palette.css') }}">
+      <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}">
+      <link rel="stylesheet" href="{{ url_for('static', path='css/home.css') }}">
+      <link rel="stylesheet" href="{{ url_for('static', path='css/login.css') }}">
+      <link rel="stylesheet" href="{{ url_for('static', path='css/register.css') }}">
+      <link rel="stylesheet" href="{{ url_for('static', path='css/profile.css') }}">
+      <link rel="stylesheet" href="{{ url_for('static', path='css/forgot_password.css') }}">
+      <link rel="stylesheet" href="{{ url_for('static', path='css/analytics.css') }}">
+      <link rel="stylesheet" href="{{ url_for('static', path='css/modal.css') }}">
+      <link rel="stylesheet" href="{{ url_for('static', path='css/alert.css') }}">
+
+      <script src="{{ url_for('static', path='js/main.js') }}" defer></script>
+      <script src="{{ url_for('static', path='js/home.js') }}" defer></script>
+      <script src="{{ url_for('static', path='js/profile.js') }}" defer></script>
+      <script src="{{ url_for('static', path='js/forgot_password.js') }}" defer></script>
     {% endif %}
   </head>
 
   <body class="p-container light" id="pMain">
     <header>
-        <div class="p-header-top">
-            <div class="p-header-logo"><a href="/">Bajeti</a></div>
-            <a href="#" class="p-header-icon" onclick="launchNav()">
-                <i class="fa fa-bars"></i>
-            </a>
+      <div class="p-header-top">
+        <div class="p-header-logo"><a href="/">Bajeti</a></div>
+        <a href="#" class="p-header-icon" onclick="launchNav()">
+          <i class="fa fa-bars"></i>
+        </a>
+      </div>
+      <div class="p-sidenav" id="pSideNav">
+        <div class="p-sidenav-content">
+          <a href="javascript:void(0)" class="p-closebtn" onclick="closeNav()">&times;</a>
+          <a href="/" onclick="closeNav()">Dashboard</a>
+          <a href="/profile" onclick="closeNav()">Profile</a>
+          <a href="/reports" onclick="closeNav()">Reports</a>
+          <a href="/analytics" onclick="closeNav()">Analytics</a>
         </div>
-        <div class="p-sidenav" id="pSideNav">
-            <div class="p-sidenav-content">
-                <a href="javascript:void(0)" class="p-closebtn" onclick="closeNav()">&times;</a>
-                <a href="/" onclick="closeNav()">Dashboard</a>
-                <a href="/profile" onclick="closeNav()">Profile</a>
-                <a href="/reports" onclick="closeNav()">Reports</a>
-                <a href="/analytics" onclick="closeNav()">Analytics</a>
-            </div>
-            <div class="p-sidenav-footer">
-                <a href="/settings"><i class="fa fa-cog"></i> Settings</a>
-                <a href="/logout" class="p-logout"><i class="fa fa-sign-out"></i> Logout</a>
-            </div>
+        <div class="p-sidenav-footer">
+          <a href="/settings"><i class="fa fa-cog"></i> Settings</a>
+          <a href="/logout" class="p-logout"><i class="fa fa-sign-out"></i> Logout</a>
         </div>
+      </div>
     </header>
+
     <div id="pOverlay" class="p-overlay" onclick="closeNav()"></div>
+
     <main>
       {% block content %}{% endblock %}
     </main>
-    {% if ENVIRONMENT == "production" %}
-      <script src="/static/dist/app.min.js" defer></script>
-    {% else %}
-      <script src="/static/js/main.js" defer></script>
-      <script src="/static/js/home.js" defer></script>
-      <script src="/static/js/profile.js" defer></script>
-      <script src="/static/js/forgot_password.js" defer></script>
-    {% endif %}
   </body>
 </html>

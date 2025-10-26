@@ -237,7 +237,7 @@ async def profile_update(request: Request,
         )
 
     if response.status_code in (200, 201):
-        # ✅ Handle success (200 OK from backend)
+        # Handle success (200 OK from backend)
         return RedirectResponse(url="/dashboard", status_code=303)
     else:
         try:

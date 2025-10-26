@@ -16,6 +16,7 @@
   "license": "ISC",
   "devDependencies": {
     "dotenv": "^17.2.3",
-    "esbuild": "^0.25.11"
+    "esbuild": "^0.25.11",
+    "esbuild-plugin-copy": "^2.1.1"
   }
 }

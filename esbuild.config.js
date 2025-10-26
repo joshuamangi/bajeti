@@ -2,45 +2,52 @@
 import { context, build } from "esbuild";
 import dotenv from "dotenv";
 import fs from "fs";
+import copy from "esbuild-plugin-copy";
 
 dotenv.config();
+
 const env = process.env.ENVIRONMENT || "development";
 const isWatch = env === "development";
-
-// Input lists
-const jsFiles = [
-    "app/static/js/main.js",
-    "app/static/js/home.js",
-    "app/static/js/profile.js",
-    "app/static/js/forgot_password.js",
-];
-
-const cssFiles = [
-    "app/static/css/palette.css",
-    "app/static/css/main.css",
-    "app/static/css/home.css",
-    "app/static/css/login.css",
-    "app/static/css/register.css",
-    "app/static/css/profile.css",
-    "app/static/css/forgot_password.css",
-    "app/static/css/analytics.css",
-    "app/static/css/modal.css",
-    "app/static/css/alert.css",
-];
 
 // Ensure output dir exists
 fs.mkdirSync("app/static/dist", { recursive: true });
 
 const commonOptions = {
-    entryPoints: [...jsFiles, ...cssFiles],
-    outdir: "app/static/dist", // ✅ MUST use outdir when multiple input files
+    entryPoints: [
+        "app/static/js/index.js", //your main JS entry
+        "app/static/css/index.css", //your main CSS entry
+    ],
+    outdir: "app/static/dist",
     bundle: true,
     sourcemap: isWatch,
     minify: !isWatch,
-    loader: { ".css": "css" },
+    loader: {
+        ".css": "css",
+        ".woff2": "file",
+        ".woff": "file",
+        ".ttf": "file",
+        ".eot": "file",
+    },
     logLevel: "info",
+    plugins: [
+        copy({
+            assets: [
+                {
+                    from: ["app/static/fonts/**/*"],
+                    to: ["app/static/dist/fonts"], //copy all fonts
+                },
+                {
+                    from: [
+                        "app/static/vendor/fontawesome/fontawesome-free-6.4.0-web/webfonts/*",
+                    ],
+                    to: ["app/static/dist/webfonts"], //copy Font Awesome webfonts
+                },
+            ],
+        }),
+    ],
 };
 
+// Build or watch
 async function run() {
     if (isWatch) {
         const ctx = await context(commonOptions);
