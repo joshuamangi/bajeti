@@ -1,0 +1,14 @@
+node_modules
+app/static/dist
+app/static/vendor/fontawesome/fontawesome-free-6.4.0-web/svgs
+app/static/vendor/bootstrap
+recover_backup
+venv
+docs
+__pycache__
+app/static/vendor/fontawesome/fontawesome-free-6.4.0-web/js
+app/static/vendor/fontawesome/fontawesome-free-6.4.0-web/less
+app/static/vendor/fontawesome/fontawesome-free-6.4.0-web/metadata
+app/static/vendor/fontawesome/fontawesome-free-6.4.0-web/scss
+app/static/vendor/fontawesome/fontawesome-free-6.4.0-web/sprites
+app/static/vendor/fontawesome/fontawesome-free-6.4.0-web/svgs
