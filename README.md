@@ -20,32 +20,6 @@ add .env fiel
 docker compose up -d —build —remove-orphans
 docker  logs -f bajeti_app [to check if the service is running and the logs]
 
-created an ngrok service to start the service upon restart using
-sudo nano /etc/systemd/system/ngrok.service
-
-[Unit]
-Description=ngrok tunnel for FastAPI app
-After=network.target
-
-[Service]
-User=joshuamangi
-WorkingDirectory=/home/joshuamangi
-ExecStart=/usr/local/bin/ngrok http 8000 --log=stdout
-Restart=always
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-
-ngrok config add-authtoken <your-ngrok-auth-token>
-
-execute these commands after
-sudo systemctl daemon-reload
-sudo systemctl enable ngrok
-sudo systemctl start ngrok
-
-check if service is running sudo systemctl status ngrok
-
 [Requirements]
 execute this command
 pip freeze > requirements.txt\n
@@ -72,3 +46,24 @@ docker compose run --rm --entrypoint bash bajeti_app
 how to do backups
 mkdir -p recover_backup
 cp -a app/templates recover_backup/templates_before_recover
+
+working with ssh
+ssh-keygen -t ed25519 -C "github-deploy@raspberrypi" -f ~/.ssh/id_rsa_github_deploy
+copy to raspberry pi
+cat ~/.ssh/id_rsa_github_deploy.pub | ssh joshuamangi@192.168.1.120 "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys"
+create PI_HOST,PI_KEY, PI_USER in Github
+
+created backup with
+aws s3api create-bucket \
+  --bucket bajeti-db-backups \
+  --region eu-west-2 \
+  --create-bucket-configuration LocationConstraint=eu-west-2
+
+db backup script is in
+/home/joshuamangi/scripts/bajeti
+
+backups are stored in
+/home/joshuamangi/backups/db_backups/
+
+check backups
+aws s3 ls s3://my-bajeti-backups/

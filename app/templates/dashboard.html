@@ -28,8 +28,8 @@
       <strong>Welcome, {{ user.first_name }} {{ user.last_name }}</strong>
     </div>
     <div style="display:flex; gap:.5rem; align-items:center;">
-      <button id="toggleVisibility" class="p-actions-btns" title="Hide/Show sensitive values"><i id="eyeIcon" class="fa fa-eye"></i></button>
-     <!-- <button id="toggleCompact" class="p-actions-btns" title="Toggle Compact View"><i id="toggleCompactIcon" class="fa fa-list"></i></button> -->
+      <button id="toggleVisibility" class="p-actions-btns p-actions-btns-primary" title="Hide/Show sensitive values"><i id="eyeIcon" class="fa fa-eye"></i></button>
+     <!-- <button id="toggleCompact" class="p-actions-btns p-actions-btns-primary" title="Toggle Compact View"><i id="toggleCompactIcon" class="fa fa-list"></i></button> -->
     </div>
   </div>
 </div>
@@ -39,11 +39,11 @@
   <div class="p-summary-cards">
     <div class="p-summary-card">
       <h4>Total Limit</h4>
-      <h2 class="p-summary-value sensitive" data-value="{{ categories_with_stats | sum(attribute='limit_amount') }}">{{ categories_with_stats | sum(attribute='limit_amount') }}</h2>
+      <h2 class="p-summary-value sensitive" data-value="{{ categories_with_stats | sum(attribute='limit_amount') | commafy}}">{{ categories_with_stats | sum(attribute='limit_amount') }}</h2>
     </div>
     <div class="p-summary-card">
       <h4>Total Balance</h4>
-      <h2 class="p-summary-value sensitive {% if categories_with_stats | sum(attribute='balance') < 0 %} p-negative {% endif %}" data-value="{{ categories_with_stats | sum(attribute='balance') }}">
+      <h2 class="p-summary-value sensitive {% if categories_with_stats | sum(attribute='balance') < 0 %} p-negative {% endif %}" data-value="{{ categories_with_stats | sum(attribute='balance') | commafy}}">
         {{ categories_with_stats | sum(attribute='balance') }}
       </h2>
     </div>
@@ -89,15 +89,15 @@
               <input type="hidden" name="amount" value="{{ cat.limit_amount }}">
               <input type="hidden" name="description" value="Quick Expense">
               <input type="hidden" name="month" value="{{ now }}">
-              <button class="p-actions-btns" type="submit" title="Quick Expense"><i class="fa fa-bolt"></i></button>
+              <button class="p-actions-btns p-actions-btns-primary" type="submit" title="Quick Expense"><i class="fa fa-bolt"></i></button>
             </form>
 
-            <button class="p-actions-btns" title="Add Expense" onclick="generateModal('addExpenseModal{{ cat.id }}','addExpenseClose{{ cat.id }}','')"><i class="fa fa-plus"></i></button>
+            <button class="p-actions-btns p-actions-btns-primary" title="Add Expense" onclick="generateModal('addExpenseModal{{ cat.id }}','addExpenseClose{{ cat.id }}','')"><i class="fa fa-plus"></i></button>
 
-            <button class="p-actions-btns" title="Edit Category" onclick="generateModal('editCategoryModal{{ cat.id }}','editCategoryClose{{ cat.id }}','')"><i class="fa fa-pencil"></i></button>
+            <button class="p-actions-btns p-actions-btns-primary" title="Edit Category" onclick="generateModal('editCategoryModal{{ cat.id }}','editCategoryClose{{ cat.id }}','')"><i class="fa fa-pencil"></i></button>
 
             <form method="POST" action="/dashboard/categories/{{ cat.id }}/delete" onsubmit="return confirmSubmit(this, 'Delete category {{ cat.name }}?')">
-              <button class="p-actions-btns" type="submit" title="Delete Category"><i class="fa fa-trash"></i></button>
+              <button class="p-actions-btns p-actions-btns-primary" type="submit" title="Delete Category"><i class="fa fa-trash"></i></button>
             </form>
           </div>
         </td>
@@ -113,7 +113,7 @@
   <div class="p-detail-card">
     <div class="p-category-limit">
       <p class="p-category-limit-name">{{ cat.name }}</p>
-      <p class="p-category-limit-amount sensitive" data-value="{{ cat.limit_amount }}">{{ cat.limit_amount }}</p>
+      <p class="p-category-limit-amount sensitive" data-value="{{ cat.limit_amount | commafy}} ">{{ cat.limit_amount }}</p>
     </div>
 
     <div class="p-expense-container">
@@ -127,7 +127,7 @@
     <div class="p-balance_and_buttons">
       <div class="p-remaining-container">
         <p class="p-remaining-caption">{% if cat.balance < 0 %} Over by {% else %}Remaining{% endif %}</p>
-        <h4 class="p-remaining-amount sensitive {% if cat.balance <= 0 %} p-negative {% else %} p-positive {% endif %}" data-value="{{ cat.balance }}">
+        <h4 class="p-remaining-amount sensitive {% if cat.balance <= 0 %} p-negative {% else %} p-positive {% endif %}" data-value="{{ cat.balance  | commafy}}">
             {% if cat.balance < 0 %}{{ -cat.balance }}{% else %}{{ cat.balance }}{% endif %}
         </h4>
       </div>
@@ -139,19 +139,19 @@
           <input type="hidden" name="amount" value="{{ cat.limit_amount }}">
           <input type="hidden" name="description" value="Quick Expense">
           <input type="hidden" name="month" value="{{ now }}">
-          <button class="p-actions-btns-tertiary" type="submit" title="Quick Expense">
+          <button class="p-actions-btns p-actions-btns-tertiary" type="submit" title="Quick Expense">
             <i class="fa fa-bolt"></i>
           </button>
         </form>
   
         <!-- Add Expense: primary -->
-        <button class="p-actions-btns-primary" title="Add Expense"
+        <button class="p-actions-btns p-actions-btns-primary" title="Add Expense"
                 onclick="generateModal('addExpenseModal{{ cat.id }}','addExpenseClose{{ cat.id }}','')">
           <i class="fa fa-plus"></i>
         </button>
   
         <!-- Edit Category: secondary -->
-        <button class="p-actions-btns-warning" title="Edit Category"
+        <button class="p-actions-btns p-actions-btns-warning" title="Edit Category"
                 onclick="generateModal('editCategoryModal{{ cat.id }}','editCategoryClose{{ cat.id }}','')">
           <i class="fa fa-pencil"></i>
         </button>
@@ -159,7 +159,7 @@
         <!-- Delete Category: danger -->
         <form method="POST" action="/dashboard/categories/{{ cat.id }}/delete"
               onsubmit="return confirmSubmit(this, 'Delete category {{ cat.name }}?')">
-          <button class="p-actions-btns-danger" type="submit" title="Delete">
+          <button class="p-actions-btns p-actions-btns-danger" type="submit" title="Delete">
             <i class="fa fa-trash"></i>
           </button>
         </form>

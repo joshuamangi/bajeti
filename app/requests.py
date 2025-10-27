@@ -27,6 +27,17 @@ router = APIRouter()
 # ---------- Helper Functions ----------
 
 
+def commafy(value):
+    try:
+        return f"{int(value):,}"
+    except (ValueError, TypeError):
+        return value
+
+
+# Register the filter manually
+templates.env.filters["commafy"] = commafy
+
+
 def verify_token(token: str):
     """Verify JWT Token"""
     try:

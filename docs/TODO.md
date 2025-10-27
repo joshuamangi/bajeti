@@ -1,6 +1,7 @@
 # TODO activities
 
-- [ ] Create periodic database backup
+- [x] Create periodic database backup
+- [ ] Add password to the database
 - [ ] Add message handling, with regards to managing response
 - [ ] How to present carefully curated errors to the user
 - [ ] Add Remember Me when logging in
