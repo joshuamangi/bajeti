@@ -1,123 +1,101 @@
 {% extends "base.html" %}
+
+{% block title %}
+Edit Profile - Bajeti
+{% endblock %}
+
 {% block content %}
-
-<div class="container my-4">
-  <h2 class="mb-4 text-center text-md-start">
-    <i class="bi bi-person-circle me-2"></i> Edit Profile
-  </h2>
-
-  <!-- ✅ User Info Card -->
-  <div class="card shadow-sm border-0">
-    <div class="card-body">
-      <form method="POST" action="/profile/update">
-
-        <!-- Name Fields -->
-        <div class="row g-3 mb-3">
-          <div class="col-md-6">
-            <label for="first_name" class="form-label fw-semibold">First Name</label>
-            <input type="text" class="form-control" id="first_name" name="first_name"
-                   value="{{ user.first_name }}" required>
-          </div>
-          <div class="col-md-6">
-            <label for="last_name" class="form-label fw-semibold">Last Name</label>
-            <input type="text" class="form-control" id="last_name" name="last_name"
-                   value="{{ user.last_name }}" required>
-          </div>
-        </div>
-
-        <!-- Email -->
-        <div class="mb-3">
-          <label for="email" class="form-label fw-semibold">Email</label>
-          <input type="email" class="form-control" id="email" name="email"
-                 value="{{ user.email }}" required>
-        </div>
-
-        <!-- Security Question with toggle -->
-        <div class="mb-4 position-relative">
-          <label for="security_answer" class="form-label fw-semibold">
-            Security Answer (for password recovery)
-          </label>
-          <div class="input-group">
-            <input type="password" class="form-control" id="security_answer" name="security_answer"
-                  value="{{ user.security_answer or '' }}" 
-                  placeholder="What is your childhood best friend's name?">
-            <button type="button" class="btn btn-outline-secondary" id="toggleSecurityAnswer">
-              <i class="bi bi-eye"></i>
-            </button>
-          </div>
-        </div>
-        <!-- Action Buttons -->
-        <div class="d-flex justify-content-between align-items-center flex-wrap">
-          <a href="/dashboard" class="btn btn-outline-secondary mb-2">
-            <i class="bi bi-arrow-left"></i> Back to Dashboard
-          </a>
-          <button type="submit" class="btn btn-primary mb-2">
-            <i class="bi bi-save"></i> Save Changes
-          </button>
-        </div>
-
-        <!-- 🔒 Password Section -->
-        <hr class="my-4">
-        <div class="mb-3 text-center text-md-start">
-          <h5 class="fw-semibold mb-2">Password Settings</h5>
-          <p class="text-muted small mb-3">
-            If you want to reset your password, click the button below to reset it.
-          </p>
-          <a href="/forgot_password" class="btn btn-outline-warning btn-sm rounded-pill mb-3">
-            <i class="bi bi-question-circle me-1"></i> Forgot Password?
-          </a>
-        </div>
-
-      </form>
-    </div>
-  </div>
+{% if error %}
+<div
+  class="p-alert-error"
+  role="alert"
+  style="
+    margin: 0.5rem 0;
+    padding: 0.6rem 1rem;
+    border-radius: 0.4rem;
+    background: var(--danger);
+    color: var(--bg-light);
+    box-shadow: var(--shadow);
+  "
+>
+  <i class="fa fa-exclamation-circle"></i>
+  <span style="margin-left: 0.5rem">{{ error }}</span>
 </div>
+{% endif %}
 
-<style>
-/* 🔹 Mobile-friendly spacing and readability */
-form .form-label {
-  font-size: 0.95rem;
-}
-.card {
-  border-radius: 0.75rem;
-}
-.card-body {
-  padding: 1.5rem;
-}
-@media (max-width: 576px) {
-  h2 {
-    font-size: 1.25rem;
-  }
-  .btn {
-    width: 100%;
-  }
-}
-</style>
+<section class="p-login">
+  <div class="p-register-container">
+    <h1 class="p-input-header">Edit Profile</h1>
 
-<script>
-// ✅ Optional password match validation
-document.addEventListener("DOMContentLoaded", function () {
-  const form = document.querySelector("form");
-  form.addEventListener("submit", function (e) {
-    const pwd = document.getElementById("password").value;
-    const confirm = document.getElementById("confirm_password").value;
-    if (pwd && pwd !== confirm) {
-      e.preventDefault();
-      alert("Passwords do not match!");
-    }
-  });
-});
-document.getElementById("toggleSecurityAnswer").addEventListener("click", function() {
-  const input = document.getElementById("security_answer");
-  const icon = this.querySelector("i");
-  if (input.type === "password") {
-    input.type = "text";
-    icon.classList.replace("bi-eye", "bi-eye-slash");
-  } else {
-    input.type = "password";
-    icon.classList.replace("bi-eye-slash", "bi-eye");
-  }
-});
-</script>
+    <form method="POST" action="/profile/update" class="p-signin-details">
+      <label for="first_name">First Name</label>
+      <input
+        type="text"
+        id="first_name"
+        name="first_name"
+        placeholder="Enter First Name"
+        value="{{ user.first_name }}"
+        required
+      />
 
+      <label for="last_name">Last Name</label>
+      <input
+        type="text"
+        id="last_name"
+        name="last_name"
+        placeholder="Enter Last Name"
+        value="{{ user.last_name }}"
+        required
+      />
+
+      <label for="email">Email</label>
+      <input
+        type="email"
+        id="email"
+        name="email"
+        placeholder="Enter Email"
+        value="{{ user.email }}"
+        required
+      />
+
+      <label for="security_answer">What was your childhood best friend's name?</label>
+      <div class="p-password-field">
+        <input
+          type="password"
+          id="security_answer"
+          name="security_answer"
+          placeholder="Enter Security Answer"
+          value="{{ user.security_answer or '' }}"
+        />
+        <i class="fa fa-eye p-eye-toggle" id="toggleSecurityAnswer"></i>
+      </div>
+
+      <button type="submit" class="p-login-button">
+        <span class="p-btn-text">
+          <i class="fa fa-save"></i> Save Changes
+        </span>
+      </button>
+
+      <hr class="p-divider" />
+
+      <div class="p-password-section">
+        <h2 class="p-password-header">Password Settings</h2>
+        <p class="p-password-text">
+          Want to reset your password? Click below to start the process.
+        </p>
+        <a href="/forgot_password" class="p-forgot-btn">
+          <i class="fa fa-key"></i> Forgot Password
+        </a>
+      </div>
+
+      <div class="p-auth-links">
+        <p>
+          <a href="/dashboard" style="color: var(--primary)">
+            <i class="fa fa-arrow-left"></i> Back to Dashboard
+          </a>
+        </p>
+      </div>
+    </form>
+  </div>
+</section>
 {% endblock %}

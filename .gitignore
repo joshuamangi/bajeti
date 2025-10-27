@@ -21,9 +21,19 @@ pytest_cache/
 .DS_Store
 Thumbs.db
 
-# files
+# folders
+docs/
+recover_backup/
 venv/
 __pycache__/
+*.pyc
+static/dist/
+node_modules/
+app/static/dist/
+app/static/js/index.js
+app/static/css/index.css
+app/static/fonts/
+app/static/vendor/
 
 # Cloudflared secrets (ignore cert + tunnel credentials, but not config.yml)
 cloudflared/cert.pem

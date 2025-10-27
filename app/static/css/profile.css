@@ -1,0 +1,59 @@
+.p-password-field {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.p-password-field input {
+    width: 100%;
+    padding-right: 2.2rem;
+}
+
+.p-eye-toggle {
+    position: absolute;
+    right: .75rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: color .2s ease;
+}
+
+.p-eye-toggle:hover {
+    color: var(--primary);
+}
+
+.p-divider {
+    margin: .4rem 0;
+    border: 0;
+    border-top: 1px solid var(--border-color);
+}
+
+.p-password-section {
+    text-align: center;
+    padding: 1rem 0;
+}
+
+.p-password-header {
+    font-weight: 700;
+    margin-bottom: .5rem;
+}
+
+.p-password-text {
+    font-size: .9rem;
+    color: var(--text-muted, #777);
+    margin-bottom: 1rem;
+}
+
+.p-forgot-btn {
+    display: inline-block;
+    padding: .5rem 1rem;
+    background-color: var(--warning);
+    color: var(--bg-light);
+    border-radius: .8em;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all .2s ease;
+}
+
+.p-forgot-btn:hover {
+    background-color: var(--primary);
+}

@@ -8,24 +8,34 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 import httpx
 from jose import JWTError, jwt
-from dotenv import load_dotenv
+from app.config import settings, ENVIRONMENT
 
 # Logging setup
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-# Load environment variables
-load_dotenv()
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = os.getenv("ALGORITHM")
-API_BASE_URL = os.getenv("API_BASE_URL")
+SECRET_KEY = settings.SECRET_KEY
+ALGORITHM = settings.ALGORITHM
+API_BASE_URL = settings.API_BASE_URL
 
 # Setup templates
 templates = Jinja2Templates(directory="app/templates")
+templates.env.globals["ENVIRONMENT"] = ENVIRONMENT
 
 router = APIRouter()
 
 # ---------- Helper Functions ----------
+
+
+def commafy(value):
+    try:
+        return f"{int(value):,}"
+    except (ValueError, TypeError):
+        return value
+
+
+# Register the filter manually
+templates.env.filters["commafy"] = commafy
 
 
 def verify_token(token: str):
@@ -82,7 +92,7 @@ async def render_with_user(template_name: str, request: Request, context: dict =
     context.update({"request": request, "user": user})
     return templates.TemplateResponse(template_name, context)
 
-# ---------- Routes ----------
+# ---------------------------------- Routes ---------------------------------
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -221,18 +231,8 @@ async def profile_update(request: Request,
                          first_name: str = Form(...),
                          last_name: str = Form(...),
                          email: str = Form(...),
-                         password: str = Form(...),
-                         confirm_password: str = Form(...),
                          security_answer: str = Form(...)
                          ):
-    if password != confirm_password:
-        return await render_with_user("register.html", request, {
-            "error": "Passwords do not match",
-            "email": email,
-            "first_name": first_name,
-            "last_name": last_name,
-            "security_answer": security_answer
-        })
 
     async with httpx.AsyncClient() as client:
         response = await client.put(
@@ -241,7 +241,6 @@ async def profile_update(request: Request,
                 "first_name": first_name,
                 "last_name": last_name,
                 "email": email,
-                "password": password,
                 "security_answer": security_answer
             },
             headers={
@@ -249,7 +248,7 @@ async def profile_update(request: Request,
         )
 
     if response.status_code in (200, 201):
-        # ✅ Handle success (200 OK from backend)
+        # Handle success (200 OK from backend)
         return RedirectResponse(url="/dashboard", status_code=303)
     else:
         try:
@@ -442,3 +441,9 @@ async def reports_page(request: Request):
 async def reports_page(request: Request):
     """Renders the reports page"""
     return await render_with_user("analytics.html", request)
+
+
+@router.get("/settings", response_class=HTMLResponse)
+async def reports_page(request: Request):
+    """Renders the reports page"""
+    return await render_with_user("settings.html", request)

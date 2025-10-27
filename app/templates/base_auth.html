@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>{% block title %}Bajeti{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- ✅ Local Fonts (optional: if you load via CSS font-face, remove this) -->
+    <link rel="stylesheet" href="{{ url_for('static', path='css/font.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='vendor/fontawesome/fontawesome-free-6.4.0-web/css/all.min.css') }}">
+
+
+    {% if ENVIRONMENT == "production" %}
+      <!-- ✅ Bundled (esbuild output) -->
+      <link rel="stylesheet" href="{{ url_for('static', path='dist/index.css') }}">
+      <script src="{{ url_for('static', path='dist/index.js') }}" defer></script>
+    {% else %}
+      <!-- 🧩 Development: separate CSS/JS files -->
+      <link rel="stylesheet" href="{{ url_for('static', path='css/palette.css') }}">
+      <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}">
+      <link rel="stylesheet" href="{{ url_for('static', path='css/home.css') }}">
+      <link rel="stylesheet" href="{{ url_for('static', path='css/login.css') }}">
+      <link rel="stylesheet" href="{{ url_for('static', path='css/register.css') }}">
+      <link rel="stylesheet" href="{{ url_for('static', path='css/profile.css') }}">
+      <link rel="stylesheet" href="{{ url_for('static', path='css/forgot_password.css') }}">
+      <link rel="stylesheet" href="{{ url_for('static', path='css/analytics.css') }}">
+      <link rel="stylesheet" href="{{ url_for('static', path='css/modal.css') }}">
+      <link rel="stylesheet" href="{{ url_for('static', path='css/alert.css') }}">
+
+      <script src="{{ url_for('static', path='js/main.js') }}" defer></script>
+      <script src="{{ url_for('static', path='js/home.js') }}" defer></script>
+      <script src="{{ url_for('static', path='js/profile.js') }}" defer></script>
+      <script src="{{ url_for('static', path='js/forgot_password.js') }}" defer></script>
+    {% endif %}
+  </head>
+
+  <body class="p-container light">
+    <header>
+      <div class="p-header-top">
+        <div class="p-header-logo">
+          <a href="/">Bajeti</a>
+        </div>
+      </div>
+    </header>
+
+    <main id="p-main">
+      {% block content %}{% endblock %}
+    </main>
+  </body>
+</html>

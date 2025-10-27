@@ -1,0 +1,69 @@
+@import url("./palette.css");
+@import url("./main.css");
+
+
+.p-login {
+    height: 90vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: .8em;
+    overflow-y: auto;
+}
+
+.p-login-container {
+    width: 400px;
+    height: min-content;
+    border-radius: .8em;
+    display: flex;
+    flex-direction: column;
+    gap: .8rem;
+    color: var(--text);
+    box-shadow: var(--shadow);
+    background: var(--gradient);
+    padding-bottom: 1.2em;
+}
+
+.p-input-header {
+    text-align: center;
+    padding: .8em 0;
+    border-top-left-radius: .8em;
+    border-top-right-radius: .8em;
+}
+
+.p-login-button {
+    position: relative;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: .4rem;
+    margin-top: .4em;
+}
+
+.p-login-button:hover {
+    background: var(--secondary);
+}
+
+.p-signin-details {
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+    color: var(--text);
+    padding: 0 .8em 0 .8em;
+}
+
+.p-auth-links {
+    margin: .8em .4em .4em .4em;
+    text-align: center;
+}
+
+.p-auth-links p a {
+    margin: .4em;
+    text-align: center;
+    text-decoration: none;
+    color: var(--secondary);
+}
+
+.p-auth-links p a:hover {
+    color: var(--tertiary);
+}

@@ -1,15 +1,28 @@
 {% extends "base.html" %}
+
+{% block title %}
+Under Construction - Bajeti
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-center align-items-center vh-100 bg-light px-3">
-  <div class="card shadow-lg border-0 p-4 rounded-4 text-center" style="max-width: 420px; width: 100%;">
-    <h1 class="display-6 mb-3 text-warning">⚠️ Under Construction</h1>
-    <p class="lead text-muted mb-4">
-      We're working hard to bring you something amazing.<br>
-      Please check back soon!
-    </p>
-    <a href="/" class="btn btn-warning text-white px-4 py-2 rounded-pill shadow-sm">
-      Back to Home
-    </a>
+<section class="p-login">
+  <div class="p-register-container p-under-construction">
+    <h1 class="p-input-header">
+      <i class="fa fa-wrench"></i> Under Construction
+    </h1>
+
+    <div class="p-signin-details p-center-text">
+      <p class="p-text-muted">
+        We're working hard to bring you something amazing.<br />
+        Please check back soon!
+      </p>
+
+      <div class="p-btn-group">
+        <a href="/" class="p-login-button p-warning-btn">
+          <i class="fa fa-home"></i> Back to Home
+        </a>
+      </div>
+    </div>
   </div>
-</div>
+</section>
 {% endblock %}
