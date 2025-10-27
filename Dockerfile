@@ -3,7 +3,7 @@ FROM node:20-slim AS frontend-builder
 
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm ci
 
 # Copy static assets
 COPY app/static ./app/static
