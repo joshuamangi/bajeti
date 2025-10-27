@@ -2,15 +2,20 @@
 FROM node:20-slim AS frontend-builder
 
 WORKDIR /app
+
+# Copy only the files needed for node build first
 COPY package*.json ./
 RUN npm ci
 
-# Copy static assets
-COPY app/static ./app/static
-COPY esbuild.config.js .
+# Copy your esbuild config and app files
+COPY esbuild.config.js ./
+COPY app ./app
+
+# Ensure build output directory exists
+RUN mkdir -p app/static/dist
 
 # Run your esbuild build using the config file
-RUN npm run build
+RUN node esbuild.config.js
 
 # ---------- Stage 2: Final image ----------
 FROM python:3.11-slim
@@ -26,7 +31,7 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy app code
+# Copy the app source
 COPY . .
 
 # Copy built frontend from previous stage
@@ -34,5 +39,5 @@ COPY --from=frontend-builder /app/app/static/dist ./app/static/dist
 
 EXPOSE 8000
 
-# Use uvicorn for FastAPI (no reload in production)
+# Run FastAPI app
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
