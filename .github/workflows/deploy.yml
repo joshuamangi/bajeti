@@ -48,11 +48,21 @@ jobs:
           script: |
             cd /home/${{ secrets.PI_USER }}/bajeti
 
-            echo "Pulling latest image..."
+            echo "📦 Writing .env file..."
+            cat <<EOF > .env
+            SECRET_KEY=${{ secrets.SECRET_KEY }}
+            ALGORITHM=${{ secrets.ALGORITHM }}
+            ACCESS_TOKEN_EXPIRE_MINUTES=${{ secrets.ACCESS_TOKEN_EXPIRE_MINUTES }}
+            API_BASE_URL=${{ secrets.API_BASE_URL }}
+            API_SERVER=${{ secrets.API_SERVER }}
+            ENVIRONMENT=${{ secrets.ENVIRONMENT }}
+            EOF
+
+            echo "🚀 Pulling latest bajeti_app image..."
             docker compose pull bajeti_app
 
-            echo "Recreating only bajeti_app..."
+            echo "🔁 Recreating bajeti_app container..."
             docker compose up -d bajeti_app
 
-            echo "Cleaning up old, unused images..."
+            echo "🧹 Cleaning up unused Docker images..."
             docker image prune -f
