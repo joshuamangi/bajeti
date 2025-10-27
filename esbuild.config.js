@@ -46,7 +46,6 @@ const commonOptions = {
         }),
     ],
 };
-
 // Build or watch
 async function run() {
     if (isWatch) {
