@@ -24,10 +24,10 @@ jobs:
         run: |
           cd /home/joshuamangi/projects/bajeti
           npm ci
-          # Clean previous builds and rebuild
           rm -rf app/static/dist/
-          node esbuild.config.js
-          # Verify the built files exist
+          # Use simple concatenation instead of esbuild
+          node simple-build.js
+          # Verify
           ls -la app/static/dist/
 
       - name: Load environment variables
