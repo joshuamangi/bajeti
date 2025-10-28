@@ -24,7 +24,11 @@ jobs:
         run: |
           cd /home/joshuamangi/projects/bajeti
           npm ci
+          # Clean previous builds and rebuild
+          rm -rf app/static/dist/
           node esbuild.config.js
+          # Verify the built files exist
+          ls -la app/static/dist/
 
       - name: Load environment variables
         run: |
@@ -42,7 +46,10 @@ jobs:
       - name: Build and deploy containers
         run: |
           cd /home/joshuamangi/projects/bajeti
-          docker compose build bajeti_app
+          # Stop and remove old container
+          docker compose down bajeti_app || true
+          # Rebuild with no cache to ensure latest changes
+          docker compose build --no-cache bajeti_app
           docker compose up -d bajeti_app
 
       - name: Clean up
