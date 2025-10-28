@@ -21,6 +21,8 @@ const commonOptions = {
     bundle: true,
     sourcemap: isWatch,
     minify: !isWatch,
+    // ADD THIS LINE - this removes the subdirectory structure
+    entryNames: '[name]',
     loader: {
         ".css": "css",
         ".woff2": "file",
