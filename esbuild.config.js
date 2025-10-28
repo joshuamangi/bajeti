@@ -20,8 +20,7 @@ const commonOptions = {
     outdir: "app/static/dist",
     bundle: true,
     sourcemap: isWatch,
-    minify: !isWatch,
-    keepNames: true,
+    minify: false, // was !isWatch
     entryNames: '[name]',
     platform: 'browser',
     loader: {
