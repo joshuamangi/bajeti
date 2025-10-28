@@ -27,11 +27,11 @@ recover_backup/
 venv/
 __pycache__/
 *.pyc
-static/dist/
+# static/dist/
 node_modules/
 app/static/dist/
-app/static/fonts/
-app/static/vendor/
+# app/static/fonts/
+# app/static/vendor/
 
 # Cloudflared secrets (ignore cert + tunnel credentials, but not config.yml)
 cloudflared/cert.pem
