@@ -23,6 +23,9 @@ const commonOptions = {
     minify: !isWatch,
     // ADD THIS LINE - this removes the subdirectory structure
     entryNames: '[name]',
+    format: 'iife',
+    globalName: 'BajetiApp',
+    platform: 'browser',
     loader: {
         ".css": "css",
         ".woff2": "file",
