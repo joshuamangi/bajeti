@@ -302,7 +302,6 @@ select {
     margin-bottom: 0.8em;
     border-radius: 0.4em;
     letter-spacing: 0.3px;
-    width: min-content;
 
     /* subtle inset gradient for depth */
     background: linear-gradient(145deg,

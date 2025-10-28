@@ -24,7 +24,6 @@ const commonOptions = {
     // ADD THIS LINE - this removes the subdirectory structure
     entryNames: '[name]',
     format: 'iife',
-    globalName: 'BajetiApp',
     platform: 'browser',
     loader: {
         ".css": "css",
