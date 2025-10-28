@@ -23,7 +23,6 @@ const commonOptions = {
     minify: !isWatch,
     // ADD THIS LINE - this removes the subdirectory structure
     entryNames: '[name]',
-    format: 'iife',
     platform: 'browser',
     loader: {
         ".css": "css",

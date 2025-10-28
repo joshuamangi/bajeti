@@ -5,5 +5,6 @@ import "./login.js";
 import "./main.js";
 import "./profile.js";
 import "./register.js";
+import "./globals.js";
 
 // add any other modules you use
