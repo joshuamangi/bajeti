@@ -1,43 +1,19 @@
-# ---------- Stage 1: Build static assets ----------
-FROM node:20-slim AS frontend-builder
-
-WORKDIR /app
-
-# Copy only the files needed for node build first
-COPY package*.json ./
-RUN npm ci
-
-# Copy your esbuild config and app files
-COPY esbuild.config.js ./
-COPY app ./app
-
-# Ensure build output directory exists
-RUN mkdir -p app/static/dist
-
-# Run your esbuild build using the config file
-RUN node esbuild.config.js
-
-# ---------- Stage 2: Final image ----------
 FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install required system dependencies
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     libsqlite3-dev sqlite3 build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy Python dependencies
+# Copy dependencies and install
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the app source
+# Copy entire app including built frontend
 COPY . .
-
-# Copy built frontend from previous stage
-COPY --from=frontend-builder /app/app/static/dist ./app/static/dist
 
 EXPOSE 8000
 
-# Run FastAPI app
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
