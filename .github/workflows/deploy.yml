@@ -1,49 +1,35 @@
-name: Deploy to Raspberry Pi (Local Build)
+name: Deploy on Raspberry Pi
 
 on:
-  pull_request:
-    types: [closed]
+  push:
     branches:
       - main
   workflow_dispatch:
 
 jobs:
   deploy:
-    if: github.event.pull_request.merged == true
-    runs-on: ubuntu-latest
-
+    runs-on: self-hosted
     steps:
-      - name: SSH into Raspberry Pi and deploy
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.PI_HOST }}
-          username: ${{ secrets.PI_USER }}
-          key: ${{ secrets.PI_SSH_KEY }}
-          script: |
-            set -e
-            cd /home/${{ secrets.PI_USER }}/bajeti
+      - name: Checkout latest code
+        uses: actions/checkout@v4
 
-            echo "🌍 Pulling latest code from main..."
-            git fetch origin main
-            git reset --hard origin/main
+      - name: Load environment variables
+        run: |
+          echo "Writing .env file..."
+          cat <<EOF > .env
+          SECRET_KEY=${{ secrets.SECRET_KEY }}
+          ALGORITHM=${{ secrets.ALGORITHM }}
+          ACCESS_TOKEN_EXPIRE_MINUTES=${{ secrets.ACCESS_TOKEN_EXPIRE_MINUTES }}
+          API_BASE_URL=${{ secrets.API_BASE_URL }}
+          API_SERVER=${{ secrets.API_SERVER }}
+          ENVIRONMENT=${{ secrets.ENVIRONMENT }}
+          EOF
 
-            echo "📦 Updating environment variables..."
-            cat <<EOF > .env
-            SECRET_KEY=${{ secrets.SECRET_KEY }}
-            ALGORITHM=${{ secrets.ALGORITHM }}
-            ACCESS_TOKEN_EXPIRE_MINUTES=${{ secrets.ACCESS_TOKEN_EXPIRE_MINUTES }}
-            API_BASE_URL=${{ secrets.API_BASE_URL }}
-            API_SERVER=${{ secrets.API_SERVER }}
-            ENVIRONMENT=${{ secrets.ENVIRONMENT }}
-            EOF
+      - name: Build and deploy containers
+        run: |
+          echo "Pulling latest images and rebuilding app..."
+          docker compose build bajeti_app
+          docker compose up -d bajeti_app
 
-            echo "🐳 Building Docker image locally..."
-            docker compose build bajeti_app
-
-            echo "🚀 Recreating container..."
-            docker compose up -d bajeti_app
-
-            echo "🧹 Cleaning old images..."
-            docker image prune -f
-
-            echo "✅ Deployment complete!"
+      - name: Clean up unused images
+        run: docker image prune -f
