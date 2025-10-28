@@ -9,6 +9,7 @@ on:
 jobs:
   deploy:
     runs-on: self-hosted
+
     steps:
       - name: Go to project directory
         run: cd /home/joshuamangi/projects/bajeti
@@ -18,6 +19,12 @@ jobs:
           cd /home/joshuamangi/projects/bajeti
           git fetch origin main
           git reset --hard origin/main
+
+      - name: Build frontend assets
+        run: |
+          cd /home/joshuamangi/projects/bajeti
+          npm ci
+          node esbuild.config.js
 
       - name: Load environment variables
         run: |
