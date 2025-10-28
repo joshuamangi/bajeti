@@ -10,11 +10,18 @@ jobs:
   deploy:
     runs-on: self-hosted
     steps:
-      - name: Checkout latest code
-        uses: actions/checkout@v4
+      - name: Go to project directory
+        run: cd /home/joshuamangi/projects/bajeti
+
+      - name: Pull latest code
+        run: |
+          cd /home/joshuamangi/projects/bajeti
+          git fetch origin main
+          git reset --hard origin/main
 
       - name: Load environment variables
         run: |
+          cd /home/joshuamangi/projects/bajeti
           echo "Writing .env file..."
           cat <<EOF > .env
           SECRET_KEY=${{ secrets.SECRET_KEY }}
@@ -27,9 +34,9 @@ jobs:
 
       - name: Build and deploy containers
         run: |
-          echo "Pulling latest images and rebuilding app..."
+          cd /home/joshuamangi/projects/bajeti
           docker compose build bajeti_app
           docker compose up -d bajeti_app
 
-      - name: Clean up unused images
+      - name: Clean up
         run: docker image prune -f
