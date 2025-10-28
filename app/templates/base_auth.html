@@ -13,8 +13,7 @@
     {% if ENVIRONMENT == "production" %}
       <!-- ✅ Bundled (esbuild output) -->
       <link rel="stylesheet" href="{{ url_for('static', path='dist/index.css') }}">
-      <script src="{{ url_for('static', path='dist/index.js') }}" defer></script>
-    {% else %}
+      {% else %}
       <!-- 🧩 Development: separate CSS/JS files -->
       <link rel="stylesheet" href="{{ url_for('static', path='css/palette.css') }}">
       <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}">
@@ -26,25 +25,26 @@
       <link rel="stylesheet" href="{{ url_for('static', path='css/analytics.css') }}">
       <link rel="stylesheet" href="{{ url_for('static', path='css/modal.css') }}">
       <link rel="stylesheet" href="{{ url_for('static', path='css/alert.css') }}">
-
+      
       <script src="{{ url_for('static', path='js/main.js') }}" defer></script>
       <script src="{{ url_for('static', path='js/home.js') }}" defer></script>
       <script src="{{ url_for('static', path='js/profile.js') }}" defer></script>
       <script src="{{ url_for('static', path='js/forgot_password.js') }}" defer></script>
-    {% endif %}
-  </head>
-
-  <body class="p-container light">
-    <header>
-      <div class="p-header-top">
-        <div class="p-header-logo">
-          <a href="/">Bajeti</a>
+      {% endif %}
+    </head>
+    
+    <body class="p-container light">
+      <header>
+        <div class="p-header-top">
+          <div class="p-header-logo">
+            <a href="/">Bajeti</a>
+          </div>
         </div>
-      </div>
-    </header>
-
-    <main id="p-main">
-      {% block content %}{% endblock %}
-    </main>
+      </header>
+      
+      <main id="p-main">
+        {% block content %}{% endblock %}
+      </main>
+      <script src="{{ url_for('static', path='dist/index.js') }}" defer></script>
   </body>
 </html>

@@ -308,3 +308,12 @@
   </div>
 </div>
 {% endblock %}
+<script>
+console.log('HTML parsed - checking generateModal:', typeof generateModal);
+window.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded - checking generateModal:', typeof generateModal);
+});
+window.addEventListener('load', function() {
+    console.log('Window loaded - checking generateModal:', typeof generateModal);
+});
+</script>
