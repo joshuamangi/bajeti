@@ -20,16 +20,6 @@ jobs:
           git fetch origin main
           git reset --hard origin/main
 
-      - name: Build frontend assets
-        run: |
-          cd /home/joshuamangi/projects/bajeti
-          npm ci
-          rm -rf app/static/dist/
-          # Use simple concatenation instead of esbuild
-          node simple-build.js
-          # Verify
-          ls -la app/static/dist/
-
       - name: Load environment variables
         run: |
           cd /home/joshuamangi/projects/bajeti
