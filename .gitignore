@@ -30,8 +30,6 @@ __pycache__/
 static/dist/
 node_modules/
 app/static/dist/
-app/static/js/index.js
-app/static/css/index.css
 app/static/fonts/
 app/static/vendor/
 

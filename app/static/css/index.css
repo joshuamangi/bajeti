@@ -1,0 +1,16 @@
+/* Fonts and vendor imports first */
+@import "./font.css";
+@import url("../vendor/fontawesome/fontawesome-free-6.4.0-web/css/all.min.css");
+
+
+/* Your theme styles */
+@import "./alert.css";
+@import "./analytics.css";
+@import "./forgot_password.css";
+@import "./home.css";
+@import "./login.css";
+@import "./main.css";
+@import "./modal.css";
+@import "./palette.css";
+@import "./profile.css";
+@import "./register.css";
