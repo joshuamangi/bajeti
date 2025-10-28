@@ -1,68 +1,49 @@
-name: Deploy to Raspberry Pi
+name: Deploy on Raspberry Pi
 
 on:
-  pull_request:
-    types: [closed]
+  push:
     branches:
       - main
-  workflow_dispatch:  # optional manual trigger
+  workflow_dispatch:
 
 jobs:
-  build-and-deploy:
-    if: github.event.pull_request.merged == true
-    runs-on: ubuntu-latest
+  deploy:
+    runs-on: self-hosted
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Go to project directory
+        run: cd /home/joshuamangi/projects/bajeti
 
-      - name: Set up QEMU (for ARM builds)
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm64
+      - name: Pull latest code
+        run: |
+          cd /home/joshuamangi/projects/bajeti
+          git fetch origin main
+          git reset --hard origin/main
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Build frontend assets
+        run: |
+          cd /home/joshuamangi/projects/bajeti
+          npm ci
+          node esbuild.config.js
 
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Load environment variables
+        run: |
+          cd /home/joshuamangi/projects/bajeti
+          echo "Writing .env file..."
+          cat <<EOF > .env
+          SECRET_KEY=${{ secrets.SECRET_KEY }}
+          ALGORITHM=${{ secrets.ALGORITHM }}
+          ACCESS_TOKEN_EXPIRE_MINUTES=${{ secrets.ACCESS_TOKEN_EXPIRE_MINUTES }}
+          API_BASE_URL=${{ secrets.API_BASE_URL }}
+          API_SERVER=${{ secrets.API_SERVER }}
+          ENVIRONMENT=${{ secrets.ENVIRONMENT }}
+          EOF
 
-      - name: Build and Push bajeti_app image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: ghcr.io/${{ github.repository_owner }}/bajeti_app:latest
-          platforms: linux/arm64
+      - name: Build and deploy containers
+        run: |
+          cd /home/joshuamangi/projects/bajeti
+          docker compose build bajeti_app
+          docker compose up -d bajeti_app
 
-      - name: SSH into Raspberry Pi and update bajeti_app
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.PI_HOST }}
-          username: ${{ secrets.PI_USER }}
-          key: ${{ secrets.PI_SSH_KEY }}
-          script: |
-            cd /home/${{ secrets.PI_USER }}/bajeti
-
-            echo "📦 Writing .env file..."
-            cat <<EOF > .env
-            SECRET_KEY=${{ secrets.SECRET_KEY }}
-            ALGORITHM=${{ secrets.ALGORITHM }}
-            ACCESS_TOKEN_EXPIRE_MINUTES=${{ secrets.ACCESS_TOKEN_EXPIRE_MINUTES }}
-            API_BASE_URL=${{ secrets.API_BASE_URL }}
-            API_SERVER=${{ secrets.API_SERVER }}
-            ENVIRONMENT=${{ secrets.ENVIRONMENT }}
-            EOF
-
-            echo "🚀 Pulling latest bajeti_app image..."
-            docker compose pull bajeti_app
-
-            echo "🔁 Recreating bajeti_app container..."
-            docker compose up -d bajeti_app
-
-            echo "🧹 Cleaning up unused Docker images..."
-            docker image prune -f
+      - name: Clean up
+        run: docker image prune -f
