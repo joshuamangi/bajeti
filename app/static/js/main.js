@@ -72,3 +72,12 @@ function showConfirm(title, message, onConfirm) {
         if (e.target === modal) modal.classList.remove("show");
     };
 }
+
+if (typeof window !== 'undefined') {
+    window.launchNav = launchNav;
+    window.closeNav = closeNav;
+    window.generateModal = generateModal;
+    window.showAlert = showAlert;
+    window.showConfirm = showConfirm;
+    console.log('Main.js functions attached to window');
+}
