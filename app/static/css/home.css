@@ -69,10 +69,3 @@
         display: none;
     }
 }
-
-/* Responsive: collapse to single column on small screens */
-@media (max-width: 768px) {
-    .p-detail-card {
-        grid-template-columns: 1fr;
-    }
-}

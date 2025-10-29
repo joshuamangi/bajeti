@@ -193,21 +193,36 @@ select {
 .p-title-card {
     display: flex;
     flex-direction: column;
-    gap: .2em;
     background: var(--gradient-hover);
-    padding: 1em;
+    padding: 0.8em;
     box-shadow: var(--shadow);
 }
 
-.p-summary-cards {
+.p-welcome-visibility {
     display: flex;
-    gap: .8em;
-    padding: .8em;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.p-welcome-text {
+    font-size: 0.75em;
+}
+
+.p-visibility {
+    display: flex;
+    gap: .5rem;
+    align-items: center;
 }
 
 .p-summary-card {
+    display: flex;
+    gap: .8em;
+    padding: .6em;
+}
+
+.p-summary-cards {
     background: var(--gradient-hover);
-    padding: .4em;
+    padding: .3em;
     box-shadow: var(--shadow);
     border-radius: .4em;
     width: min-content;
@@ -226,7 +241,7 @@ select {
 
 .p-add-category {
     display: flex;
-    padding: 0 1em;
+    padding: 0 0.6em;
 }
 
 .p-button-info {
@@ -248,13 +263,13 @@ select {
     display: flex;
     flex-direction: column;
     gap: 0.8em;
-    margin: 0.8em;
+    margin: 0.6em;
 }
 
 /* Make each card a 3-column grid */
 .p-detail-card {
     display: grid;
-    gap: 0.8em;
+    gap: 0.6em;
     background: var(--gradient);
     border-radius: .4em;
     box-shadow: var(--shadow);
@@ -266,7 +281,8 @@ select {
     border-left: 0.4em solid var(--primary);
     grid-template-columns: 1fr 0.8fr 1.6fr;
     align-items: center;
-    padding: 0.8em 0.8em;
+    padding: 0.8em 0.4em;
+    overflow: auto;
 }
 
 /* Category info (left column) */
@@ -295,13 +311,16 @@ select {
 }
 
 .p-category-limit-name {
-    font-weight: bold;
-    font-size: 0.9em;
+    font-weight: bolder;
+    font-size: 0.8em;
     display: inline-block;
     padding: 0.1em 0.8em;
     margin-bottom: 0.8em;
     border-radius: 0.4em;
     letter-spacing: 0.3px;
+    width: max-content;
+    max-width: max-content;
+    text-align: start;
 
     /* subtle inset gradient for depth */
     background: linear-gradient(145deg,
@@ -336,7 +355,7 @@ select {
 
 .p-expense-amount-name {
     font-weight: 500;
-    font-size: 0.8em;
+    font-size: 0.7em;
 }
 
 .p-expense-amount {
@@ -379,14 +398,14 @@ select {
 .p-actions-container {
     display: flex;
     justify-content: right;
-    gap: 0.6em;
+    gap: 0.5em;
 }
 
 .p-actions-btns {
     background: var(--bg-light);
     border-radius: 0.4em;
-    width: 40px;
-    height: 32px;
+    width: 32px;
+    height: 28px;
     display: flex;
     align-items: center;
     justify-content: center;

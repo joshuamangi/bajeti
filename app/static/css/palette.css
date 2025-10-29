@@ -100,7 +100,7 @@ body.light {
 
     /* Typography (same as dark theme) */
     --ff: "Manrope", sans-serif;
-    --h1: 500 1.5rem / 1.25 var(--ff);
+    --h1: 500 1.4rem / 1.25 var(--ff);
     --h2: 500 1.25rem / 1.4 var(--ff);
     --h3: 500 1.125rem / 1.5 var(--ff);
     --h4: 500 1rem / 1.5 var(--ff);

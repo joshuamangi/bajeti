@@ -23,36 +23,34 @@
 <!-- Title + toggles -->
 <div class="p-title-card">
   <h1>{{ current_month }}'s Budget</h1>
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:.4rem;">
+  <div class="p-welcome-visibility">
     <div>
-      <strong>Welcome, {{ user.first_name }} {{ user.last_name }}</strong>
+      <p class="p-welcome-text">Welcome, {{ user.first_name }} {{ user.last_name }}</p>
     </div>
-    <div style="display:flex; gap:.5rem; align-items:center;">
+    <div  class="p-visibility">
       <button id="toggleVisibility" class="p-actions-btns p-actions-btns-primary" title="Hide/Show sensitive values"><i id="eyeIcon" class="fa fa-eye"></i></button>
-     <!-- <button id="toggleCompact" class="p-actions-btns p-actions-btns-primary" title="Toggle Compact View"><i id="toggleCompactIcon" class="fa fa-list"></i></button> -->
     </div>
   </div>
 </div>
 
 <!-- Summary & Add Category -->
 <section>
-  <div class="p-summary-cards">
-    <div class="p-summary-card">
-      <h4>Total Limit</h4>
-      <h2 class="p-summary-value sensitive" data-value="{{ categories_with_stats | sum(attribute='limit_amount') | commafy}}">{{ categories_with_stats | sum(attribute='limit_amount') }}</h2>
+  <div class="p-summary-card">
+    <div class="p-summary-cards">
+      <p>Total Limit</p>
+      <h3 class="p-summary-value sensitive" data-value="{{ categories_with_stats | sum(attribute='limit_amount') | commafy}}">{{ categories_with_stats | sum(attribute='limit_amount') }}</h3>
     </div>
-    <div class="p-summary-card">
-      <h4>Total Balance</h4>
-      <h2 class="p-summary-value sensitive {% if categories_with_stats | sum(attribute='balance') < 0 %} p-negative {% endif %}" data-value="{{ categories_with_stats | sum(attribute='balance') | commafy}}">
+    <div class="p-summary-cards">
+      <p>Total Balance</p>
+      <h3 class="p-summary-value sensitive {% if categories_with_stats | sum(attribute='balance') < 0 %} p-negative {% endif %}" data-value="{{ categories_with_stats | sum(attribute='balance') | commafy}}">
         {{ categories_with_stats | sum(attribute='balance') }}
-      </h2>
+      </h3>
     </div>
   </div>
 </section>
   <div class="p-add-category">
       <button class="p-button-info" id="launchAddCategory" onclick="generateModal('pCategoryModal','pCategoryClose','closeCategoryModalBtn')">+ Add New Category</button>
     </div>
-<section>
 </section>
 
 <!-- DESKTOP: table view -->
@@ -180,7 +178,7 @@
       <h2 class="p-add-category-title">New Category</h2>
       <div class="p-modal-details">
         <label for="name">Name</label>
-        <input name="name" placeholder="Enter Category Name (No Spaces Allowed)" maxlength="16" pattern="^[^ ]+$" title="Only letters, numbers, underscores, or hyphens allowed (no spaces or &)" required>
+        <input name="name" placeholder="Enter Category Name (16 characters only)" maxlength="16" required>
         <label for="limit_amount">Limit</label>
         <input name="limit_amount" type="number" placeholder="Enter Category Limit" required>
         <button type="submit" class="p-modal-btn" id="closeCategoryModalBtn">Add Category</button>
@@ -308,12 +306,3 @@
   </div>
 </div>
 {% endblock %}
-<script>
-console.log('HTML parsed - checking generateModal:', typeof generateModal);
-window.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded - checking generateModal:', typeof generateModal);
-});
-window.addEventListener('load', function() {
-    console.log('Window loaded - checking generateModal:', typeof generateModal);
-});
-</script>
