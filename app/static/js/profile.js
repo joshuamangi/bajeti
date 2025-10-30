@@ -1,13 +1,16 @@
-document.getElementById("toggleSecurityAnswer").addEventListener("click", function () {
-    const input = document.getElementById("security_answer");
+// Only run if the security answer toggle exists
+const toggleSecurityAnswer = document.getElementById("toggleSecurityAnswer");
+if (toggleSecurityAnswer) {
+    toggleSecurityAnswer.addEventListener("click", function () {
+        const input = document.getElementById("security_answer");
+        if (!input) return;
 
-    if (!input) return; // Safety check in case element is missing
-
-    if (input.type === "password") {
-        input.type = "text";
-        this.classList.replace("fa-eye", "fa-eye-slash");
-    } else {
-        input.type = "password";
-        this.classList.replace("fa-eye-slash", "fa-eye");
-    }
-});
+        if (input.type === "password") {
+            input.type = "text";
+            this.classList.replace("fa-eye", "fa-eye-slash");
+        } else {
+            input.type = "password";
+            this.classList.replace("fa-eye-slash", "fa-eye");
+        }
+    });
+}

@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
+    // Only run if toggleVisibility exists (dashboard page)
     const toggleBtn = document.getElementById("toggleVisibility");
-
     if (toggleBtn) {
         const icon = toggleBtn.querySelector("i");
         const sensitiveValues = document.querySelectorAll(".sensitive");
@@ -8,11 +8,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
         toggleBtn.addEventListener("click", function () {
             hidden = !hidden;
-
             sensitiveValues.forEach(el => {
                 el.classList.toggle("blurred", hidden);
             });
-
             if (icon) {
                 icon.classList.toggle("bi-eye-fill", !hidden);
                 icon.classList.toggle("bi-eye-slash-fill", hidden);
@@ -20,8 +18,8 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    // Only run if resetForm exists (forgot password page)
     const resetForm = document.getElementById("resetForm");
-
     if (resetForm) {
         resetForm.addEventListener("submit", function (event) {
             const email = document.getElementById("email");

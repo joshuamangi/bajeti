@@ -7,3 +7,6 @@
 - [ ] Add Remember Me when logging in
 - [ ] Add ordering by ascending order
 - [ ] Add Option for selecting date you want to view budget
+- [ ] Add Unique values for Categories
+- [ ] Add graph on the dashboard
+- [ ] Add Filter for Categories

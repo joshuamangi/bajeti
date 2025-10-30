@@ -27,9 +27,16 @@ router = APIRouter()
 # ---------- Helper Functions ----------
 
 
-def commafy(value):
+def commafy(value, decimals=0):
     try:
-        return f"{int(value):,}"
+        # Convert to float first to handle both int and float values
+        num_value = float(value)
+
+        # Format with commas and specified decimal places
+        if decimals == 0:
+            return f"{int(num_value):,}"
+        else:
+            return f"{num_value:,.{decimals}f}"
     except (ValueError, TypeError):
         return value
 
