@@ -514,3 +514,28 @@ select {
 .p-modal-btn {
     margin-top: .4em;
 }
+
+/* Prevent zoom on input focus in modals */
+@media screen and (max-width: 768px) {
+
+    .p-modal input[type="text"],
+    .p-modal input[type="email"],
+    .p-modal input[type="password"],
+    .p-modal input[type="number"],
+    .p-modal textarea,
+    .p-modal select {
+        font-size: 16px;
+        /* Critical - prevents iOS zoom */
+        transform: scale(1);
+        line-height: 1.2;
+    }
+
+    /* Optional: Improve touch targets without causing zoom */
+    .p-modal input,
+    .p-modal textarea,
+    .p-modal select {
+        min-height: 44px;
+        /* Apple's recommended minimum touch target */
+        padding: 12px 16px;
+    }
+}
