@@ -1,5 +1,5 @@
 :root {
-    /* Dark theme color variables - HSL format */
+    /* ===== Base (HSL fallback for older browsers) ===== */
     --bg-dark: hsl(220 35% 5%);
     --bg: hsl(220 25% 8%);
     --bg-light: hsl(220 20% 12%);
@@ -18,22 +18,6 @@
     --success: hsl(155 55% 55%);
     --info: hsl(210 70% 65%);
 
-    /* Dark theme color variables - OKLCH format */
-    --bg-dark: oklch(0.12 .02 255);
-    --bg: oklch(0.16 .025 255);
-    --bg-light: oklch(0.22 .025 255);
-    --text: oklch(0.96 .05 250);
-    --text-muted: oklch(0.7 .03 250);
-    --highlight: oklch(0.55 .05 180);
-    --border: oklch(0.35 .03 250);
-    --border-muted: oklch(0.25 .02 250);
-    --primary: oklch(0.74 .13 210);
-    --secondary: oklch(0.72 .12 85);
-    --danger: oklch(0.68 .11 25);
-    --warning: oklch(0.75 .12 85);
-    --success: oklch(0.7 .12 150);
-    --info: oklch(0.7 .13 230);
-
     /* Typography */
     --ff: "Manrope", sans-serif;
     --h1: 500 1.5rem / 1.25 var(--ff);
@@ -45,25 +29,18 @@
     --tiny: 400 .625rem / 1.6 var(--ff);
 
     /* Shadows */
-    --shadow: 0 2px 3px oklch(0 0 0 / .25), 0 4px 6px oklch(0 0 0 / .15);
+    --shadow: 0 2px 3px hsla(0, 0%, 0%, 0.25), 0 4px 6px hsla(0, 0%, 0%, 0.15);
 
-    /* Text color scale */
-    --text-100: oklch(0.96 .05 250);
-    --text-80: oklch(0.76 .04 250);
-    --text-60: oklch(0.55 .03 250);
-    --text-40: oklch(0.35 .02 250);
-    --text-20: oklch(0.2 .015 250);
-    --text-0: oklch(0.1 .025 250);
-
-    /* Text semantic names */
-    --text-primary: var(--text-100);
-    --text-secondary: var(--text-80);
-    --text-placeholder: var(--text-60);
-    --text-disabled: var(--text-40);
+    /* Text scale */
+    --text-100: hsl(210 40% 96%);
+    --text-80: hsl(210 30% 75%);
+    --text-60: hsl(210 20% 55%);
+    --text-40: hsl(210 15% 35%);
+    --text-20: hsl(210 10% 20%);
+    --text-0: hsl(210 10% 10%);
 }
 
 body.light {
-    /* Light theme color variables - HSL format */
     --bg-dark: hsl(210 40% 93%);
     --bg: hsl(210 40% 97%);
     --bg-light: hsl(210 40% 100%);
@@ -76,52 +53,55 @@ body.light {
     --border-muted: hsl(220 25% 80%);
     --primary: hsl(190 90% 35%);
     --secondary: hsl(40 85% 45%);
-    --tertiary: oklch(0.7 .1 310);
+    --tertiary: hsl(280 45% 60%);
     --danger: hsl(4 70% 45%);
     --warning: hsl(42 85% 45%);
     --success: hsl(155 55% 40%);
     --info: hsl(210 70% 45%);
+    --shadow: 0 2px 3px hsla(0, 0%, 0%, 0.15), 0 4px 6px hsla(0, 0%, 0%, 0.08);
+    --text-100: hsl(220 25% 10%);
+    --text-80: hsl(220 15% 25%);
+    --text-60: hsl(220 10% 45%);
+    --text-40: hsl(220 10% 65%);
+    --text-20: hsl(220 10% 80%);
+    --text-0: hsl(220 10% 95%);
+}
 
-    /* Light theme color variables - OKLCH format */
-    --bg-dark: oklch(0.93 .02 250);
-    --bg: oklch(0.97 .015 250);
-    --bg-light: oklch(1 .015 250);
-    --text: oklch(0.15 .05 250);
-    --text-muted: oklch(0.4 .04 250);
-    --highlight: oklch(0.55 .05 180);
-    --border: oklch(0.7 .03 250);
-    --border-muted: oklch(0.85 .02 250);
-    --primary: oklch(0.52 .13 210);
-    --secondary: oklch(0.6 .12 85);
-    --danger: oklch(0.55 .12 25);
-    --warning: oklch(0.65 .13 85);
-    --success: oklch(0.55 .12 150);
-    --info: oklch(0.55 .12 230);
+/* ===== Modern OKLCH Overrides (only when supported) ===== */
+@supports (color: oklch(0.7 0.1 200)) {
+    :root {
+        --bg-dark: oklch(0.12 .02 255);
+        --bg: oklch(0.16 .025 255);
+        --bg-light: oklch(0.22 .025 255);
+        --text: oklch(0.96 .05 250);
+        --text-muted: oklch(0.7 .03 250);
+        --highlight: oklch(0.55 .05 180);
+        --border: oklch(0.35 .03 250);
+        --border-muted: oklch(0.25 .02 250);
+        --primary: oklch(0.74 .13 210);
+        --secondary: oklch(0.72 .12 85);
+        --danger: oklch(0.68 .11 25);
+        --warning: oklch(0.75 .12 85);
+        --success: oklch(0.7 .12 150);
+        --info: oklch(0.7 .13 230);
+        --shadow: 0 2px 3px oklch(0 0 0 / .25), 0 4px 6px oklch(0 0 0 / .15);
+    }
 
-    /* Typography (same as dark theme) */
-    --ff: "Manrope", sans-serif;
-    --h1: 500 1.4rem / 1.25 var(--ff);
-    --h2: 500 1.25rem / 1.4 var(--ff);
-    --h3: 500 1.125rem / 1.5 var(--ff);
-    --h4: 500 1rem / 1.5 var(--ff);
-    --p: 400 .875rem / 1.75 var(--ff);
-    --small: 400 .75rem / 1.6 var(--ff);
-    --tiny: 400 .625rem / 1.6 var(--ff);
-
-    /* Shadows (lighter for light theme) */
-    --shadow: 0 2px 3px oklch(0 0 0 / .15), 0 4px 6px oklch(0 0 0 / .08);
-
-    /* Text color scale (inverted for light theme) */
-    --text-100: oklch(0.15 .05 250);
-    --text-80: oklch(0.35 .04 250);
-    --text-60: oklch(0.55 .03 250);
-    --text-40: oklch(0.7 .02 250);
-    --text-20: oklch(0.85 .015 250);
-    --text-0: oklch(0.98 .01 250);
-
-    /* Text semantic names */
-    --text-primary: var(--text-100);
-    --text-secondary: var(--text-80);
-    --text-placeholder: var(--text-60);
-    --text-disabled: var(--text-40);
+    body.light {
+        --bg-dark: oklch(0.93 .02 250);
+        --bg: oklch(0.97 .015 250);
+        --bg-light: oklch(1 .015 250);
+        --text: oklch(0.15 .05 250);
+        --text-muted: oklch(0.4 .04 250);
+        --highlight: oklch(0.55 .05 180);
+        --border: oklch(0.7 .03 250);
+        --border-muted: oklch(0.85 .02 250);
+        --primary: oklch(0.52 .13 210);
+        --secondary: oklch(0.6 .12 85);
+        --danger: oklch(0.55 .12 25);
+        --warning: oklch(0.65 .13 85);
+        --success: oklch(0.55 .12 150);
+        --info: oklch(0.55 .12 230);
+        --shadow: 0 2px 3px oklch(0 0 0 / .15), 0 4px 6px oklch(0 0 0 / .08);
+    }
 }
