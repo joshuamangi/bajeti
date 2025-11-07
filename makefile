@@ -21,7 +21,7 @@ clean:
 # Build containers for the selected environment
 build:
 ifeq ($(ENV),dev)
-	@docker compose -f docker-compose.dev.yml build
+	@docker compose -f docker-compose.dev.yml build --no-cache
 else
 	@docker compose build
 endif
