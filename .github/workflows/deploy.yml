@@ -34,6 +34,11 @@ jobs:
           API_SERVER=${{ secrets.API_SERVER }}
           ENVIRONMENT=${{ secrets.ENVIRONMENT }}
           EOF
+      
+      - name: Run Alembic migrations
+        run:  |
+          cd /home/joshuamangi/projects/bajeti
+          docker compose run --rm bajeti_app alembic upgrade head
 
       - name: Build and deploy containers
         run: |
