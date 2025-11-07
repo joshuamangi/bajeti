@@ -138,6 +138,14 @@ function showConfirm(title, message, onConfirm) {
     };
 }
 
+function displayToastNotification() {
+    const toast = document.getElementById('pSnackBar');
+    toast.className = "show";
+    setTimeout(function () {
+        toast.className = toast.className.replace("show", "");
+    }, 3000);
+}
+
 // Make functions globally available with safety checks
 if (typeof window !== 'undefined') {
     window.launchNav = launchNav;
