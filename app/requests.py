@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 import httpx
 from jose import JWTError, jwt
+from urllib.parse import urlencode
 from app.config import settings, ENVIRONMENT
 
 # Logging setup
@@ -99,6 +100,12 @@ async def render_with_user(template_name: str, request: Request, context: dict =
     context.update({"request": request, "user": user})
     return templates.TemplateResponse(template_name, context)
 
+
+def redirect_with_toast(base_url: str, message: str, type_: str = "success", status_code: int = 303):
+    """Helper to redirect with a toast message and type (success, error, warning, info)."""
+    params = urlencode({"toast": type_, "message": message})
+    return RedirectResponse(url=f"{base_url}?{params}", status_code=status_code)
+
 # ---------------------------------- Routes ---------------------------------
 
 
@@ -144,7 +151,8 @@ async def register_user(request: Request,
                                      })
 
     if response.status_code == 201:
-        return RedirectResponse(url="/dashboard", status_code=303)
+        return redirect_with_toast("/dashboard", f"User {first_name} created successfully!", "success")
+
     return await render_with_user("register.html", request, {
         "error": "Registration failed. Try again.",
         "email": email,
@@ -220,7 +228,7 @@ async def reset_password(request: Request,
     if response.status_code >= 500:
         return await render_with_user("forgot_password.html", request, {"error": "Server error. Try again later."})
     if response.status_code == 200:
-        return RedirectResponse(url="/login", status_code=303)
+        return redirect_with_toast("/login", "Password reset successfully!", "success")
 
     return await render_with_user("forgot_password.html", request, {
         "error": f"Unexpected response: {response.status_code}"
@@ -256,7 +264,7 @@ async def profile_update(request: Request,
 
     if response.status_code in (200, 201):
         # Handle success (200 OK from backend)
-        return RedirectResponse(url="/dashboard", status_code=303)
+        return redirect_with_toast("/dashboard", "Profile updated successfully!", "success")
     else:
         try:
             error_detail = response.json().get("detail", "Update failed. Try again.")
@@ -311,12 +319,13 @@ async def add_category(request: Request,
                                      headers={"Authorization": f"Bearer {token}"})
 
     if response.status_code == 201:
-        return RedirectResponse(url="/dashboard", status_code=303)
+        return redirect_with_toast("/dashboard", f"{name} created successfully!", "success")
 
     return await render_with_user("dashboard.html", request, {
         "error": "Category creation failed",
         "token": token,
         "categories_with_stats": [],
+        "now": datetime.now().strftime("%Y-%m"),
     })
 
 
@@ -334,12 +343,13 @@ async def edit_category(request: Request,
                                     headers={"Authorization": f"Bearer {token}"})
 
     if response.status_code == 200:
-        return RedirectResponse(url="/dashboard", status_code=303)
+        return redirect_with_toast("/dashboard", f"{name} updated successfully!", "info")
 
     return await render_with_user("dashboard.html", request, {
         "error": "Category update failed",
         "token": token,
         "categories_with_stats": [],
+        "now": datetime.now().strftime("%Y-%m"),
     })
 
 
@@ -353,12 +363,13 @@ async def delete_category(request: Request,
                                        headers={"Authorization": f"Bearer {token}"})
 
     if response.status_code == 204:
-        return RedirectResponse(url="/dashboard", status_code=303)
+        return redirect_with_toast("/dashboard", "Category Deleted successfully!", "warning")
 
     return await render_with_user("dashboard.html", request, {
         "error": "Category deletion failed",
         "token": token,
         "categories_with_stats": [],
+        "now": datetime.now().strftime("%Y-%m"),
     })
 
 
@@ -382,12 +393,13 @@ async def add_expense(request: Request,
                                      headers={"Authorization": f"Bearer {token}"})
 
     if response.status_code == 201:
-        return RedirectResponse(url="/dashboard", status_code=303)
+        return redirect_with_toast("/dashboard", "Expense created successfully!", "success")
 
     return await render_with_user("dashboard.html", request, {
         "error": "Expense creation failed",
         "token": token,
         "categories_with_stats": [],
+        "now": datetime.now().strftime("%Y-%m"),
     })
 
 
@@ -410,12 +422,13 @@ async def edit_expense(request: Request,
                                     json=payload, headers={"Authorization": f"Bearer {token}"})
 
     if response.status_code == 200:
-        return RedirectResponse(url="/dashboard", status_code=303)
+        return redirect_with_toast("/dashboard", "Expense updated successfully!", "info")
 
     return await render_with_user("dashboard.html", request, {
         "error": "Expense update failed",
         "token": token,
         "categories_with_stats": [],
+        "now": datetime.now().strftime("%Y-%m"),
     })
 
 
@@ -429,12 +442,13 @@ async def delete_expense(request: Request,
                                        headers={"Authorization": f"Bearer {token}"})
 
     if response.status_code == 204:
-        return RedirectResponse(url="/dashboard", status_code=303)
+        return redirect_with_toast("/dashboard", "Expense deleted successfully!", "warning")
 
     return await render_with_user("dashboard.html", request, {
         "error": "Expense deletion failed",
         "token": token,
         "categories_with_stats": [],
+        "now": datetime.now().strftime("%Y-%m"),
     })
 
 

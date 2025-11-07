@@ -231,9 +231,9 @@ select {
     /* border: 1px solid var(--border, #e0e0e0); */
 }
 
-.p-summary-card:hover {
+/* .p-summary-card:hover {
     background: var(--gradient);
-}
+} */
 
 .p-summary-value {
     color: var(--success);
@@ -538,4 +538,41 @@ select {
         /* Apple's recommended minimum touch target */
         padding: 12px 16px;
     }
+}
+
+/* Mobile zoom prevention */
+@media screen and (max-width: 768px) {
+
+    /* Prevent zoom on all form inputs site-wide */
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="number"],
+    input[type="tel"],
+    textarea,
+    select {
+        font-size: 16px !important;
+    }
+
+    /* Ensure modal inputs have proper touch targets */
+    .p-modal input,
+    .p-modal textarea,
+    .p-modal select {
+        min-height: 44px;
+        padding: 12px 16px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+    }
+}
+
+/* Disable pinch-zoom specifically when modals are open */
+body.modal-open {
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+}
+
+body.modal-open .p-modal {
+    position: fixed;
+    width: 100%;
+    height: 100%;
 }

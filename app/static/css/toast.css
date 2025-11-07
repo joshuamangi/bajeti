@@ -1,0 +1,86 @@
+@import url("./palette.css");
+@import url("./main.css");
+
+#pSnackBar {
+    position: fixed;
+    left: 50%;
+    bottom: 2rem;
+    transform: translateX(-50%) translateY(100%);
+    visibility: hidden;
+    opacity: 0;
+    z-index: 9999;
+    min-width: max-content;
+    max-width: 90vw;
+    padding: 0.75em 1.25em;
+    border-radius: 0.6em;
+    font-size: 0.9em;
+    text-align: center;
+    color: var(--bg-light);
+    background: var(--success);
+    box-shadow: 0 4px 12px oklch(0 0 0 / 0.25);
+    transition: all 0.35s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+}
+
+/* ===== Show State ===== */
+#pSnackBar.show {
+    visibility: visible;
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* ===== Variants ===== */
+#pSnackBar.success {
+    background: var(--success);
+    color: var(--bg-light);
+}
+
+#pSnackBar.error {
+    background: var(--danger);
+    color: var(--bg-light);
+}
+
+#pSnackBar.warning {
+    background: var(--warning);
+    color: var(--bg-dark);
+}
+
+#pSnackBar.info {
+    background: var(--info);
+    color: var(--bg-light);
+}
+
+/* ===== Animations ===== */
+@keyframes slideUpFade {
+    from {
+        transform: translateX(-50%) translateY(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideDownFade {
+    from {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+    }
+
+    to {
+        transform: translateX(-50%) translateY(100%);
+        opacity: 0;
+    }
+}
+
+/* ===== Animated Class for Auto-hide ===== */
+#pSnackBar.show {
+    animation: slideUpFade 0.4s ease, slideDownFade 0.4s ease 2.8s forwards;
+}

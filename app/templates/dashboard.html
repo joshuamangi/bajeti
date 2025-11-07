@@ -33,19 +33,23 @@
   </div>
 </div>
 
+<div id="pSnackBar">
+</div>
+
 <!-- Summary & Add Category -->
 <section>
   <div class="p-summary-card">
     <div class="p-summary-cards">
       <p>Total Limit</p>
-      <h3 class="p-summary-value sensitive" data-value="{{ categories_with_stats | sum(attribute='limit_amount') | commafy(1)}}">
-          {{ categories_with_stats | sum(attribute='limit_amount') | commafy(1) }}
+      <!-- <a href="#" onclick="displayToastNotification()">Click me</a> -->
+      <h3 class="p-summary-value sensitive" data-value="{{ categories_with_stats | sum(attribute='limit_amount') | commafy(2)}}">
+          {{ categories_with_stats | sum(attribute='limit_amount') | commafy(2) }}
       </h3>
     </div>
     <div class="p-summary-cards">
         <p>Total Balance</p>
-        <h3 class="p-summary-value sensitive {% if categories_with_stats | sum(attribute='balance') < 0 %} p-negative {% endif %}" data-value="{{ categories_with_stats | sum(attribute='balance') | commafy(1)}}">
-            {{ categories_with_stats | sum(attribute='balance') | commafy(1) }}
+        <h3 class="p-summary-value sensitive {% if categories_with_stats | sum(attribute='balance') < 0 %} p-negative {% endif %}" data-value="{{ categories_with_stats | sum(attribute='balance') | commafy(2)}}">
+            {{ categories_with_stats | sum(attribute='balance') | commafy(2) }}
         </h3>
     </div>
   </div>
@@ -127,8 +131,8 @@
     <div class="p-balance_and_buttons">
       <div class="p-remaining-container">
         <p class="p-remaining-caption">{% if cat.balance < 0 %} Over by {% else %}Remaining{% endif %}</p>
-        <h4 class="p-remaining-amount sensitive {% if cat.balance <= 0 %} p-negative {% else %} p-positive {% endif %}" data-value="{{ cat.balance | commafy(1) }}">
-          {% if cat.balance < 0 %}{{ (-cat.balance) | commafy(1) }}{% else %}{{ cat.balance | commafy(1) }}{% endif %}
+        <h4 class="p-remaining-amount sensitive {% if cat.balance <= 0 %} p-negative {% else %} p-positive {% endif %}" data-value="{{ cat.balance | commafy(2) }}">
+          {% if cat.balance < 0 %}{{ (-cat.balance) | commafy(2) }}{% else %}{{ cat.balance | commafy(2) }}{% endif %}
         </h4>
       </div>
   
@@ -180,9 +184,9 @@
       <h2 class="p-add-category-title">New Category</h2>
       <div class="p-modal-details">
         <label for="name">Name</label>
-        <input name="name" placeholder="Enter Category Name (16 characters only)" maxlength="16" required>
+        <input name="name" type="text" placeholder="Category Name (16 characters)" maxlength="16" required>
         <label for="limit_amount">Limit</label>
-        <input name="limit_amount" type="number" placeholder="Enter Category Limit" required>
+        <input name="limit_amount" type="number" placeholder="Category Limit" required>
         <button type="submit" class="p-modal-btn" id="closeCategoryModalBtn">Add Category</button>
       </div>
     </form>
@@ -249,7 +253,7 @@
       <form method="POST" action="/dashboard/categories/{{ cat.id }}/edit">
         <div class="p-modal-details">
           <label>Name</label>
-          <input name="name" value="{{ cat.name }}" maxlength="16" required>
+          <input type="text" name="name" value="{{ cat.name }}" maxlength="16" required>
           <label>Limit</label>
           <input name="limit_amount" type="number" value="{{ cat.limit_amount }}" required>
           <button type="submit" class="p-modal-btn" id="closeEditCategoryBtn{{ cat.id }}">Save</button>
