@@ -35,19 +35,21 @@ jobs:
           ENVIRONMENT=${{ secrets.ENVIRONMENT }}
           EOF
       
+      - name: Build new containers
+        run: |
+          cd /home/joshuamangi/projects/bajeti
+          docker compose build --no-cache bajeti_app
+
       - name: Run Alembic migrations
-        run:  |
+        run: |
           cd /home/joshuamangi/projects/bajeti
           docker compose run --rm bajeti_app alembic upgrade head
 
-      - name: Build and deploy containers
+      - name: Deploy containers
         run: |
           cd /home/joshuamangi/projects/bajeti
-          # Stop and remove old container
-          docker compose down bajeti_app || true
-          # Rebuild with no cache to ensure latest changes
-          docker compose build --no-cache bajeti_app
           docker compose up -d bajeti_app
+
 
       - name: Clean up
         run: docker image prune -f
