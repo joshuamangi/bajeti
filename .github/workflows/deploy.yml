@@ -37,6 +37,8 @@ jobs:
       - name: Run Alembic migrations
         run: |
           cd /home/joshuamangi/projects/bajeti
+          docker compose down bajeti_app || true
+          docker compose build --no-cache bajeti_app
           docker compose run --rm bajeti_app alembic upgrade head
 
       - name: Build and deploy containers
