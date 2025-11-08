@@ -515,6 +515,21 @@ select {
     margin-top: .4em;
 }
 
+/* --- FIX SAFARI TOUCH ISSUES --- */
+.p-detail-card {
+    overflow: visible !important;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Ensure invisible overlays don’t block clicks */
+.p-overlay {
+    pointer-events: none;
+}
+
+.p-overlay.show {
+    pointer-events: auto;
+}
+
 /* Prevent zoom on input focus in modals */
 @media screen and (max-width: 768px) {
 
