@@ -12,9 +12,6 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      - name: Go to project directory
-        run: cd /home/joshuamangi/projects/bajeti
-
       - name: Pull latest code
         run: |
           cd /home/joshuamangi/projects/bajeti
@@ -37,8 +34,6 @@ jobs:
       - name: Run Alembic migrations
         run: |
           cd /home/joshuamangi/projects/bajeti
-          docker compose down bajeti_app || true
-          docker compose build --no-cache bajeti_app
           docker compose run --rm bajeti_app alembic upgrade head
 
       - name: Build and deploy containers
@@ -50,3 +45,10 @@ jobs:
 
       - name: Clean up
         run: docker image prune -f
+
+      - name: Verify deployment
+        run: |
+          cd /home/joshuamangi/projects/bajeti
+          sleep 10  # Wait for app to start
+          docker compose ps
+          docker compose logs bajeti_app --tail=20
