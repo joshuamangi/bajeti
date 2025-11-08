@@ -1,7 +1,7 @@
 """Model for handling data"""
 
 from datetime import datetime
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, Numeric, String
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import relationship
 from data.db.db import Base
 
@@ -29,7 +29,7 @@ class Category(Base):
     __tablename__ = "categories"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False, unique=True)
+    name = Column(String, nullable=False)
     limit_amount = Column(Numeric, nullable=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -38,6 +38,10 @@ class Category(Base):
 
     owner = relationship("User", back_populates="categories")
     expenses = relationship("Expense", back_populates="category")
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "name", name="uq_user_category_name"),
+    )
 
 
 class Expense(Base):
