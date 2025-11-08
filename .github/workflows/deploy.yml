@@ -12,9 +12,6 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      - name: Go to project directory
-        run: cd /home/joshuamangi/projects/bajeti
-
       - name: Pull latest code
         run: |
           cd /home/joshuamangi/projects/bajeti
@@ -48,3 +45,10 @@ jobs:
 
       - name: Clean up
         run: docker image prune -f
+
+      - name: Verify deployment
+        run: |
+          cd /home/joshuamangi/projects/bajeti
+          sleep 10  # Wait for app to start
+          docker compose ps
+          docker compose logs bajeti_app --tail=20
