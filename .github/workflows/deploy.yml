@@ -3,12 +3,11 @@ name: Deploy on Raspberry Pi
 on:
   pull_request:
     branches: [ main ]
-    types: [closed]  # Only trigger when PR is closed
-  workflow_dispatch:   # Manual trigger
+    types: [closed]
+  workflow_dispatch:
 
 jobs:
   deploy:
-    # Only deploy if the PR was actually merged (not just closed)
     if: github.event.pull_request.merged == true
     runs-on: self-hosted
 
@@ -34,22 +33,18 @@ jobs:
           API_SERVER=${{ secrets.API_SERVER }}
           ENVIRONMENT=${{ secrets.ENVIRONMENT }}
           EOF
-      
-      - name: Build new containers
-        run: |
-          cd /home/joshuamangi/projects/bajeti
-          docker compose build --no-cache bajeti_app
 
       - name: Run Alembic migrations
         run: |
           cd /home/joshuamangi/projects/bajeti
           docker compose run --rm bajeti_app alembic upgrade head
 
-      - name: Deploy containers
+      - name: Build and deploy containers
         run: |
           cd /home/joshuamangi/projects/bajeti
+          docker compose down bajeti_app || true
+          docker compose build --no-cache bajeti_app
           docker compose up -d bajeti_app
-
 
       - name: Clean up
         run: docker image prune -f
