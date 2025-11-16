@@ -9,6 +9,8 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
+from core.messages import MessageCode, get_message
+from core.responses import ApiResponse
 from data.db.db import get_db
 from data.db.models.models import User
 from schema.user import UserCreate, UserOut, Token
@@ -83,6 +85,7 @@ def get_current_user(
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    print("🔍 TOKEN RECEIVED:", token)
     try:
         payload = jwt.decode(token, settings.SECRET_KEY,
                              algorithms=[settings.ALGORITHM])
@@ -115,10 +118,9 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
     user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
         logger.warning("Login failed for email=%s", form_data.username)
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
+        return ApiResponse.error(
+            MessageCode.LOGIN_FAILED,
+            status_code=status.HTTP_401_UNAUTHORIZED
         )
     access_token_expires = timedelta(
         minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -127,7 +129,11 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
         expires_delta=access_token_expires
     )
     logger.info("Login successful for email=%s", user.email)
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {
+        "access_token": access_token,
+        "bearer": "bearer",
+        "message": get_message(MessageCode.LOGIN_SUCCESS)["text"]
+    }
 
 
 @router.get("/users/me", response_model=UserOut)
@@ -138,7 +144,7 @@ async def read_users_me(current_user: User = Depends(get_current_user)):
     return current_user
 
 
-@router.post("/", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+@router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 async def register(user: UserCreate, db: Session = Depends(get_db)):
     """Register a new user"""
     logger.info("Register attempt for email=%s", user.email)
@@ -146,24 +152,38 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
     if existing_user:
         logger.warning(
             "Registration failed: email=%s already exists", user.email)
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
+        return ApiResponse.error(
+            MessageCode.REGISTER_EMAIL_EXISTS
+        )
+    try:
+        new_user = User(
+            first_name=user.first_name,
+            last_name=user.last_name,
+            email=user.email,
+            hashed_password=pwd_context.hash(user.password),
+            security_answer=user.security_answer,
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
+        )
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+
+        logger.info("New user registered: id=%s email=%s",
+                    new_user.id, new_user.email)
+        return ApiResponse.success(
+            MessageCode.REGISTER_SUCCESS,
+            data=UserOut.from_orm(new_user).dict(),
+            status_code=status.HTTP_201_CREATED,
+            first_name=new_user.first_name
         )
 
-    new_user = User(
-        first_name=user.first_name,
-        last_name=user.last_name,
-        email=user.email,
-        hashed_password=pwd_context.hash(user.password),
-        security_answer=user.security_answer,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow()
-    )
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-
-    logger.info("New user registered: id=%s email=%s",
-                new_user.id, new_user.email)
-    return new_user
+    except Exception as e:
+        logger.error("Registration failed for email=%s: %s",
+                     user.email, str(e))
+        db.rollback()
+        return ApiResponse.error(
+            MessageCode.REGISTRATION_FAILED,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            email=user.email
+        )

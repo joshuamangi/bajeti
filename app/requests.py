@@ -141,7 +141,7 @@ async def register_user(request: Request,
         })
 
     async with httpx.AsyncClient() as client:
-        response = await client.post(f"{API_BASE_URL}/auth/",
+        response = await client.post(f"{API_BASE_URL}/auth/register",
                                      json={
                                          "first_name": first_name,
                                          "last_name": last_name,
