@@ -21,3 +21,16 @@ services:
     volumes:
       - .:/app
     command: npm run dev
+
+  tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    environment:
+      - .:/app
+    container_name: bajeti_tests
+    env_file: .env
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: pytest -vv

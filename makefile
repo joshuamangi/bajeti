@@ -57,6 +57,21 @@ stop-dev:
 prune-dev:
 	@docker system prune -af
 
+ENV ?= prod
+
+# make test ENV=dev
+ifeq ($(ENV),dev)
+	DOCKER_COMPOSE_CMD = docker compose -f docker-compose.dev.yml
+else
+	DOCKER_COMPOSE_CMD = docker compose
+endif
+
+test:
+	$(DOCKER_COMPOSE_CMD) run --rm tests
+
+test-clean:
+	@docker compose rm -f tests 2>/dev/null || true
+
 # ---------------------------------------
 # 🚀 Production Commands
 # ---------------------------------------
@@ -82,3 +97,13 @@ logs-bajeti:
 
 logs-cloudflared:
 	@docker logs -f cloudflared
+
+
+
+# ---------------------------------------
+# 🚀 CI/CD
+# ---------------------------------------
+
+ci-test:
+	@docker compose build tests
+	@docker compose run --rm tests
