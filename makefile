@@ -98,13 +98,3 @@ logs-bajeti:
 
 logs-cloudflared:
 	@docker logs -f cloudflared
-
-
-
-# ---------------------------------------
-# 🚀 CI/CD
-# ---------------------------------------
-
-ci-test:
-	@docker compose build tests
-	@docker compose run --rm tests
