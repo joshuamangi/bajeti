@@ -26,6 +26,7 @@
 - [x] Users should be able to delete Categories
 - [ ] Users should be able to filter Categories with a slider
 - [ ] Users should be able to view Category Limits status
+- [ ] Users should be able to flag if a Category is recurring monthly
 
 ## Expenses
 

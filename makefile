@@ -46,7 +46,7 @@ prune:
 # ---------------------------------------
 
 # Start dev environment (FastAPI + esbuild)
-dev:
+dev: test
 	@docker compose -f docker-compose.dev.yml up --build
 
 # Stop dev environment
@@ -67,10 +67,11 @@ else
 endif
 
 test:
-	$(DOCKER_COMPOSE_CMD) run --rm tests
+	pytest -q
 
-test-clean:
-	@docker compose rm -f tests 2>/dev/null || true
+# Run tests in Docker (if you really need it)
+test-docker:
+	docker compose -f docker-compose.dev.yml run --rm tests
 
 # ---------------------------------------
 # 🚀 Production Commands
