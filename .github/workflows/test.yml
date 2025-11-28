@@ -20,6 +20,15 @@ jobs:
         pip install -r requirements.txt
         pip install pytest
     
+    - name: Set environment variables
+      run: |
+        echo "SECRET_KEY=test-secret-key-for-github-actions" >> $GITHUB_ENV
+        echo "ALGORITHM=HS256" >> $GITHUB_ENV
+        echo "ACCESS_TOKEN_EXPIRE_MINUTES=30" >> $GITHUB_ENV
+        echo "API_BASE_URL=http://localhost:8000/api" >> $GITHUB_ENV
+        echo "API_SERVER=http://localhost:8000" >> $GITHUB_ENV
+        echo "DATABASE_URL=sqlite:///./test.db" >> $GITHUB_ENV
+    
     - name: Run tests
       run: |
         pytest -q
