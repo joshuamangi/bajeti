@@ -2,31 +2,46 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.gzip import GZipMiddleware
 from pathlib import Path
-from app import requests
+from contextlib import asynccontextmanager
+
 from data.db.db import engine, Base
 from routers import auth, categories, expenses, users
-from app.config import IS_PRODUCTION, ENVIRONMENT
+from app import requests
+from app.config import IS_PRODUCTION
 
-# Database init
-Base.metadata.create_all(bind=engine)
+# Lifespan for DB setup
 
-app = FastAPI(title="Bajeti", debug=not IS_PRODUCTION)
 
-# ---Static directory resolution ---
-# Figure out where static lives (works in dev + container)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    Base.metadata.create_all(bind=engine)
+    yield
+    # Shutdown (optional future cleanup)
+
+
+app = FastAPI(
+    title="Bajeti",
+    debug=not IS_PRODUCTION,
+    lifespan=lifespan
+)
+
+
+# --- Static directory resolution ---
 root_dir = Path(__file__).resolve().parent
-static_dir = root_dir / "app" / "static"  # inside container (/app/app/static)
+static_dir = root_dir / "app" / "static"
 
 if not static_dir.exists():
-    static_dir = root_dir / "static"  # fallback if you run directly on host
+    static_dir = root_dir / "static"
 
-print(f"📁 Using static directory: {static_dir}")
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
-# ---End static block ---
+# --- End static block ---
 
-# Gzip for prod
+
+# Gzip for production
 if IS_PRODUCTION:
     app.add_middleware(GZipMiddleware, minimum_size=500)
+
 
 # Routers
 app.include_router(categories.router)

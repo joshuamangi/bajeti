@@ -22,7 +22,6 @@ pytest_cache/
 Thumbs.db
 
 # folders
-docs/
 recover_backup/
 venv/
 __pycache__/

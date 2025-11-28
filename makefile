@@ -46,7 +46,7 @@ prune:
 # ---------------------------------------
 
 # Start dev environment (FastAPI + esbuild)
-dev:
+dev: test
 	@docker compose -f docker-compose.dev.yml up --build
 
 # Stop dev environment
@@ -56,6 +56,22 @@ stop-dev:
 # Clean dev containers and images
 prune-dev:
 	@docker system prune -af
+
+ENV ?= prod
+
+# make test ENV=dev
+ifeq ($(ENV),dev)
+	DOCKER_COMPOSE_CMD = docker compose -f docker-compose.dev.yml
+else
+	DOCKER_COMPOSE_CMD = docker compose
+endif
+
+test:
+	pytest -q
+
+# Run tests in Docker (if you really need it)
+test-docker:
+	docker compose -f docker-compose.dev.yml run --rm tests
 
 # ---------------------------------------
 # 🚀 Production Commands
@@ -82,3 +98,13 @@ logs-bajeti:
 
 logs-cloudflared:
 	@docker logs -f cloudflared
+
+
+
+# ---------------------------------------
+# 🚀 CI/CD
+# ---------------------------------------
+
+ci-test:
+	@docker compose build tests
+	@docker compose run --rm tests
