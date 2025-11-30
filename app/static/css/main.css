@@ -492,7 +492,6 @@ select {
 
 .p-btn-secondary {
     background: var(--secondary);
-    color: var(--bg-dark);
 }
 
 .p-btn-secondary:hover {

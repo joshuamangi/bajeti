@@ -108,6 +108,37 @@ def get_current_user(
 # ----------- Routes -----------
 
 
+@router.post("/", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+async def register(user: UserCreate, db: Session = Depends(get_db)):
+    """Register a new user"""
+    logger.info("Register attempt for email=%s", user.email)
+    existing_user = get_user_by_email(db, user.email)
+    if existing_user:
+        logger.warning(
+            "Registration failed: email=%s already exists", user.email)
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Email is already in use. Please Register using another email"
+        )
+
+    new_user = User(
+        first_name=user.first_name,
+        last_name=user.last_name,
+        email=user.email,
+        hashed_password=pwd_context.hash(user.password),
+        security_answer=user.security_answer,
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow()
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    logger.info("New user registered: id=%s email=%s",
+                new_user.id, new_user.email)
+    return new_user
+
+
 @router.post("/token", response_model=Token)
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     """Login to get access token"""
@@ -136,34 +167,3 @@ async def read_users_me(current_user: User = Depends(get_current_user)):
     logger.debug("Returning current user: id=%s email=%s",
                  current_user.id, current_user.email)
     return current_user
-
-
-@router.post("/", response_model=UserOut, status_code=status.HTTP_201_CREATED)
-async def register(user: UserCreate, db: Session = Depends(get_db)):
-    """Register a new user"""
-    logger.info("Register attempt for email=%s", user.email)
-    existing_user = get_user_by_email(db, user.email)
-    if existing_user:
-        logger.warning(
-            "Registration failed: email=%s already exists", user.email)
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
-        )
-
-    new_user = User(
-        first_name=user.first_name,
-        last_name=user.last_name,
-        email=user.email,
-        hashed_password=pwd_context.hash(user.password),
-        security_answer=user.security_answer,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow()
-    )
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-
-    logger.info("New user registered: id=%s email=%s",
-                new_user.id, new_user.email)
-    return new_user

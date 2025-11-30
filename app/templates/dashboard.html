@@ -236,9 +236,9 @@
           <label>Amount</label>
           <input name="amount" type="number" placeholder="Enter Expense Amount" required>
           <label>Description</label>
-          <input name="description" placeholder="Enter Expense Description (Optional)">
+          <input name="description" type="text" placeholder="Optional">
           <label>Month</label>
-          <input name="month" placeholder="YYYY-MM" value="{{ now }}" readonly>
+          <input name="month" type="text" placeholder="YYYY-MM" value="{{ now }}" readonly>
           <button type="submit" class="p-modal-btn" id="closeAddExpenseBtn{{ cat.id }}">Add Expense</button>
         </div>
       </form>
@@ -273,9 +273,9 @@
           <label>Amount</label>
           <input name="amount" type="number" value="{{ e.amount }}" required>
           <label>Description</label>
-          <input name="description" value="{{ e.description }}">
+          <input name="description" type="text" placeholder="Optional" value="{{ e.description }}">
           <label>Month (YYYY-MM)</label>
-          <input name="month" value="{{ e.month }}" readonly>
+          <input name="month" type="text" value="{{ e.month }}" readonly>
           <label>Category</label>
           <select name="category_id" required>
             {% for c in categories_with_stats %}
@@ -306,7 +306,7 @@
     <h3 id="pConfirmTitle">Confirm Action</h3>
     <p id="pConfirmMessage"></p>
     <div class="p-confirm-footer">
-      <button id="pConfirmOk" class="p-btn">OK</button>
+      <button id="pConfirmOk" class="p-btn p-btn-primary">OK</button>
       <button id="pConfirmCancel" class="p-btn p-btn-secondary">Cancel</button>
     </div>
   </div>

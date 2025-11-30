@@ -5,27 +5,20 @@ Edit Profile - Bajeti
 {% endblock %}
 
 {% block content %}
-{% if error %}
-<div
-  class="p-alert-error"
-  role="alert"
-  style="
-    margin: 0.5rem 0;
-    padding: 0.6rem 1rem;
-    border-radius: 0.4rem;
-    background: var(--danger);
-    color: var(--bg-light);
-    box-shadow: var(--shadow);
-  "
->
-  <i class="fa fa-exclamation-circle"></i>
-  <span style="margin-left: 0.5rem">{{ error }}</span>
+
+<div id="pSnackBar">
 </div>
-{% endif %}
 
 <section class="p-login">
   <div class="p-register-container">
     <h1 class="p-input-header">Edit Profile</h1>
+
+    {% if error %}
+    <div class="p-alert-error">
+      <span><i class="fa fa-exclamation-circle"></i></span>
+      <span>{{ error }}</span>
+    </div>
+    {% endif %}
 
     <form method="POST" action="/profile/update" class="p-signin-details">
       <label for="first_name">First Name</label>

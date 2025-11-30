@@ -122,6 +122,15 @@ async def create_category(
     current_user: UserOut = Depends(get_current_user)
 ):
     """Create a new category for the current user."""
+    # fetch Categories for this current category name
+    existing_category = db.query(Category).filter(
+        Category.name == category.name,
+        Category.user_id == current_user.id).first()
+
+    if (existing_category):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                            detail="Category already exists")
+
     new_category = Category(
         name=category.name,
         limit_amount=category.limit_amount,
@@ -151,7 +160,8 @@ async def update_category(
     if not existing_category:
         logger.warning(
             "Update failed - category %d not found for user %d", category_id, current_user.id)
-        raise HTTPException(status_code=404, detail="Category not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Category not found")
 
     existing_category.name = category.name
     existing_category.limit_amount = category.limit_amount
@@ -179,7 +189,8 @@ async def remove_category(
     if not category:
         logger.warning(
             "Delete failed - category %d not found for user %d", category_id, current_user.id)
-        raise HTTPException(status_code=404, detail="Category not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Category not found")
 
     db.delete(category)
     db.commit()
