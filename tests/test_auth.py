@@ -48,8 +48,8 @@ def test_create_user_duplicate_email():
 
     # Second creation with same email should fail
     response2 = client.post("/api/auth/", json=user_payload)
-    assert response2.status_code == 400
-    assert "Email already registered" in response2.json()["detail"]
+    assert response2.status_code == 409
+    assert "Email is already in use" in response2.json()["detail"]
 
 
 def test_login_success():

@@ -35,7 +35,7 @@ async def get_all_expenses(
     if not expenses:
         logger.warning("No expenses found for user_id=%s", current_user.id)
         raise HTTPException(
-            status_code=404, detail="No expenses found for this user")
+            status_code=status.HTTP_404_NOT_FOUND, detail="No expenses found for this user")
     logger.info("Fetched %d expenses for user_id=%s",
                 len(expenses), current_user.id)
     return expenses
@@ -60,7 +60,7 @@ async def get_current_month_expense(
         logger.warning("No expenses found for user_id=%s in %s",
                        current_user.id, current_year_month)
         raise HTTPException(
-            status_code=404, detail=f"No expenses found for {current_year_month}"
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"No expenses found for {current_year_month}"
         )
 
     logger.info("Fetched %d expenses for user_id=%s in %s",
@@ -87,7 +87,7 @@ async def get_expenses_by_month(
         logger.warning(
             "No expenses found for user_id=%s in month=%s", current_user.id, month)
         raise HTTPException(
-            status_code=404, detail=f"No expenses found for {month}")
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"No expenses found for {month}")
 
     logger.info("Fetched %d expenses for user_id=%s in month=%s",
                 len(expenses), current_user.id, month)
@@ -113,7 +113,7 @@ async def get_expense_by_category(
         logger.warning("No expenses found for user_id=%s category_id=%s",
                        current_user.id, category_id)
         raise HTTPException(
-            status_code=404, detail=f"No expenses found for category {category_id}"
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"No expenses found for category {category_id}"
         )
 
     logger.info("Fetched %d expenses for user_id=%s category_id=%s",
@@ -145,7 +145,7 @@ async def get_expenses_by_category_and_month(
         logger.warning("No expenses found for user_id=%s category_id=%s month=%s",
                        current_user.id, category_id, month)
         raise HTTPException(
-            status_code=404,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail=f"No expenses found for category {category_id} in {month}"
         )
 
@@ -238,7 +238,7 @@ def remove_expense(
         logger.error("Expense not found: expense_id=%s user_id=%s",
                      expense_id, current_user.id)
         raise HTTPException(
-            status_code=404, detail="Expense not found or not yours"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Expense not found or not yours"
         )
 
     db.delete(db_expense)

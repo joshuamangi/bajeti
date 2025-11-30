@@ -30,7 +30,7 @@ if not logger.hasHandlers():
     logger.addHandler(handler)
 
 
-@router.put("/me", response_model=UserOut)
+@router.put("/me", response_model=UserOut, status_code=status.HTTP_200_OK)
 async def update_user(
     updates: UserUpdate,
     current_user: User = Depends(get_current_user),
@@ -60,7 +60,7 @@ async def update_user(
                 current_user.id, updates.email
             )
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=status.HTTP_409_CONFLICT,
                 detail="Email already exists"
             )
         user.email = updates.email
@@ -101,7 +101,8 @@ async def reset_password(
     if not user:
         logger.warning(
             "Password reset failed: user not found (%s)", request.email)
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     # Handle missing security answer column or empty value
     if not getattr(user, "security_answer", None):
@@ -110,7 +111,7 @@ async def reset_password(
             request.email,
         )
         raise HTTPException(
-            status_code=400,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail="Security answer not configured for this account. Please contact support.",
         )
 
@@ -118,7 +119,7 @@ async def reset_password(
     if user.security_answer.lower().strip() != request.security_answer.lower().strip():
         logger.warning("Incorrect security answer for email=%s", request.email)
         raise HTTPException(
-            status_code=400, detail="Incorrect answer to security question"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect answer to security question"
         )
 
     # Hash and update new password

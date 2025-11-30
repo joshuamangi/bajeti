@@ -44,7 +44,7 @@ def test_update_user_duplicate_email(auth_headers, create_second_user):
 
     response = client.put(
         "/api/users/me", json=update_data, headers=auth_headers)
-    assert response.status_code == 400
+    assert response.status_code == 409
     assert "Email already exists" in response.json()["detail"]
 
 

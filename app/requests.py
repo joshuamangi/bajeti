@@ -87,7 +87,7 @@ async def get_user_from_cookie(request: Request):
     async with httpx.AsyncClient() as client:
         response = await client.get(f"{API_BASE_URL}/auth/users/me",
                                     headers={"Authorization": f"Bearer {token}"})
-        if response.status_code == 200:
+        if response.status_code == status.HTTP_200_OK:
             return response.json()
     return None
 
@@ -101,10 +101,34 @@ async def render_with_user(template_name: str, request: Request, context: dict =
     return templates.TemplateResponse(template_name, context)
 
 
-def redirect_with_toast(base_url: str, message: str, type_: str = "success", status_code: int = 303):
+def redirect_with_toast(base_url: str, message: str, type_: str = "success", status_code: int = status.HTTP_303_SEE_OTHER):
     """Helper to redirect with a toast message and type (success, error, warning, info)."""
     params = urlencode({"toast": type_, "message": message})
     return RedirectResponse(url=f"{base_url}?{params}", status_code=status_code)
+
+
+async def handle_authenticated_login(username: str, password: str, request: Request):
+    """Handles the login for an authenticated user"""
+    async with httpx.AsyncClient() as client:
+        response = await client.post(f"{API_BASE_URL}/auth/token",
+                                     data={"username": username, "password": password})
+
+    if response.status_code != status.HTTP_200_OK:
+        return await render_with_user("login.html", request, {
+            "error": "Invalid credentials",
+            "username": username,
+        })
+    token_data = response.json()
+    access_token = token_data["access_token"]
+
+    response = RedirectResponse(
+        url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
+    response.set_cookie(key="access_token", value=access_token,
+                        httponly=True, max_age=86400)
+    response.set_cookie(key="show_menu", value="1",
+                        httponly=False, max_age=86400)
+    return response
+    return response
 
 # ---------------------------------- Routes ---------------------------------
 
@@ -113,7 +137,7 @@ def redirect_with_toast(base_url: str, message: str, type_: str = "success", sta
 async def welcome(request: Request):
     token = request.cookies.get("access_token")
     if token and verify_token(token):
-        return RedirectResponse(url="/dashboard", status_code=303)
+        return RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
     return await render_with_user("login.html", request)
 
 
@@ -150,16 +174,19 @@ async def register_user(request: Request,
                                          "security_answer": security_answer
                                      })
 
-    if response.status_code == 201:
-        return redirect_with_toast("/dashboard", f"User {first_name} created successfully!", "success")
+    if response.status_code == status.HTTP_409_CONFLICT:
+        return await render_with_user("register.html", request, {
+            "error": f"Email already exists. Register using another email address",
+            "email": email,
+            "first_name": first_name,
+            "last_name": last_name,
+            "security_answer": security_answer,
+        })
 
-    return await render_with_user("register.html", request, {
-        "error": "Registration failed. Try again.",
-        "email": email,
-        "first_name": first_name,
-        "last_name": last_name,
-        "security_answer": security_answer,
-    })
+    if response.status_code == status.HTTP_201_CREATED:
+        # Get the token for the user
+        response = await handle_authenticated_login(username=email, password=password, request=request)
+        return response
 
 
 @router.get("/login", response_class=HTMLResponse)
@@ -172,30 +199,16 @@ async def login_user(request: Request,
                      username: str = Form(...),
                      password: str = Form(...)):
 
-    async with httpx.AsyncClient() as client:
-        response = await client.post(f"{API_BASE_URL}/auth/token",
-                                     data={"username": username, "password": password})
+    response = await handle_authenticated_login(
+        username=username, password=password, request=request)
 
-    if response.status_code != 200:
-        return await render_with_user("login.html", request, {
-            "error": "Invalid credentials",
-            "username": username,
-        })
-
-    token_data = response.json()
-    access_token = token_data["access_token"]
-
-    response = RedirectResponse(url="/dashboard", status_code=303)
-    response.set_cookie(key="access_token", value=access_token,
-                        httponly=True, max_age=86400)
-    response.set_cookie(key="show_menu", value="1",
-                        httponly=False, max_age=86400)
     return response
 
 
 @router.get("/logout")
 def logout():
-    response = RedirectResponse(url="/login", status_code=303)
+    response = RedirectResponse(
+        url="/login", status_code=status.HTTP_303_SEE_OTHER)
     response.delete_cookie("access_token")
     response.delete_cookie("show_menu")
     return response
@@ -221,14 +234,14 @@ async def reset_password(request: Request,
             "error": "Unable to reach server. Please try again later."
         })
 
-    if response.status_code == 404:
+    if response.status_code == status.HTTP_404_NOT_FOUND:
         return await render_with_user("forgot_password.html", request, {"error": "User not found."})
-    if response.status_code == 400:
+    if response.status_code == status.HTTP_400_BAD_REQUEST:
         return await render_with_user("forgot_password.html", request, {"error": response.json().get("detail", "Invalid request.")})
     if response.status_code >= 500:
         return await render_with_user("forgot_password.html", request, {"error": "Server error. Try again later."})
-    if response.status_code == 200:
-        return redirect_with_toast("/login", "Password reset successfully!", "success")
+    if response.status_code == status.HTTP_200_OK:
+        return await handle_authenticated_login(username=email, password=new_password, request=request)
 
     return await render_with_user("forgot_password.html", request, {
         "error": f"Unexpected response: {response.status_code}"
@@ -262,22 +275,38 @@ async def profile_update(request: Request,
                 "Authorization": f"Bearer {request.cookies.get('access_token')}"}
         )
 
-    if response.status_code in (200, 201):
+    if response.status_code in (status.HTTP_200_OK, status.HTTP_201_CREATED):
         # Handle success (200 OK from backend)
         return redirect_with_toast("/dashboard", "Profile updated successfully!", "success")
-    else:
-        try:
-            error_detail = response.json().get("detail", "Update failed. Try again.")
-        except Exception:
-            error_detail = "Unexpected error. Please try again."
 
-        return await render_with_user("register.html", request, {
-            "error": error_detail,
+    if (response.status_code == status.HTTP_409_CONFLICT):
+        return await render_with_user("profile.html", request, {
+            "error": response.json().get('detail', 'Email already exists'),
             "email": email,
             "first_name": first_name,
             "last_name": last_name,
             "security_answer": security_answer,
         })
+    if (response.status_code == status.HTTP_404_BAD_REQUEST):
+        return await render_with_user("profile.html", request, {
+            "error": response.json().get('detail', 'User not found'),
+            "email": email,
+            "first_name": first_name,
+            "last_name": last_name,
+            "security_answer": security_answer,
+        })
+    try:
+        error_detail = response.json().get("detail", "Update failed. Try again.")
+    except Exception:
+        error_detail = "Unexpected error. Please try again."
+
+    return await render_with_user("profile.html", request, {
+        "error": error_detail,
+        "email": email,
+        "first_name": first_name,
+        "last_name": last_name,
+        "security_answer": security_answer,
+    })
 
 
 @router.get("/dashboard", response_class=HTMLResponse)
@@ -285,15 +314,15 @@ async def dashboard(request: Request, token: str = Depends(get_current_user)):
     async with httpx.AsyncClient() as client:
         user_response = await client.get(f"{API_BASE_URL}/auth/users/me",
                                          headers={"Authorization": f"Bearer {token}"})
-        if user_response.status_code != 200:
-            return RedirectResponse(url="/login", status_code=303)
+        if user_response.status_code != status.HTTP_200_OK:
+            return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
 
         user = user_response.json()
         categories_response = await client.get(
             f"{API_BASE_URL}/categories/with-stats",
             headers={"Authorization": f"Bearer {token}"})
         categories_with_stats = categories_response.json(
-        ) if categories_response.status_code == 200 else []
+        ) if categories_response.status_code == status.HTTP_200_OK else []
 
     return await render_with_user("dashboard.html", request, {
         "categories_with_stats": categories_with_stats,
@@ -318,8 +347,13 @@ async def add_category(request: Request,
                                            "limit_amount": limit_amount},
                                      headers={"Authorization": f"Bearer {token}"})
 
-    if response.status_code == 201:
+    logger.info("Response Code", response.status_code)
+
+    if response.status_code == status.HTTP_201_CREATED:
         return redirect_with_toast("/dashboard", f"{name} created successfully!", "success")
+
+    if response.status_code == status.HTTP_409_CONFLICT:
+        return redirect_with_toast("/dashboard", f"{name} already exists!", "error")
 
     return await render_with_user("dashboard.html", request, {
         "error": "Category creation failed",
@@ -342,7 +376,7 @@ async def edit_category(request: Request,
                                           "limit_amount": limit_amount},
                                     headers={"Authorization": f"Bearer {token}"})
 
-    if response.status_code == 200:
+    if response.status_code == status.HTTP_200_OK:
         return redirect_with_toast("/dashboard", f"{name} updated successfully!", "info")
 
     return await render_with_user("dashboard.html", request, {
@@ -392,7 +426,7 @@ async def add_expense(request: Request,
         response = await client.post(f"{API_BASE_URL}/expenses/", json=payload,
                                      headers={"Authorization": f"Bearer {token}"})
 
-    if response.status_code == 201:
+    if response.status_code == status.HTTP_201_CREATED:
         return redirect_with_toast("/dashboard", "Expense created successfully!", "success")
 
     return await render_with_user("dashboard.html", request, {
@@ -421,7 +455,7 @@ async def edit_expense(request: Request,
         response = await client.put(f"{API_BASE_URL}/expenses/{expense_id}",
                                     json=payload, headers={"Authorization": f"Bearer {token}"})
 
-    if response.status_code == 200:
+    if response.status_code == status.HTTP_200_OK:
         return redirect_with_toast("/dashboard", "Expense updated successfully!", "info")
 
     return await render_with_user("dashboard.html", request, {
