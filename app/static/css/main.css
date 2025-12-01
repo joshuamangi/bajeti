@@ -555,6 +555,11 @@ select {
 
 .p-category-name {
     font-weight: 600;
+    font-size: 0.9em;
+}
+
+.p-category-status {
+    font-size: 0.9em;
 }
 
 .p-category-status.ok {

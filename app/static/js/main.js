@@ -137,12 +137,6 @@ function showConfirm(title, message, onConfirm) {
         }
     };
 }
-document.addEventListener("DOMContentLoaded", function () {
-    document.querySelectorAll(".p-progress-fill").forEach(bar => {
-        const finalWidth = bar.getAttribute("data-width"); // stored from Jinja
-        bar.style.width = finalWidth + "%";
-    });
-});
 // Make functions globally available with safety checks
 if (typeof window !== 'undefined') {
     window.launchNav = launchNav;
