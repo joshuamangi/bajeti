@@ -557,6 +557,10 @@ select {
     font-weight: 600;
 }
 
+.p-category-status {
+    font-size: 0.9em;
+}
+
 .p-category-status.ok {
     color: var(--success);
     /* green */
