@@ -194,7 +194,7 @@ select {
     display: flex;
     flex-direction: column;
     background: var(--gradient-hover);
-    padding: 0.6em;
+    padding: 0.8em;
     box-shadow: var(--shadow);
 }
 
@@ -222,7 +222,7 @@ select {
 
 .p-summary-cards {
     background: var(--gradient-hover);
-    padding: .2em;
+    padding: .3em;
     box-shadow: var(--shadow);
     border-radius: .4em;
     width: min-content;
@@ -278,7 +278,7 @@ select {
     border-right: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
     /* Thicker colored left border */
-    border-left: 0.3em solid var(--primary);
+    border-left: 0.4em solid var(--primary);
     grid-template-columns: 1fr 0.8fr 1.6fr;
     align-items: center;
     padding: 0.8em 0.4em;
@@ -531,13 +531,11 @@ select {
 
 /* ---------------------- Category Progress section ---------------------- */
 .p-category-progress-list {
-    width: 100%;
-    box-sizing: border-box;
     display: grid;
     gap: 0.6em 0.8em;
     margin: 0.8em 0;
     padding: 0 0.6em;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(2, 1fr);
 }
 
 .p-category-item {
@@ -557,11 +555,6 @@ select {
 
 .p-category-name {
     font-weight: 600;
-    font-size: 0.9em;
-}
-
-.p-category-status {
-    font-size: 0.9em;
 }
 
 .p-category-status.ok {
@@ -585,11 +578,7 @@ select {
 .p-progress-fill {
     height: 100%;
     border-radius: 0.2em;
-    width: 0;
-    /* start at 0 */
-    transition: width 1s ease-out;
-    min-height: 6px;
-    display: block;
+    transition: width 0.4s ease;
 }
 
 .p-ok-fill {

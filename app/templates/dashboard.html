@@ -60,41 +60,43 @@
 </section>
 
 <!-- Category Progress section -->
-<div class="p-category-progress-list">
+<section>
+  <div class="p-category-progress-list">
 
     {% for c in categories_progress %}
-        {% set used = c.used %}
-    {% set limit = c.limit %}
-    {% set balance = c.balance %}
-    {% set percent = (used / limit * 100) if limit > 0 else 0 %}
-    {% set exceeded = percent > 100 %}
-    {% set display_percent = percent if percent <= 100 else 100 %}
-    {% set fill_width = (used / limit * 100) if limit > 0 else 0 %}
-    <div class="p-category-item">
-        <div class="p-category-header">
-            <span class="p-category-name">{{ c.name }}</span>
+      {% set used = c.used %}
+      {% set limit = c.limit %}
+      {% set balance = c.balance %}
+      {% set percent = (used / limit * 100) if limit > 0 else 0 %}
+      {% set exceeded = percent > 100 %}
+      {% set display_percent = percent if percent <= 100 else 100 %}
+      
+      <div class="p-category-item">
+          <div class="p-category-header">
+              <span class="p-category-name">{{ c.name }}</span>
 
-            {% if exceeded %}
-                <span class="p-category-status exceeded">
-                    {{ (percent - 100) | round(1) }}% over
-                </span>
-            {% else %}
-                <span class="p-category-status ok">
-                    {{ percent | round(1) }}% used
-                </span>
-            {% endif %}
-        </div>
+              {% if exceeded %}
+                  <span class="p-category-status exceeded">
+                      {{ (percent - 100) | round(1) }}% over
+                  </span>
+              {% else %}
+                  <span class="p-category-status ok">
+                      {{ percent | round(1) }}% used
+                  </span>
+              {% endif %}
+          </div>
 
-        <div class="p-progress-bar">
-            <div class="p-progress-fill {{ 'p-ok-fill' if balance > 0 else 'p-exceeded-fill' }}"
-                data-width="{{ fill_width }}">
-            </div>
-        </div>
-    </div>
+          <div class="p-progress-bar">
+              <div class="p-progress-fill {% if exceeded %}p-exceeded-fill{% else %}p-ok-fill{% endif %}"
+                  style="width: {{ display_percent }}%;">
+              </div>
+          </div>
+      </div>
 
     {% endfor %}
 
-</div>
+  </div>
+</section>
 
 <!-- DESKTOP: table view -->
 <div id="tableView" class="table-responsive">

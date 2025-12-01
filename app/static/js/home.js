@@ -73,13 +73,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
-document.addEventListener("DOMContentLoaded", function () {
-    document.querySelectorAll(".p-progress-fill").forEach(bar => {
-        const finalWidth = bar.getAttribute("data-width"); // stored from Jinja
-        bar.style.width = finalWidth + "%";
-    });
-});
-
 // Form confirmation dialog
 function confirmSubmit(formOrEvt, message) {
     let form = formOrEvt;
