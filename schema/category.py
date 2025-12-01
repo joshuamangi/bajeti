@@ -31,3 +31,11 @@ class CategoryStats(CategoryOut):
     expense_count: int
     balance: float
     expenses: List[ExpenseOut]
+
+
+class CategoryProgress(BaseModel):
+    """Cateogires progress for current month"""
+    name: str
+    used: float
+    limit: float
+    balance: float

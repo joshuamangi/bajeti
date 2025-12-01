@@ -324,12 +324,19 @@ async def dashboard(request: Request, token: str = Depends(get_current_user)):
         categories_with_stats = categories_response.json(
         ) if categories_response.status_code == status.HTTP_200_OK else []
 
+        categories_progress_response = await client.get(
+            f"{API_BASE_URL}/categories/categories-progress",
+            headers={"Authorization": f"Bearer {token}"})
+        categories_progress = categories_progress_response.json(
+        ) if categories_progress_response.status_code == status.HTTP_200_OK else []
+
     return await render_with_user("dashboard.html", request, {
         "categories_with_stats": categories_with_stats,
         "token": token,
         "current_month": datetime.now().strftime('%B'),
         "user": user,
         "now": datetime.now().strftime("%Y-%m"),
+        "categories_progress": categories_progress,
     })
 
 
@@ -406,8 +413,8 @@ async def delete_category(request: Request,
         "now": datetime.now().strftime("%Y-%m"),
     })
 
-
 # ---------- Expense Management ----------
+
 
 @router.post("/dashboard/expenses")
 async def add_expense(request: Request,

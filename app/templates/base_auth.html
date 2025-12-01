@@ -36,6 +36,7 @@
       <main id="p-main">
         {% block content %}{% endblock %}
       </main>
+      <script src="{{ url_for('static', path='vendor/echarts/echarts.min.js') }}"></script>
       <script src="{{ url_for('static', path='js/main.js') }}" defer></script>
       <script src="{{ url_for('static', path='js/home.js') }}" defer></script>
       <script src="{{ url_for('static', path='js/profile.js') }}" defer></script>

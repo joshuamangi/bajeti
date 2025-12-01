@@ -58,6 +58,74 @@
       <button class="p-button-info" id="launchAddCategory" onclick="generateModal('pCategoryModal','pCategoryClose','closeCategoryModalBtn')">+ Add New Category</button>
     </div>
 </section>
+<script src="{{ url_for('static', path='vendor/echarts/echarts.min.js') }}"></script>
+<div id="progressChart" class="chart-container"></div>
+<script>
+    const names = [
+        {% for c in categories_progress %}"{{ c.name }}",{% endfor %}
+    ];
+    const used = [
+        {% for c in categories_progress %}{{ c.used }},{% endfor %}
+    ];
+    const limit = [
+        {% for c in categories_progress %}{{ c.limit }},{% endfor %}
+    ];
+
+    const percentages = [
+        {% for c in categories_progress %}
+            {{ (c.used / c.limit * 100 if c.limit > 0 else 0) }},
+        {% endfor %}
+    ];
+
+    const chart = echarts.init(document.getElementById('progressChart'));
+
+    const option = {
+        grid: {
+            left: 70,
+            right: 20,
+            top: 20,
+            bottom: 20
+        },
+        xAxis: {
+            type: 'value',
+            show: false,
+            max: 100
+        },
+        yAxis: {
+            type: 'category',
+            data: names,
+            axisLabel: {
+                fontSize: 12
+            }
+        },
+        series: [
+            {
+                type: 'bar',
+                data: percentages,
+                barWidth: 14,
+                itemStyle: {
+                    borderRadius: 6,
+                    color: function(params) {
+                        const p = params.value;
+                        if (p < 50) return '#4CAF50';      // green
+                        if (p < 80) return '#FFC107';      // amber
+                        return '#F44336';                  // red
+                    }
+                },
+                label: {
+                    show: true,
+                    position: 'right',
+                    formatter: '{c}%',
+                    fontSize: 12
+                }
+            }
+        ]
+    };
+
+    chart.setOption(option);
+
+    window.addEventListener("resize", () => chart.resize());
+</script>
 
 <!-- DESKTOP: table view -->
 <div id="tableView" class="table-responsive">
