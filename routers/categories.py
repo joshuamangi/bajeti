@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from data.db.db import get_db
 from data.db.models.models import Category, Expense
 from routers.auth import get_current_user
-from schema.category import CategoryBase, CategoryOut, CategoryStats
+from schema.category import CategoryBase, CategoryOut, CategoryProgress, CategoryStats
 from schema.user import UserOut
 
 # Setup logging
@@ -89,6 +89,38 @@ async def get_categories_with_stats(
         })
 
     logger.info("Returning %d categories with stats for user_id=%s",
+                len(result), current_user.id)
+    return result
+
+
+@router.get("/categories-progress", response_model=list[CategoryProgress], status_code=status.HTTP_200_OK)
+async def categories_progress_view(db: Session = Depends(get_db),
+                                   current_user: UserOut = Depends(get_current_user)):
+    """Get the Categores Progress Chart"""
+    current_year_month = datetime.utcnow().strftime("%Y-%m")
+
+    categories = db.query(Category).filter(
+        Category.user_id == current_user.id
+    ).all()
+    result = []
+    for category in categories:
+        expenses = db.query(Expense).filter(
+            Expense.user_id == current_user.id,
+            Expense.category_id == category.id,
+            Expense.month == current_year_month
+        ).all()
+
+        total_spend = sum(float(e.amount) for e in expenses)
+        limit_amount = float(category.limit_amount or 0)
+        balance = max(limit_amount - total_spend, 0)
+
+        result.append({
+            "name": category.name,
+            "used": total_spend,
+            "limit": limit_amount,
+            "balance": balance
+        })
+    logger.info("Returning %d categories for category-progress for user_id=%s",
                 len(result), current_user.id)
     return result
 
