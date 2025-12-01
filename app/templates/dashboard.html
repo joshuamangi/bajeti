@@ -69,7 +69,7 @@
     {% set percent = (used / limit * 100) if limit > 0 else 0 %}
     {% set exceeded = percent > 100 %}
     {% set display_percent = percent if percent <= 100 else 100 %}
-    
+    {% set fill_width = (used / limit * 100) if limit > 0 else 0 %}
     <div class="p-category-item">
         <div class="p-category-header">
             <span class="p-category-name">{{ c.name }}</span>
@@ -87,8 +87,8 @@
 
         <div class="p-progress-bar">
             <div class="p-progress-fill {{ 'p-ok-fill' if balance > 0 else 'p-exceeded-fill' }}"
-         data-width="{{ used / limit * 100 if limit > 0 else 0 }}">
-    </div>
+                data-width="{{ fill_width }}">
+            </div>
         </div>
     </div>
 
