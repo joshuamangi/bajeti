@@ -4,17 +4,17 @@
 
 {# Security question warning (auto-dismiss after 20s) #}
 {% if user.security_answer is none or user.security_answer == '' %}
-<div class="p-alert-warning" role="alert" id="securityWarning" style="margin: .8rem 0; padding: .75rem 1rem; border-radius:.5rem; background:var(--warning); color:var(--bg-dark); box-shadow:var(--shadow);">
+<div class="p-alert-warning" role="alert" id="securityWarning" class="p-security-alert">
   <i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
   <strong style="margin-left:.5rem">Important:</strong>
   <span style="margin-left:.5rem">Please set your <em>Security Question</em> from your Profile (☰ → Account → Profile) to help protect your account and enable password recovery.</span>
-  <button id="closeSecurityWarning" style="float:right;background:none;border:none;font-size:1.1rem;cursor:pointer;color:var(--bg-dark)">×</button>
+  <button id="closeSecurityWarning" class="p-security-btn">×</button>
 </div>
 {% endif %}
 
 {# Generic error alert (server-provided) #}
 {% if error %}
-<div class="p-alert-error" role="alert" style="margin: .5rem 0; padding: .6rem 1rem; border-radius:.4rem; background:var(--danger); color:var(--bg-light); box-shadow:var(--shadow);">
+<div class="p-alert-error" role="alert" class="p-security-alert-error">
   <i class="fa fa-exclamation-circle"></i>
   <span style="margin-left:.5rem">{{ error }}</span>
 </div>
@@ -38,6 +38,17 @@
 
 <!-- Summary & Add Category -->
 <section>
+  {% set total_limit = categories_with_stats | sum(attribute='limit_amount') %}
+  {% set total_balance = categories_with_stats | sum(attribute='balance') %}
+  {% set total_used = total_limit - total_balance %}
+  {% set progress_percent = (total_used / total_limit * 100) if total_limit > 0 else 0 %}
+  
+  <!-- <div class="p-summary-progress-bar">
+    <div class="p-summary-progress-fill" 
+          style="width: {{ progress_percent }}%;">
+    </div>
+  </div>-->
+
   <div class="p-summary-card">
     <div class="p-summary-cards">
       <p>Total Limit</p>
@@ -54,6 +65,7 @@
     </div>
   </div>
 </section>
+<section>
   <div class="p-add-category">
       <button class="p-button-info" id="launchAddCategory" onclick="generateModal('pCategoryModal','pCategoryClose','closeCategoryModalBtn')">+ Add New Category</button>
     </div>
@@ -61,20 +73,20 @@
 
 <!-- Category Progress section -->
 <section>
+  <p class="p-category-progress-paragraph"> Categories</p>
   <div class="p-category-progress-list">
 
-    {% for c in categories_progress %}
+    {% for c in categories_with_stats %}
       {% set used = c.used %}
-      {% set limit = c.limit %}
+      {% set limit = c.limit_amount %}
       {% set balance = c.balance %}
       {% set percent = (used / limit * 100) if limit > 0 else 0 %}
       {% set exceeded = percent > 100 %}
       {% set display_percent = percent if percent <= 100 else 100 %}
       
-      <div class="p-category-item">
+      <div class="p-category-item" onclick="generateModal('categoryDetailModal{{ c.id }}','pCategoryDetailClose{{ c.id }}','')">
           <div class="p-category-header">
               <span class="p-category-name">{{ c.name }}</span>
-
               {% if exceeded %}
                   <span class="p-category-status exceeded">
                       {{ (percent - 100) | round(1) }}% over
@@ -85,14 +97,12 @@
                   </span>
               {% endif %}
           </div>
-
           <div class="p-progress-bar">
               <div class="p-progress-fill {% if exceeded %}p-exceeded-fill{% else %}p-ok-fill{% endif %}"
                   style="width: {{ display_percent }}%;">
               </div>
           </div>
       </div>
-
     {% endfor %}
 
   </div>
@@ -150,71 +160,6 @@
   </table>
 </div>
 
-<!-- COMPACT -->
-<div id="pDetailCards" class="p-detail-cards">
-  {% for cat in categories_with_stats | sort(attribute='name')%}
-  <div class="p-detail-card">
-    <div class="p-category-limit">
-      <p class="p-category-limit-name">{{ cat.name }}</p>
-      <p class="p-category-limit-amount sensitive" data-value="{{ cat.limit_amount | commafy(0) }}">{{ cat.limit_amount | commafy(0) }}</p>
-    </div>
-
-    <div class="p-expense-container">
-      <p class="p-expense-amount-name">Expenses</p>
-      <a class="{% if cat.expense_count <= 0 %} p-empty-exp {% else %} p-expense-amount {% endif %}"
-        href="#" onclick="generateModal('expensesModal{{ cat.id }}','expensesClose{{ cat.id }}','')">
-        {{ cat.expense_count }}
-      </a>
-    </div>
-
-    <div class="p-balance_and_buttons">
-      <div class="p-remaining-container">
-        <p class="p-remaining-caption">{% if cat.balance < 0 %} Over by {% else %}Remaining{% endif %}</p>
-        <h4 class="p-remaining-amount sensitive {% if cat.balance <= 0 %} p-negative {% else %} p-positive {% endif %}" data-value="{{ cat.balance | commafy(2) }}">
-          {% if cat.balance < 0 %}{{ (-cat.balance) | commafy(2) }}{% else %}{{ cat.balance | commafy(2) }}{% endif %}
-        </h4>
-      </div>
-  
-      <div class="p-actions-container">
-        <form method="POST" action="/dashboard/expenses"
-              onsubmit="return confirmSubmit(this, 'Add Quick expense of {{ cat.limit_amount }} to {{ cat.name }}?')">
-          <input type="hidden" name="category_id" value="{{ cat.id }}">
-          <input type="hidden" name="amount" value="{{ cat.limit_amount }}">
-          <input type="hidden" name="description" value="Quick Expense">
-          <input type="hidden" name="month" value="{{ now }}">
-          <button class="p-actions-btns p-actions-btns-tertiary" type="submit" title="Quick Expense">
-            <i class="fa fa-bolt"></i>
-          </button>
-        </form>
-  
-        <!-- Add Expense: primary -->
-        <button class="p-actions-btns p-actions-btns-primary" title="Add Expense"
-                onclick="generateModal('addExpenseModal{{ cat.id }}','addExpenseClose{{ cat.id }}','')">
-          <i class="fa fa-plus"></i>
-        </button>
-  
-        <!-- Edit Category: secondary -->
-        <button class="p-actions-btns p-actions-btns-warning" title="Edit Category"
-                onclick="generateModal('editCategoryModal{{ cat.id }}','editCategoryClose{{ cat.id }}','')">
-          <i class="fa fa-pencil"></i>
-        </button>
-  
-        <!-- Delete Category: danger -->
-        <form method="POST" action="/dashboard/categories/{{ cat.id }}/delete"
-              onsubmit="return confirmSubmit(this, 'Delete category {{ cat.name }}?')">
-          <button class="p-actions-btns p-actions-btns-danger" type="submit" title="Delete">
-            <i class="fa fa-trash"></i>
-          </button>
-        </form>
-      </div>
-    </div>
-
-  </div>
-  {% endfor %}
-</div>
-
-{# ---------- Modals (single + per category) ---------- #}
-
 <!-- Add Category modal -->
 <div class="p-modal" id="pCategoryModal">
   <div class="p-modal-content">
@@ -231,6 +176,114 @@
     </form>
   </div>
 </div>
+
+<!-- Category Progress Modal -->
+{% for cat in categories_with_stats %}
+  {% set used = cat.used %}
+  {% set limit = cat.limit_amount %}
+  {% set balance = cat.balance %}
+  {% set percent = (used / limit * 100) if limit > 0 else 0 %}
+  {% set exceeded = percent > 100 %}
+  {% set display_percent = percent if percent <= 100 else 100 %}
+  <div class="p-modal" id="categoryDetailModal{{ cat.id }}">
+    <div class="p-modal-content">
+      <a href="#" id="pCategoryDetailClose{{ cat.id }}" class="p-close"><i class="fa fa-close"></i></a>
+      <div class="p-category-progress-gap">
+        <div class="p-category-header-divider p-category-header">
+          <span> <h3 class="p-category-limit-name">{{cat.name}}</h3> </span>
+          {% if exceeded %}
+            <span style="align-self:center;" class="p-category-status exceeded">
+                {{ (percent - 100) | round(1) }}% over
+            </span>
+          {% else %}
+            <span style="align-self:center;" class="p-category-status ok">
+                {{ percent | round(1) }}% used
+            </span>
+          {% endif %}
+           <span style="align-self:center;">
+            <p class="p-category-limit-amount sensitive" data-value="{{ cat.limit_amount | commafy(0) }}">{{ cat.limit_amount | commafy(0) }}</p>
+           </span>
+        </div>
+          <div class="p-category-progress-balance-container">
+            <p style="font-weight: 600;">{% if cat.balance < 0 %} Over by: {% else %}Remaining: {% endif %}</p>
+            <h4 class="sensitive {% if cat.balance <= 0 %} p-negative {% else %} p-positive {% endif %}" data-value="{{ cat.balance | commafy(2) }}">
+              {% if cat.balance < 0 %}{{ (-cat.balance) | commafy(2) }}{% else %}{{ cat.balance | commafy(2) }}{% endif %}
+            </h4>
+          </div>
+        <div style="margin-bottom: 0.8em;" class="p-progress-bar">
+          <div class="p-progress-fill {% if exceeded %}p-exceeded-fill{% else %}p-ok-fill{% endif %}"
+              style="width: {{ display_percent }}%;">
+          </div>
+        </div>
+        <!--Is this a mandatory expense --> 
+        <div class="p-category-progress-expense-divider">
+          <h4 style="font-size: 0.9em;">Expenses</h4>
+        </div>
+        <div class="p-category-progress-expenses">   
+          <div style="flex:1;">
+            <form method="POST" action="/dashboard/expenses"
+              onsubmit="return confirmSubmit(this, 'Add Quick expense of {{ cat.limit_amount }} to {{ cat.name }}?')">
+              <input type="hidden" name="category_id" value="{{ cat.id }}">
+              <input type="hidden" name="amount" value="{{ cat.limit_amount }}">
+              <input type="hidden" name="description" value="Quick Expense">
+              <input type="hidden" name="month" value="{{ now }}">
+              <button class="p-modal-btn-tertiary" type="submit" title="Quick Expense">
+                Quick Expense
+              </button>
+            </form>
+          </div>
+          <div style="flex:1;">
+              <button class="p-modal-btn-primary" title="Add Expense"
+              onclick="generateModal('addExpenseModal{{ cat.id }}','addExpenseClose{{ cat.id }}','')">
+              Add Expense
+            </button>
+            </div>
+          </div>
+          <div style="padding: 0.4em 0em 0em 0.4em; margin-left: 0.4em;">
+            {% if cat.expenses %}
+              <ul class="p-category-progress-ul">
+                {% for e in cat.expenses %}
+                <li class="p-category-progress-li ">
+                  <div>
+                    <strong>{{ e.amount }}</strong> — <small>{{ e.description or "(no desc)" }}</small>
+                    <small style="color:var(--text-muted)"> ({{ e.month }})</small>
+                  </div>
+                  <div style="display:flex; gap:.8rem;">
+                    <button class="p-btn-warning" onclick="generateModal('editExpenseModal{{ e.id }}','editExpenseClose{{ e.id }}','')"><i class="fa fa-pencil"></i></button>
+                    <form method="POST" action="/dashboard/expenses/{{ e.id }}/delete" onsubmit="return confirmSubmit(this,'Delete expense?')">
+                      <button class="p-btn-danger" type="submit"><i class="fa fa-trash"></i></button>
+                    </form>
+                  </div>
+                </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <div class="p-category-progress-no-content">
+                <strong class="p-no-expense">There are no expenses for this month. Click the Quick Expense or Add Expense button to add an expense</strong>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+        <div class="p-category-progress-btns-container">   
+          <div style="flex:1;">
+            <button class="p-modal-btn-warning" title="Edit Category"
+                    onclick="generateModal('editCategoryModal{{ cat.id }}','editCategoryClose{{ cat.id }}','')">
+              Edit Category
+            </button>
+          </div>
+          <div style="flex:1;">
+            <form method="POST" action="/dashboard/categories/{{ cat.id }}/delete"
+                  onsubmit="return confirmSubmit(this, 'Delete category {{ cat.name }}?')">
+              <button class="p-modal-btn-danger" type="submit" title="Delete">
+                Delete Category
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>  
+    </div>
+  </div>
+{% endfor %}
 
 <!-- Per-category modals -->
 {% for cat in categories_with_stats %}
