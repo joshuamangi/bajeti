@@ -31,6 +31,7 @@ class CategoryStats(CategoryOut):
     expense_count: int
     balance: float
     expenses: List[ExpenseOut]
+    used: float
 
 
 class CategoryProgress(BaseModel):

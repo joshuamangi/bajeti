@@ -85,7 +85,8 @@ async def get_categories_with_stats(
             "updated_at": category.updated_at,
             "expense_count": expense_count,
             "balance": balance,
-            "expenses": expenses_list
+            "expenses": expenses_list,
+            "used": total_spend
         })
 
     logger.info("Returning %d categories with stats for user_id=%s",

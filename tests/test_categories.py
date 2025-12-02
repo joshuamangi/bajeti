@@ -119,6 +119,7 @@ class TestCategories:
             assert "expense_count" in category
             assert "balance" in category
             assert "expenses" in category
+            assert "used" in category
 
     def test_get_categories_with_stats_unauthorized(self):
         """Test getting stats without authentication"""
