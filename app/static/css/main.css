@@ -658,6 +658,7 @@ select {
     gap: 0.6em 0.8em;
     padding: 0 0.6em;
     grid-template-columns: 1fr 1fr;
+    margin-bottom: 1.2em;
 }
 
 .p-category-item {
@@ -716,11 +717,13 @@ select {
 
 .p-category-status.ok {
     color: var(--success);
+    font-size: 0.9em;
     /* green */
 }
 
 .p-category-status.exceeded {
     color: var(--danger);
+    font-size: 0.9em;
     /* red */
 }
 
@@ -744,6 +747,25 @@ select {
 
 .p-exceeded-fill {
     background: var(--danger);
+}
+
+.p-progress-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+    margin-top: 4px;
+}
+
+.p-progress-percent {
+    font-size: 12px;
+    color: var(--text-muted);
+    min-width: 40px;
+    text-align: right;
+}
+
+/* Turn percent red when exceeded */
+.p-percent-exceeded {
+    color: var(--danger);
 }
 
 .p-category-footer {
