@@ -75,33 +75,49 @@
 <section>
   <p class="p-category-progress-paragraph"> Categories</p>
   <div class="p-category-progress-list">
-
+    
     {% for c in categories_with_stats %}
       {% set used = c.used %}
       {% set limit = c.limit_amount %}
       {% set balance = c.balance %}
+      {% set exceeded = balance < 0 %}
       {% set percent = (used / limit * 100) if limit > 0 else 0 %}
-      {% set exceeded = percent > 100 %}
       {% set display_percent = percent if percent <= 100 else 100 %}
-      
+
       <div class="p-category-item" onclick="generateModal('categoryDetailModal{{ c.id }}','pCategoryDetailClose{{ c.id }}','')">
+
           <div class="p-category-header">
               <span class="p-category-name">{{ c.name }}</span>
+
               {% if exceeded %}
                   <span class="p-category-status exceeded">
-                      {{ (percent - 100) | round(1) }}% over
+                      {{ (balance * -1) | commafy(0) }} over
                   </span>
               {% else %}
                   <span class="p-category-status ok">
-                      {{ percent | round(1) }}% used
+                      {{ balance | commafy(0) }} left
                   </span>
               {% endif %}
           </div>
-          <div class="p-progress-bar">
-              <div class="p-progress-fill {% if exceeded %}p-exceeded-fill{% else %}p-ok-fill{% endif %}"
-                  style="width: {{ display_percent }}%;">
+
+          <!-- Progress bar container -->
+          <div class="p-progress-wrapper">
+            
+              <div class="p-progress-bar">
+                  <div class="p-progress-fill 
+                      {% if exceeded %}p-exceeded-fill{% else %}p-ok-fill{% endif %}"
+                      style="width: {{ display_percent }}%;">
+                  </div>
               </div>
+
+              <!-- Percentage label -->
+              <span class="p-progress-percent 
+                  {% if percent > 100 %}p-percent-exceeded{% endif %}">
+                  {{ percent | round(1) }}%
+              </span>
+
           </div>
+
       </div>
     {% endfor %}
 
