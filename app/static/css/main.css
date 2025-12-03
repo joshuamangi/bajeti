@@ -757,9 +757,9 @@ select {
 }
 
 .p-progress-percent {
-    font-size: 12px;
+    flex: 1;
+    font-size: 0.6em;
     color: var(--text-muted);
-    min-width: 40px;
     text-align: right;
 }
 
