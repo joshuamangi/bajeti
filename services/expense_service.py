@@ -13,10 +13,6 @@ logger = logging.getLogger("app.expenses")
 
 
 class ExpenseService:
-
-    # ---------------------------------------------------------
-    # GET ALL EXPENSES
-    # ---------------------------------------------------------
     @staticmethod
     def get_all_expenses(db: Session, current_user: UserOut):
         expenses = db.query(Expense).filter(
@@ -31,9 +27,6 @@ class ExpenseService:
 
         return expenses
 
-    # ---------------------------------------------------------
-    # GET CURRENT MONTH EXPENSES
-    # ---------------------------------------------------------
     @staticmethod
     def get_current_month_expense(db: Session, current_user: UserOut):
         current_year_month = datetime.utcnow().strftime("%Y-%m")
@@ -53,9 +46,6 @@ class ExpenseService:
 
         return expenses
 
-    # ---------------------------------------------------------
-    # GET EXPENSES BY MONTH
-    # ---------------------------------------------------------
     @staticmethod
     def get_expenses_by_month(db: Session, month: str, current_user: UserOut):
         expenses = db.query(Expense).filter(
@@ -73,9 +63,6 @@ class ExpenseService:
 
         return expenses
 
-    # ---------------------------------------------------------
-    # GET BY CATEGORY
-    # ---------------------------------------------------------
     @staticmethod
     def get_expenses_by_category(db: Session, category_id: int, current_user: UserOut):
         expenses = db.query(Expense).filter(
@@ -93,9 +80,6 @@ class ExpenseService:
 
         return expenses
 
-    # ---------------------------------------------------------
-    # GET BY CATEGORY & MONTH
-    # ---------------------------------------------------------
     @staticmethod
     def get_expenses_by_category_and_month(
         db: Session,
@@ -119,9 +103,6 @@ class ExpenseService:
 
         return expenses
 
-    # ---------------------------------------------------------
-    # CREATE EXPENSE
-    # ---------------------------------------------------------
     @staticmethod
     def create_expense(db: Session, expense: ExpenseCreate, current_user: UserOut):
         now = datetime.utcnow()
@@ -142,9 +123,6 @@ class ExpenseService:
 
         return new_expense
 
-    # ---------------------------------------------------------
-    # UPDATE EXPENSE
-    # ---------------------------------------------------------
     @staticmethod
     def update_expense(db: Session, expense_id: int, expense: ExpenseCreate, current_user: UserOut):
         db_expense = db.query(Expense).filter(
@@ -171,9 +149,6 @@ class ExpenseService:
 
         return db_expense
 
-    # ---------------------------------------------------------
-    # DELETE EXPENSE
-    # ---------------------------------------------------------
     @staticmethod
     def delete_expense(db: Session, expense_id: int, current_user: UserOut):
         db_expense = db.query(Expense).filter(
