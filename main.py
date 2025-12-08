@@ -4,6 +4,7 @@ from starlette.middleware.gzip import GZipMiddleware
 from pathlib import Path
 from contextlib import asynccontextmanager
 
+from app.routers import requests_router
 from data.db.db import engine, Base
 from routers import auth, categories, expenses, users
 from app import requests
@@ -48,4 +49,4 @@ app.include_router(categories.router)
 app.include_router(expenses.router)
 app.include_router(auth.router)
 app.include_router(users.router)
-app.include_router(requests.router)
+app.include_router(requests_router.router)
