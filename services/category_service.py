@@ -3,7 +3,7 @@ from datetime import datetime
 from decimal import Decimal
 from sqlalchemy.orm import Session
 
-from data.db.models.models import Category, Expense
+from data.db.models.models import Category, Expense, Transfer
 from schema.category import CategoryBase
 
 logger = logging.getLogger(__name__)
@@ -21,11 +21,8 @@ class CategoryService:
     @staticmethod
     def get_categories_with_stats(db: Session, user_id: int):
         current_year_month = datetime.utcnow().strftime("%Y-%m")
-
         categories = db.query(Category).filter(
-            Category.user_id == user_id
-        ).all()
-
+            Category.user_id == user_id).all()
         result = []
 
         for category in categories:
@@ -38,7 +35,30 @@ class CategoryService:
             total_spend = sum(Decimal(str(exp.amount)) for exp in expenses)
             expense_count = len(expenses)
 
-            # Convert expense objects to dictionaries
+            # transfers (incoming and outgoing)
+            incoming = db.query(Transfer).filter(
+                Transfer.user_id == user_id,
+                Transfer.to_category_id == category.id,
+                Transfer.month == current_year_month
+            ).all()
+            outgoing = db.query(Transfer).filter(
+                Transfer.user_id == user_id,
+                Transfer.from_category_id == category.id,
+                Transfer.month == current_year_month
+            ).all()
+
+            total_incoming = sum(Decimal(str(t.amount)) for t in incoming)
+            total_outgoing = sum(Decimal(str(t.amount)) for t in outgoing)
+
+            # net top-ups applied to the category for the month
+            net_topup = total_incoming - total_outgoing
+
+            # balance = (limit + net_topup) - used
+            category_limit = Decimal(
+                str(category.limit_amount)) if category.limit_amount is not None else Decimal("0")
+            balance = (category_limit + net_topup) - total_spend
+
+            # convert expenses to dicts (same as before)
             expenses_list = [
                 {
                     "id": exp.id,
@@ -53,19 +73,17 @@ class CategoryService:
                 for exp in expenses
             ]
 
-            balance = category.limit_amount - total_spend
-
             result.append({
                 "id": category.id,
                 "name": category.name,
-                "limit_amount": float(category.limit_amount) if category.limit_amount else None,
+                "limit_amount": float(category.limit_amount) if category.limit_amount is not None else None,
                 "user_id": category.user_id,
                 "created_at": category.created_at,
                 "updated_at": category.updated_at,
                 "expense_count": expense_count,
-                "balance": balance,
+                "balance": float(balance),
                 "expenses": expenses_list,
-                "used": total_spend
+                "used": float(total_spend)
             })
 
         return result

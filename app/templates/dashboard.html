@@ -193,7 +193,7 @@
   </div>
 </div>
 
-<!-- Category Progress Modal -->
+<!-- Category Modal -->
 {% for cat in categories_with_stats %}
   {% set used = cat.used %}
   {% set limit = cat.limit_amount %}
@@ -397,6 +397,45 @@
   </div>
   {% endfor %}
 {% endfor %}
+
+
+<!-- Transfer Modal -->
+<div class="p-modal" id="transferModal">
+  <div class="p-modal-content">
+    <a href="#" id="transferClose" class="p-close"><i class="fa fa-close"></i></a>
+    <h2>Transfer between categories</h2>
+    <form method="POST" action="/dashboard/transfers">
+      <div class="p-modal-details">
+        <label>From Category</label>
+        <select name="from_category_id" required>
+          <option value="">Select</option>
+          {% for c in categories_with_stats %}
+          <option value="{{ c.id }}">{{ c.name }} (Remaining: {{ c.balance | commafy(2) }})</option>
+          {% endfor %}
+        </select>
+
+        <label>To Category</label>
+        <select name="to_category_id" required>
+          <option value="">Select</option>
+          {% for c in categories_with_stats %}
+          <option value="{{ c.id }}">{{ c.name }} (Remaining: {{ c.balance | commafy(2) }})</option>
+          {% endfor %}
+        </select>
+
+        <label>Amount</label>
+        <input name="amount" type="number" step="0.01" required>
+
+        <label>Description (optional)</label>
+        <input name="description" type="text">
+
+        <label>Month</label>
+        <input name="month" type="text" value="{{ now }}" readonly>
+
+        <button type="submit" class="p-modal-btn">Make Transfer</button>
+      </div>
+    </form>
+  </div>
+</div>
 
 <!-- Alert & Confirm (single) -->
 <div id="pAlert" class="p-alert">
