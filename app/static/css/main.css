@@ -402,7 +402,6 @@ select {
 }
 
 .p-no-expense {
-    text-align: center;
     border-radius: 0.8em;
     margin-top: 1.2em;
 }
@@ -536,6 +535,87 @@ select {
     background: color-mix(in oklch, var(--secondary) 85%, var(--bg-light));
 }
 
+/* Icon buttons */
+.p-icon-btn-primary {
+    background: var(--bg-light);
+    width: 3.2em;
+    height: 2.4em;
+    color: var(--primary);
+    font-size: 0.8em;
+    padding: 0.4em 0.8em;
+}
+
+.p-icon-btn-primary:hover {
+    background: color-mix(in oklch, var(--danger) 85%, var(--bg-light));
+}
+
+.p-icon-btn-warning {
+    background: var(--bg-light);
+    width: 3.2em;
+    height: 2.4em;
+    color: var(--warning);
+    padding: 0.4em 0.8em;
+    font-size: 0.8em;
+}
+
+.p-icon-btn-warning:hover {
+    background: color-mix(in oklch, var(--gradient-hover) 85%, var(--bg-dark));
+}
+
+.p-icon-btn-danger {
+    background: var(--bg-light);
+    width: 3.2em;
+    height: 2.4em;
+    color: var(--danger);
+    padding: 0.4em 0.8em;
+    font-size: 0.8em;
+}
+
+.p-icon-btn-danger:hover {
+    background: color-mix(in oklch, var(--gradient-hover) 85%, var(--bg-dark));
+}
+
+.p-icon-btn-info {
+    background: var(--bg-light);
+    width: 3.2em;
+    height: 2.4em;
+    color: var(--info);
+    padding: 0.4em 0.8em;
+    font-size: 0.8em;
+}
+
+.p-icon-btn-info:hover {
+    background: color-mix(in oklch, var(--info) 85%, var(--bg-light));
+}
+
+.p-icon-btn-tertiary {
+    background: var(--bg-light);
+    width: 3.2em;
+    height: 2.4em;
+    color: var(--tertiary);
+    padding: 0.4em 0.8em;
+    font-size: 0.8em;
+}
+
+.p-icon-btn-tertiary:hover {
+    background: color-mix(in oklch, var(--tertiary) 85%, var(--bg-light));
+}
+
+.p-icon-btn-secondary {
+    background: var(--bg-light);
+    width: 3.2em;
+    height: 2.4em;
+    color: var(--secondary);
+    padding: 0.4em 0.8em;
+    font-size: 0.8em;
+}
+
+.p-icon-btn-secondary:hover {
+    background: color-mix(in oklch, var(--secondary) 85%, var(--bg-light));
+}
+
+/* Icon buttons */
+
 .p-add-category-title {
     text-align: center;
 }
@@ -556,6 +636,7 @@ select {
     background: var(--bg-light);
     width: 100%;
     color: var(--tertiary);
+    font-size: 0.8em;
 }
 
 .p-modal-btn-tertiary:hover {
@@ -566,9 +647,21 @@ select {
     background: var(--bg-light);
     width: 100%;
     color: var(--primary);
+    font-size: 0.8em;
 }
 
 .p-modal-btn-primary:hover {
+    background: color-mix(in oklch, var(--gradient-hover) 85%, var(--bg-dark));
+}
+
+.p-modal-btn-secondary {
+    background: var(--bg-light);
+    width: 100%;
+    color: var(--secondary);
+    font-size: 0.8em;
+}
+
+.p-modal-btn-secondary:hover {
     background: color-mix(in oklch, var(--gradient-hover) 85%, var(--bg-dark));
 }
 
@@ -576,6 +669,7 @@ select {
     background: var(--bg-light);
     width: 100%;
     color: var(--warning);
+    font-size: 0.8em;
 }
 
 .p-modal-btn-warning:hover {
@@ -586,11 +680,13 @@ select {
     background: var(--bg-light);
     width: 100%;
     color: var(--danger);
+    font-size: 0.8em;
 }
 
 .p-modal-btn-danger:hover {
     background: color-mix(in oklch, var(--gradient-hover) 85%, var(--bg-dark));
 }
+
 
 /* --- FIX SAFARI TOUCH ISSUES --- */
 .p-detail-card {
@@ -619,7 +715,7 @@ select {
 
 .p-category-progress-gap {
     margin-top: 0.8em;
-    padding: 0.8em 0em;
+    padding-top: 0.8em;
 }
 
 .p-category-header-divider {
@@ -635,6 +731,13 @@ select {
     flex-direction: row;
     gap: 0.4em;
     margin-bottom: 0.4em;
+}
+
+.p-category-progress-transfer-divider {
+    padding-top: 0.4em;
+    border-color: var(--primary);
+    border-width: .1em;
+    border-top: 1px solid var(--border-muted);
 }
 
 .p-category-progress-expense-divider {
@@ -669,6 +772,13 @@ select {
     /* Thicker colored left border */
 }
 
+.p-category-transfers-list {
+    padding: 0.4em 0em 0.4em 0.4em;
+    margin-left: 0.4em;
+    margin-right: 0.2em;
+    align-items: center;
+}
+
 .p-category-progress-ul {
     list-style: none;
     margin: 0;
@@ -684,13 +794,14 @@ select {
     display: flex;
     justify-content: space-between;
     gap: 0.8em;
+    font-size: 0.8em;
 }
 
 .p-category-progress-btns-container {
     border-color: var(--primary);
     border-width: .1em;
     border-top: 1px solid var(--border-muted);
-    padding-top: 0.8em;
+    padding-top: 0.4em;
     margin: 0.4em;
     display: flex;
     justify-content: space-between;
@@ -699,9 +810,11 @@ select {
 }
 
 .p-category-progress-no-content {
-    padding: 0em 0.4em 0.4em 0.4em;
+    text-align: center;
+    padding: 0.4em 0.4em 0.4em 0.4em;
     background: var(--bg-dark);
     border-radius: 0.4em;
+    font-size: 0.8em;
 }
 
 .p-category-header {

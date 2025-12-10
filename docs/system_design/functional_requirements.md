@@ -35,6 +35,12 @@
 - [x] Users should be able to edit Expenses per Category
 - [x] Users should be able to delete Expenses per Category
 
+## Transfers
+
+- [x] Users should be able to transfer funds from one category to the other
+- [x] Users should be able to undo transfers done from or to a category
+- [x] Users should be able to view transfers done on a category
+
 ## Data
 
 - [ ] Users should be able to generate their data based on criteria
