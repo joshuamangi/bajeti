@@ -6,7 +6,8 @@ from app.handlers import (
     dashboard_handlers,
     category_handlers,
     expense_handlers,
-    page_handlers
+    page_handlers,
+    transfer_handlers
 )
 
 router = APIRouter()
@@ -44,6 +45,11 @@ router.post(
     "/dashboard/expenses/{expense_id}/edit")(expense_handlers.edit_expense)
 router.post(
     "/dashboard/expenses/{expense_id}/delete")(expense_handlers.delete_expense)
+
+# ---------- TRANSFER CRUD ----------
+router.post("/dashboard/transfers")(transfer_handlers.add_transfer)
+router.post(
+    "/dashboard/transfers/{transfer_id}/undo")(transfer_handlers.undo_transfer)
 
 # ---------- STATIC PAGES ----------
 router.get(

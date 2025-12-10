@@ -23,3 +23,15 @@ class TransferOut(TransferBase):
 
     class Config:
         orm_mode = True
+
+
+class TransferStats(TransferBase):
+    id: int
+    user_id: int
+    created_at: datetime
+    updated_at: datetime
+    from_category_name: str
+    to_category_name: str
+
+    class Config:
+        orm_mode = True

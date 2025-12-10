@@ -83,41 +83,33 @@
       {% set exceeded = balance < 0 %}
       {% set percent = (used / limit * 100) if limit > 0 else 0 %}
       {% set display_percent = percent if percent <= 100 else 100 %}
-
       <div class="p-category-item" onclick="generateModal('categoryDetailModal{{ c.id }}','pCategoryDetailClose{{ c.id }}','')">
-
           <div class="p-category-header">
               <span class="p-category-name">{{ c.name }}</span>
-
               {% if exceeded %}
-                  <span class="p-category-status exceeded">
+                  <span class="sensitive p-category-status exceeded">
                       {{ (balance * -1) | commafy(0) }} over
                   </span>
               {% else %}
-                  <span class="p-category-status ok">
+                  <span class="sensitive p-category-status ok">
                       {{ balance | commafy(0) }} left
                   </span>
               {% endif %}
           </div>
-
           <!-- Progress bar container -->
           <div class="p-progress-wrapper">
-            
               <div class="p-progress-bar">
                   <div class="p-progress-fill 
                       {% if exceeded %}p-exceeded-fill{% else %}p-ok-fill{% endif %}"
                       style="width: {{ display_percent }}%;">
                   </div>
               </div>
-
               <!-- Percentage label -->
               <span class="p-progress-percent 
                   {% if percent > 100 %}p-percent-exceeded{% endif %}">
                   {{ percent | round(1) }}%
               </span>
-
           </div>
-
       </div>
     {% endfor %}
 
@@ -231,7 +223,48 @@
               style="width: {{ display_percent }}%;">
           </div>
         </div>
-        <!--Is this a mandatory expense --> 
+        <!-- Transfers -->
+        <div class="p-category-progress-transfer-divider">
+          <h4 style="font-size: 0.9em;">Transfers</h4>
+        </div>
+        <div class="p-category-transfers-list">
+          {% if cat.transfers_in or cat.transfers_out %}
+            <ul class="p-category-progress-ul">
+              {% for t in cat.transfers_in %}
+              <li class="p-category-progress-li">
+                <div style="align-self: center;">
+                  <strong style="color: var(--success);">+{{ t.amount }}</strong> 
+                  <small>from {{ t.from_category_name }}</small>
+                  <small style="color:var(--text-muted)"> ({{ t.month }})</small>
+                </div>
+                <div style="display:flex; gap:.8rem;">
+                  <form method="POST" action="/dashboard/transfers/{{t.id}}/undo" onsubmit="return confirmSubmit(this, 'Undo Transfer?')">
+                    <button class="p-icon-btn-tertiary" type="submit"><i class="fa fa-undo"></i>
+                </div>
+              </li>
+              {% endfor %}
+              {% for t in cat.transfers_out %}
+              <li class="p-category-progress-li">
+                <div style="align-self: center;">
+                  <strong style="color: var(--danger);">-{{ t.amount }}</strong>
+                  <small> to {{ t.to_category_name }} </small>
+                  <small style="color:var(--text-muted)"> ({{ t.month }})</small>
+                </div>
+                <div style="display:flex; gap:.8rem;">
+                  <form method="POST" action="/dashboard/transfers/{{t.id}}/undo" onsubmit="return confirmSubmit(this, 'Undo Transfer?')">
+                    <button class="p-icon-btn-tertiary" type="submit"><i class="fa fa-undo"></i>
+                </div>
+              </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <div class="p-category-progress-no-content">
+              <strong class="p-no-expense">No transfer/topup this month.</strong>
+            </div>
+          {% endif %}
+        </div>
+        <!-- TODO: Add is this a mandatory expense --> 
+         <!-- Expenses -->
         <div class="p-category-progress-expense-divider">
           <h4 style="font-size: 0.9em;">Expenses</h4>
         </div>
@@ -255,19 +288,19 @@
             </button>
             </div>
           </div>
-          <div style="padding: 0.4em 0em 0em 0.4em; margin-left: 0.4em;">
+          <div style="padding: 0.2em 0em 0em 0.4em; margin-left: 0.4em;">
             {% if cat.expenses %}
               <ul class="p-category-progress-ul">
                 {% for e in cat.expenses %}
                 <li class="p-category-progress-li ">
-                  <div>
+                  <div style="align-self: center;">
                     <strong>{{ e.amount }}</strong> — <small>{{ e.description or "(no desc)" }}</small>
                     <small style="color:var(--text-muted)"> ({{ e.month }})</small>
                   </div>
                   <div style="display:flex; gap:.8rem;">
-                    <button class="p-btn-warning" onclick="generateModal('editExpenseModal{{ e.id }}','editExpenseClose{{ e.id }}','')"><i class="fa fa-pencil"></i></button>
+                    <button class="p-icon-btn-warning" onclick="generateModal('editExpenseModal{{ e.id }}','editExpenseClose{{ e.id }}','')"><i class="fa fa-pencil"></i></button>
                     <form method="POST" action="/dashboard/expenses/{{ e.id }}/delete" onsubmit="return confirmSubmit(this,'Delete expense?')">
-                      <button class="p-btn-danger" type="submit"><i class="fa fa-trash"></i></button>
+                      <button class="p-icon-btn-danger" type="submit"><i class="fa fa-trash"></i></button>
                     </form>
                   </div>
                 </li>
@@ -275,12 +308,18 @@
               </ul>
             {% else %}
               <div class="p-category-progress-no-content">
-                <strong class="p-no-expense">There are no expenses for this month. Click the Quick Expense or Add Expense button to add an expense</strong>
+                <strong class="p-no-expense">No expenses this month. Click the Quick Expense or Add Expense button to add an expense</strong>
               </div>
             {% endif %}
           </div>
         </div>
-        <div class="p-category-progress-btns-container">   
+        <div class="p-category-progress-btns-container"> 
+          <div style="flex:1;">
+            <button class="p-modal-btn-primary" onclick="generateModal('transferModal{{ cat.id }}','transferClose{{ cat.id }}','')">
+            Top Up Category
+          </button>
+
+          </div>  
           <div style="flex:1;">
             <button class="p-modal-btn-warning" title="Edit Category"
                     onclick="generateModal('editCategoryModal{{ cat.id }}','editCategoryClose{{ cat.id }}','')">
@@ -396,46 +435,42 @@
     </div>
   </div>
   {% endfor %}
+
+<!-- Transfer Modal -->
+  <div class="p-modal" id="transferModal{{ cat.id }}">
+    <div class="p-modal-content">
+      <a href="#" id="transferClose{{ cat.id }}" class="p-close"><i class="fa fa-close"></i></a>
+      <h2>Top Up {{ cat.name }}</h2>
+
+      <form method="POST" action="/dashboard/transfers">
+        <div class="p-modal-details">
+          <input type="hidden" name="to_category_id" value="{{ cat.id }}">
+          <label>From Category</label>
+          <select name="from_category_id" required>
+            <option value="">Select</option>
+            {% for c in categories_with_stats if c.id != cat.id and c.balance > 0 %}
+            <option value="{{ c.id }}">{{ c.name }} (Remaining: {{ c.balance | commafy(2) }})</option>
+            {% endfor %}
+          </select>
+
+          <label>Amount</label>
+          <input name="amount" type="number" step="0.01" required>
+
+          <label>Description (optional)</label>
+          <input name="description" type="text">
+
+          <label>Month</label>
+          <input name="month" type="text" value="{{ now }}" readonly>
+
+          <button type="submit" class="p-modal-btn">Make Transfer</button>
+        </div>
+      </form>
+    </div>
+  </div>
 {% endfor %}
 
 
-<!-- Transfer Modal -->
-<div class="p-modal" id="transferModal">
-  <div class="p-modal-content">
-    <a href="#" id="transferClose" class="p-close"><i class="fa fa-close"></i></a>
-    <h2>Transfer between categories</h2>
-    <form method="POST" action="/dashboard/transfers">
-      <div class="p-modal-details">
-        <label>From Category</label>
-        <select name="from_category_id" required>
-          <option value="">Select</option>
-          {% for c in categories_with_stats %}
-          <option value="{{ c.id }}">{{ c.name }} (Remaining: {{ c.balance | commafy(2) }})</option>
-          {% endfor %}
-        </select>
 
-        <label>To Category</label>
-        <select name="to_category_id" required>
-          <option value="">Select</option>
-          {% for c in categories_with_stats %}
-          <option value="{{ c.id }}">{{ c.name }} (Remaining: {{ c.balance | commafy(2) }})</option>
-          {% endfor %}
-        </select>
-
-        <label>Amount</label>
-        <input name="amount" type="number" step="0.01" required>
-
-        <label>Description (optional)</label>
-        <input name="description" type="text">
-
-        <label>Month</label>
-        <input name="month" type="text" value="{{ now }}" readonly>
-
-        <button type="submit" class="p-modal-btn">Make Transfer</button>
-      </div>
-    </form>
-  </div>
-</div>
 
 <!-- Alert & Confirm (single) -->
 <div id="pAlert" class="p-alert">

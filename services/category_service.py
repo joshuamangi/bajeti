@@ -47,8 +47,50 @@ class CategoryService:
                 Transfer.month == current_year_month
             ).all()
 
+            def get_cat_name(db, category_id):
+                if not category_id:
+                    return None
+                cat = db.query(Category).filter(
+                    Category.id == category_id).first()
+                return cat.name if cat else None
+
             total_incoming = sum(Decimal(str(t.amount)) for t in incoming)
             total_outgoing = sum(Decimal(str(t.amount)) for t in outgoing)
+
+            # convert transfers into simple dicts for the UI
+            incoming_list = [
+                {
+                    "id": t.id,
+                    "user_id": t.user_id,
+                    "created_at": t.created_at,
+                    "updated_at": t.updated_at,
+                    "amount": float(t.amount),
+                    "description": t.description,
+                    "month": t.month,
+                    "from_category_id": t.from_category_id,
+                    "to_category_id": t.to_category_id,
+                    "from_category_name": get_cat_name(db, t.from_category_id),
+                    "to_category_name": get_cat_name(db, t.to_category_id),
+                }
+                for t in incoming
+            ]
+
+            outgoing_list = [
+                {
+                    "id": t.id,
+                    "user_id": t.user_id,
+                    "created_at": t.created_at,
+                    "updated_at": t.updated_at,
+                    "amount": float(t.amount),
+                    "description": t.description,
+                    "month": t.month,
+                    "from_category_id": t.from_category_id,
+                    "to_category_id": t.to_category_id,
+                    "from_category_name": get_cat_name(db, t.from_category_id),
+                    "to_category_name": get_cat_name(db, t.to_category_id),
+                }
+                for t in outgoing
+            ]
 
             # net top-ups applied to the category for the month
             net_topup = total_incoming - total_outgoing
@@ -83,9 +125,12 @@ class CategoryService:
                 "expense_count": expense_count,
                 "balance": float(balance),
                 "expenses": expenses_list,
-                "used": float(total_spend)
+                "used": float(total_spend),
+                "transfers_in": incoming_list,
+                "transfers_out": outgoing_list,
+                "total_transfers_in": float(total_incoming),
+                "total_transfers_out": float(total_outgoing),
             })
-
         return result
 
     @staticmethod
