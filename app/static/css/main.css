@@ -63,17 +63,17 @@ input {
     background: var(--bg-light);
     border-radius: .4em;
     padding: .8em;
-    border-color: var(--primary);
+    border-color: var(--text);
     border-width: .1em;
 }
 
-select {
+/* select {
     background: var(--bg-light);
     border-radius: .4em;
     padding: .8em;
     border-color: var(--primary);
     border-width: .1em;
-}
+} */
 
 .p-security-alert {
     margin: .8rem 0;
@@ -351,7 +351,6 @@ select {
 
 .p-category-limit-name {
     font-weight: 600;
-    font-size: 1.3em;
     display: inline-block;
     padding: 0.1em 0.8em;
     margin-bottom: 0.8em;
@@ -687,6 +686,19 @@ select {
     background: color-mix(in oklch, var(--gradient-hover) 85%, var(--bg-dark));
 }
 
+.p-modal-form-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4em;
+    background: var(--bg-dark);
+    border-radius: 0.4em;
+    padding: 0.8em;
+}
+
+.p-category-form {
+    padding: 0.4em;
+    margin-top: 1.0em;
+}
 
 /* --- FIX SAFARI TOUCH ISSUES --- */
 .p-detail-card {
@@ -772,7 +784,7 @@ select {
     /* Thicker colored left border */
 }
 
-.p-category-transfers-list {
+.p- .p-category-transfers-list {
     padding: 0.4em 0em 0.4em 0.4em;
     margin-left: 0.4em;
     margin-right: 0.2em;
@@ -781,7 +793,7 @@ select {
 
 .p-category-progress-ul {
     list-style: none;
-    margin: 0;
+    margin: 0em 0.4em 0.4em 0.4em;
     background: var(--bg-dark);
     border-radius: 0.4em;
 }
@@ -831,13 +843,16 @@ select {
 .p-category-status.ok {
     color: var(--success);
     font-size: 0.9em;
-    /* green */
 }
 
 .p-category-status.exceeded {
     color: var(--danger);
     font-size: 0.9em;
-    /* red */
+}
+
+.p-category-status.zero {
+    color: var(--secondary);
+    font-size: 0.9em;
 }
 
 .p-progress-bar {
@@ -861,6 +876,12 @@ select {
 .p-exceeded-fill {
     background: var(--danger);
 }
+
+.p-zero-fill {
+    background-color: var(--secondary);
+    /* or custom color */
+}
+
 
 .p-progress-wrapper {
     display: flex;
