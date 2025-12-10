@@ -85,31 +85,43 @@
       {% set display_percent = percent if percent <= 100 else 100 %}
       <div class="p-category-item" onclick="generateModal('categoryDetailModal{{ c.id }}','pCategoryDetailClose{{ c.id }}','')">
           <div class="p-category-header">
-              <span class="p-category-name">{{ c.name }}</span>
-              {% if exceeded %}
-                  <span class="sensitive p-category-status exceeded">
-                      {{ (balance * -1) | commafy(0) }} over
-                  </span>
-              {% else %}
-                  <span class="sensitive p-category-status ok">
-                      {{ balance | commafy(0) }} left
-                  </span>
-              {% endif %}
+            <span class="p-category-name">{{ c.name }}</span>
+            {% if balance == 0 %}
+                <span class="sensitive p-category-status zero">
+                    No balance
+                </span>
+            {% elif exceeded %}
+                <span class="sensitive p-category-status exceeded">
+                    {{ (balance * -1) | commafy(0) }} over
+                </span>
+            {% else %}
+                <span class="sensitive p-category-status ok">
+                    {{ balance | commafy(0) }} left
+                </span>
+            {% endif %}
           </div>
+
           <!-- Progress bar container -->
           <div class="p-progress-wrapper">
-              <div class="p-progress-bar">
-                  <div class="p-progress-fill 
-                      {% if exceeded %}p-exceeded-fill{% else %}p-ok-fill{% endif %}"
-                      style="width: {{ display_percent }}%;">
-                  </div>
-              </div>
-              <!-- Percentage label -->
-              <span class="p-progress-percent 
-                  {% if percent > 100 %}p-percent-exceeded{% endif %}">
-                  {{ percent | round(1) }}%
-              </span>
+            <div class="p-progress-bar">
+                <div class="p-progress-fill
+                    {% if balance == 0 %}
+                        p-zero-fill
+                    {% elif exceeded %}
+                        p-exceeded-fill
+                    {% else %}
+                        p-ok-fill
+                    {% endif %}"
+                    style="width: {{ display_percent }}%;">
+                </div>
+            </div>
+
+            <span class="p-progress-percent
+                {% if percent > 100 %}p-percent-exceeded{% endif %}">
+                {{ percent | round(1) }}%
+            </span>
           </div>
+
       </div>
     {% endfor %}
 
@@ -171,14 +183,16 @@
 <!-- Add Category modal -->
 <div class="p-modal" id="pCategoryModal">
   <div class="p-modal-content">
-    <form method="POST" action="/dashboard/categories">
+    <form class="p-category-form" method="POST" action="/dashboard/categories">
       <a href="#" id="pCategoryClose" class="p-close"><i class="fa fa-close"></i></a>
-      <h2 class="p-add-category-title">New Category</h2>
+      <h2 class="p-category-limit-name">New Category</h2>
       <div class="p-modal-details">
-        <label for="name">Name</label>
-        <input name="name" type="text" placeholder="Category Name (16 characters)" maxlength="16" required>
-        <label for="limit_amount">Limit</label>
-        <input name="limit_amount" type="number" placeholder="Category Limit" required>
+        <div class="p-modal-form-content">
+          <label for="name">Name</label>
+          <input name="name" type="text" placeholder="Category Name (16 characters)" maxlength="16" required>
+          <label for="limit_amount">Limit</label>
+          <input name="limit_amount" type="number" placeholder="Category Limit" required>
+        </div>
         <button type="submit" class="p-modal-btn" id="closeCategoryModalBtn">Add Category</button>
       </div>
     </form>
@@ -375,17 +389,19 @@
   <!-- Add Expense modal -->
   <div class="p-modal" id="addExpenseModal{{ cat.id }}">
     <div class="p-modal-content">
-      <a href="#" id="addExpenseClose{{ cat.id }}" class="p-close"><i class="fa fa-close"></i></a>
-      <h2>Add Expense to {{ cat.name }}</h2>
-      <form method="POST" action="/dashboard/expenses">
+      <form class="p-category-form" method="POST" action="/dashboard/expenses">
+        <a href="#" id="addExpenseClose{{ cat.id }}" class="p-close"><i class="fa fa-close"></i></a>
+        <p style="font-size: 1.1em;" class="p-category-limit-name">Add Expense to {{ cat.name }}</p>
         <div class="p-modal-details">
-          <input type="hidden" name="category_id" value="{{ cat.id }}">
-          <label>Amount</label>
-          <input name="amount" type="number" placeholder="Enter Expense Amount" required>
-          <label>Description</label>
-          <input name="description" type="text" placeholder="Optional">
-          <label>Month</label>
-          <input name="month" type="text" placeholder="YYYY-MM" value="{{ now }}" readonly>
+          <div class="p-modal-form-content">
+            <input type="hidden" name="category_id" value="{{ cat.id }}">
+            <label>Amount</label>
+            <input name="amount" type="number" placeholder="Enter Expense Amount" required>
+            <label>Description</label>
+            <input name="description" type="text" placeholder="Optional">
+            <label>Month</label>
+            <input name="month" type="text" placeholder="YYYY-MM" value="{{ now }}" readonly>
+          </div>
           <button type="submit" class="p-modal-btn" id="closeAddExpenseBtn{{ cat.id }}">Add Expense</button>
         </div>
       </form>
@@ -395,14 +411,16 @@
   <!-- Edit Category modal -->
   <div class="p-modal" id="editCategoryModal{{ cat.id }}">
     <div class="p-modal-content">
-      <a href="#" id="editCategoryClose{{ cat.id }}" class="p-close"><i class="fa fa-close"></i></a>
-      <h2>Edit Category</h2>
-      <form method="POST" action="/dashboard/categories/{{ cat.id }}/edit">
+      <form class="p-category-form" method="POST" action="/dashboard/categories/{{ cat.id }}/edit">
+        <a href="#" id="editCategoryClose{{ cat.id }}" class="p-close"><i class="fa fa-close"></i></a>
+        <h2 class="p-category-limit-name">Edit Category</h2>
         <div class="p-modal-details">
-          <label>Name</label>
-          <input type="text" name="name" value="{{ cat.name }}" maxlength="16" required>
-          <label>Limit</label>
-          <input name="limit_amount" type="number" value="{{ cat.limit_amount }}" required>
+          <div class="p-modal-form-content">
+            <label>Name</label>
+            <input type="text" name="name" value="{{ cat.name }}" maxlength="16" required>
+            <label>Limit</label>
+            <input name="limit_amount" type="number" value="{{ cat.limit_amount }}" required>
+          </div>
           <button type="submit" class="p-modal-btn" id="closeEditCategoryBtn{{ cat.id }}">Save</button>
         </div>
       </form>
@@ -413,22 +431,24 @@
   {% for e in cat.expenses %}
   <div class="p-modal" id="editExpenseModal{{ e.id }}">
     <div class="p-modal-content">
-      <a href="#" id="editExpenseClose{{ e.id }}" class="p-close"><i class="fa fa-close"></i></a>
-      <h2>Edit Expense</h2>
-      <form method="POST" action="/dashboard/expenses/{{ e.id }}/edit">
+      <form class="p-category-form" method="POST" action="/dashboard/expenses/{{ e.id }}/edit">
+        <a href="#" id="editExpenseClose{{ e.id }}" class="p-close"><i class="fa fa-close"></i></a>
+        <h2 class="p-category-limit-name">Edit Expense</h2>
         <div class="p-modal-details">
-          <label>Amount</label>
-          <input name="amount" type="number" value="{{ e.amount }}" required>
-          <label>Description</label>
-          <input name="description" type="text" placeholder="Optional" value="{{ e.description }}">
-          <label>Month (YYYY-MM)</label>
-          <input name="month" type="text" value="{{ e.month }}" readonly>
-          <label>Category</label>
-          <select name="category_id" required>
-            {% for c in categories_with_stats %}
-            <option value="{{ c.id }}" {% if c.id == e.category_id %}selected{% endif %}>{{ c.name }}</option>
-            {% endfor %}
-          </select>
+          <div class="p-modal-form-content">
+            <label>Amount</label>
+            <input name="amount" type="number" value="{{ e.amount }}" required>
+            <label>Description</label>
+            <input name="description" type="text" placeholder="Optional" value="{{ e.description }}">
+            <label>Month</label>
+            <input name="month" type="text" value="{{ e.month }}" readonly>
+            <label>Category</label>
+            <select style="border: 1px solid var(--text-muted);" name="category_id" required>
+              {% for c in categories_with_stats %}
+              <option value="{{ c.id }}" {% if c.id == e.category_id %}selected{% endif %}>{{ c.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
           <button type="submit" class="p-modal-btn" id="closeEditExpenseBtn{{ e.id }}">Save</button>
         </div>
       </form>
@@ -439,29 +459,26 @@
 <!-- Transfer Modal -->
   <div class="p-modal" id="transferModal{{ cat.id }}">
     <div class="p-modal-content">
-      <a href="#" id="transferClose{{ cat.id }}" class="p-close"><i class="fa fa-close"></i></a>
-      <h2>Top Up {{ cat.name }}</h2>
-
-      <form method="POST" action="/dashboard/transfers">
+      <form class="p-category-form" method="POST" action="/dashboard/transfers">
+        <a href="#" id="transferClose{{ cat.id }}" class="p-close"><i class="fa fa-close"></i></a>
+        <p style="font-size: 1.1em;" class="p-category-limit-name">Top Up {{ cat.name }}</p>
         <div class="p-modal-details">
-          <input type="hidden" name="to_category_id" value="{{ cat.id }}">
-          <label>From Category</label>
-          <select name="from_category_id" required>
-            <option value="">Select</option>
-            {% for c in categories_with_stats if c.id != cat.id and c.balance > 0 %}
-            <option value="{{ c.id }}">{{ c.name }} (Remaining: {{ c.balance | commafy(2) }})</option>
-            {% endfor %}
-          </select>
-
-          <label>Amount</label>
-          <input name="amount" type="number" step="0.01" required>
-
-          <label>Description (optional)</label>
-          <input name="description" type="text">
-
-          <label>Month</label>
-          <input name="month" type="text" value="{{ now }}" readonly>
-
+          <div class="p-modal-form-content">
+            <input type="hidden" name="to_category_id" value="{{ cat.id }}">
+            <label>From Category</label>
+            <select style="border: 1px solid var(--text-muted);" name="from_category_id" required>
+              <option value="">Select</option>
+              {% for c in categories_with_stats if c.id != cat.id and c.balance > 0 %}
+              <option value="{{ c.id }}">{{ c.name }} (Remaining: {{ c.balance | commafy(2) }})</option>
+              {% endfor %}
+            </select>
+            <label>Amount</label>
+            <input name="amount" type="number" step="0.01" placeholder="Enter Amount" required>
+            <label>Description (optional)</label>
+            <input name="description" placeholder="Optional" type="text">
+            <label>Month</label>
+            <input name="month" type="text" value="{{ now }}" readonly>
+          </div>
           <button type="submit" class="p-modal-btn">Make Transfer</button>
         </div>
       </form>
