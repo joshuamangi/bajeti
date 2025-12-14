@@ -5,7 +5,7 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 
-from data.db.models.models import User
+from data.db.models.models import Budget, User
 from schema.user import UserCreate
 
 logger = logging.getLogger("app.user_service")
@@ -23,6 +23,10 @@ class UserService:
         return db.query(User).filter(User.id == user_id).first()
 
     @staticmethod
+    def get_user_by_email(db: Session, email: str) -> Optional[User]:
+        return db.query(User).filter(User.email == email).first()
+
+    @staticmethod
     def create_user(db: Session, user: UserCreate, hashed_password: str) -> User:
         """Create a new User record and return it."""
         new_user = User(
@@ -37,4 +41,12 @@ class UserService:
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
+
+        default_budget = Budget(
+            name="Monthly",
+            amount=0,
+            user_id=new_user.id,
+        )
+        db.add(default_budget)
+        db.commit()
         return new_user

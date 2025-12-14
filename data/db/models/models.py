@@ -140,3 +140,11 @@ class Allocation(Base):
 
     budget = relationship("Budget", back_populates="allocations")
     category = relationship("Category", back_populates="allocations")
+
+    __table_args__ = (
+        UniqueConstraint(
+            "budget_id",
+            "category_id",
+            name="uq_budget_category_allocation"
+        ),
+    )
