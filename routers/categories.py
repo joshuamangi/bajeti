@@ -63,7 +63,7 @@ async def create_category(
 
 
 @router.put("/{category_id}", response_model=CategoryOut)
-async def update_category(
+async def edit_category(
     category_id: int,
     category: CategoryBase,
     db: Session = Depends(get_db),
@@ -81,7 +81,7 @@ async def update_category(
 
 
 @router.delete("/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_category(
+async def remove_category(
     category_id: int,
     db: Session = Depends(get_db),
     current_user: UserOut = Depends(get_current_user),
