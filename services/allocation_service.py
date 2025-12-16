@@ -1,4 +1,3 @@
-from datetime import datetime
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -16,22 +15,6 @@ class AllocationService:
             Allocation.category_id == category_id
         ).first()
         return existing_allocation
-
-    @staticmethod
-    def get_allocation_by_id(db: Session, budget_id: int, allocation_id: int):
-        allocation = db.query(Allocation).filter(
-            Allocation.budget_id == budget_id,
-            Allocation.id == allocation_id
-        ).first()
-        return allocation
-
-    @staticmethod
-    def fetch_all_allocations(db: Session, budget_id: int):
-        allocations = db.query(Allocation).filter(
-            Allocation.budget_id == budget_id
-        ).all()
-
-        return allocations
 
     @staticmethod
     def add_allocation(db: Session, user_id: int, budget_id: int, data: AllocationCreate):
@@ -66,18 +49,3 @@ class AllocationService:
         db.commit()
         db.refresh(allocation)
         return allocation
-
-    @staticmethod
-    def update_allocation(db: Session, allocation: AllocationCreate, existing_allocation: Allocation):
-        existing_allocation.allocated_amount = allocation.allocated_amount
-        existing_allocation.category_id = allocation.category_id
-        existing_allocation.updated_at = datetime.utcnow()
-
-        db.commit()
-        db.refresh(existing_allocation)
-        return existing_allocation
-
-    @staticmethod
-    def remove_allocation(db: Session, allocation: Allocation):
-        db.delete(allocation)
-        db.commit()
