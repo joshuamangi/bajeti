@@ -22,14 +22,16 @@ class CategoryService:
     def get_categories_with_stats(db: Session, user_id: int):
         current_year_month = datetime.utcnow().strftime("%Y-%m")
         categories = db.query(Category).filter(
-            Category.user_id == user_id).all()
+            Category.user_id == user_id,
+            Category.type == "expense").all()
         result = []
 
         for category in categories:
             expenses = db.query(Expense).filter(
                 Expense.user_id == user_id,
                 Expense.category_id == category.id,
-                Expense.month == current_year_month
+                Expense.month == current_year_month,
+                Expense.type == "spend"
             ).all()
 
             total_spend = sum(Decimal(str(exp.amount)) for exp in expenses)
@@ -109,6 +111,7 @@ class CategoryService:
                     "description": exp.description,
                     "category_id": exp.category_id,
                     "user_id": exp.user_id,
+                    "type": exp.type,
                     "created_at": exp.created_at,
                     "updated_at": exp.updated_at,
                 }
@@ -120,6 +123,7 @@ class CategoryService:
                 "name": category.name,
                 "limit_amount": float(category.limit_amount) if category.limit_amount is not None else None,
                 "user_id": category.user_id,
+                "type": category.type,
                 "created_at": category.created_at,
                 "updated_at": category.updated_at,
                 "expense_count": expense_count,
@@ -137,15 +141,16 @@ class CategoryService:
     def get_category_by_id(db: Session, user_id: int, category_id: int):
         category = db.query(Category).filter(
             Category.id == category_id,
-            Category.user_id == user_id
+            Category.user_id == user_id,
         ).first()
         return category
 
     @staticmethod
-    def create_category(db: Session, user_id: int, category: CategoryBase):
+    def get_existing_category(db: Session, user_id: int, category: CategoryBase):
         existing_category = db.query(Category).filter(
             Category.name == category.name,
-            Category.user_id == user_id
+            Category.user_id == user_id,
+            Category.type == category.type
         ).first()
 
         return existing_category
@@ -155,6 +160,7 @@ class CategoryService:
         new_category = Category(
             name=category.name,
             limit_amount=category.limit_amount,
+            type=category.type,
             user_id=user_id
         )
         db.add(new_category)

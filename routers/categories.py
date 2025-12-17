@@ -49,7 +49,8 @@ async def create_category(
     db: Session = Depends(get_db),
     current_user: UserOut = Depends(get_current_user),
 ):
-    existing = CategoryService.create_category(db, current_user.id, category)
+    existing = CategoryService.get_existing_category(
+        db, current_user.id, category)
 
     if existing:
         raise HTTPException(

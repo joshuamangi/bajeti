@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Annotated, Optional
+from typing import Annotated, Literal, Optional
 from pydantic import BaseModel, StringConstraints
 
 MonthStr = Annotated[str, StringConstraints(
@@ -19,6 +19,7 @@ class ExpenseBase(BaseModel):
 class ExpenseCreate(ExpenseBase):
     """describes the structure for the creation of an expense"""
     category_id: int
+    type: Literal["spend", "withdrawal"] = "spend"
     # user_id: int
 
 
@@ -27,6 +28,7 @@ class ExpenseOut(ExpenseBase):
     id: int
     category_id: int
     user_id: int
+    type: str
     created_at: datetime
     updated_at: Optional[datetime] = None
 
