@@ -1,7 +1,26 @@
 from datetime import datetime
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, Numeric, String, UniqueConstraint
+from sqlalchemy import CheckConstraint, Column, DateTime, ForeignKey, Integer, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import relationship
 from data.db.db import Base
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    first_name = Column(String, nullable=False)
+    last_name = Column(String, nullable=False)
+    email = Column(String, unique=True, index=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow,
+                        onupdate=datetime.utcnow)
+    security_answer = Column(String(255), nullable=True)
+
+    categories = relationship("Category", back_populates="owner")
+    expenses = relationship("Expense", back_populates="owner")
+    transfers = relationship("Transfer", back_populates="owner")
+    budgets = relationship("Budget", back_populates="owner")
 
 
 class Budget(Base):
@@ -28,30 +47,13 @@ class Budget(Base):
     )
 
 
-class User(Base):
-    __tablename__ = "users"
-
-    id = Column(Integer, primary_key=True, index=True)
-    first_name = Column(String, nullable=False)
-    last_name = Column(String, nullable=False)
-    email = Column(String, unique=True, index=True, nullable=False)
-    hashed_password = Column(String, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow,
-                        onupdate=datetime.utcnow)
-    security_answer = Column(String(255), nullable=True)
-
-    categories = relationship("Category", back_populates="owner")
-    expenses = relationship("Expense", back_populates="owner")
-    transfers = relationship("Transfer", back_populates="owner")
-    budgets = relationship("Budget", back_populates="owner")
-
-
 class Category(Base):
     __tablename__ = "categories"
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
+    type = Column(String(20), nullable=False,
+                  default="expense", server_default="expense")
     limit_amount = Column(Numeric, nullable=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -74,7 +76,14 @@ class Category(Base):
     allocations = relationship("Allocation", back_populates="category")
 
     __table_args__ = (
-        UniqueConstraint("user_id", "name", name="uq_user_category_name"),
+        UniqueConstraint(
+            "user_id", "name", "type",
+            name="uq_user_category_name"
+        ),
+        CheckConstraint(
+            "type IN ('expense','savings')",
+            name="ck_categories_type"
+        ),
     )
 
 
@@ -84,6 +93,8 @@ class Expense(Base):
     id = Column(Integer, primary_key=True, index=True)
     amount = Column(Numeric, nullable=False)
     description = Column(String, nullable=True)
+    type = Column(String(20), nullable=False,
+                  default="spend", server_default="spend")
     month = Column(String, index=True)
     category_id = Column(Integer, ForeignKey("categories.id"))
     user_id = Column(Integer, ForeignKey("users.id"))
@@ -93,6 +104,12 @@ class Expense(Base):
 
     owner = relationship("User", back_populates="expenses")
     category = relationship("Category", back_populates="expenses")
+    __table_args__ = (
+        CheckConstraint(
+            "type IN ('spend','withdrawal')",
+            name="ck_expenses_type"
+        ),
+    )
 
 
 class Transfer(Base):
