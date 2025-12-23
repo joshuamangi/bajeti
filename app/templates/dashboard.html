@@ -415,66 +415,67 @@
           <!-- Allocation list will go here -->
           <div style="padding: 0.2em 0em 0em 0.4em; margin-top: 0.6em;">
           {% if budget_allocations.allocations %}
-            <div style="display: grid; grid-template-columns: 1.5fr 1fr auto; gap: 0.4em; padding-bottom: 0.4em;
+            <div style="display: grid; grid-template-columns: 1.5fr 1fr auto; gap: 0.4em; padding: 0.2em 1em 0.4em 0.6em;
                         border-bottom: 1px solid var(--bg-light); font-size: 0.9em; font-weight: 600; color: var(--highlight);">
               <div>Category Name</div>
               <div>Amount</div>
               <div>Actions</div>
             </div>
-            
-            <ul class="p-category-progress-ul" style="margin-top: 0; padding: 0;">
-              {% for ba in budget_allocations.allocations | sort(attribute='category_name') %}
-                <li class="p-category-progress-li" style="
-                  display: grid;
-                  grid-template-columns: 1.5fr 1fr auto;
-                  gap: 0.4em;
-                  align-items: center;
-                  padding: 0.8em 0.4em;
-                  border-bottom: 1px solid var(--bg-light);
-                  margin: 0;
-                ">
-                  <!-- Category Name -->
-                  <div style="
-                    font-weight: 500;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    white-space: nowrap;
+            <div style="padding: 0.4em; max-height: 200px; overflow-y: auto; border: 1px solid var(--border-muted); border-radius: 6px;">
+              <ul class="p-category-progress-ul" style="margin-top: 0; padding: 0;">
+                {% for ba in budget_allocations.allocations | sort(attribute='category_name') %}
+                  <li class="p-category-progress-li" style="
+                    display: grid;
+                    grid-template-columns: 1.5fr 1fr auto;
+                    gap: 0.4em;
+                    align-items: center;
+                    padding: 0.8em 0.6em;
+                    border-bottom: 1px solid var(--bg-light);
+                    margin: 0;
                   ">
-                    {{ ba.category_name }}
-                  </div>
-                  
-                  <!-- Amount - Right aligned -->
-                  <div style="
-                    font-weight: 600;
-                    text-align: center;
-                    color: var(--success);
-                  ">
-                    {{ ba.allocated_amount | commafy(0) }}
-                  </div>
-                  
-                  <!-- Actions -->
-                  <div style="
-                    display: flex;
-                    gap: 0.5em;
-                    justify-content: flex-end;
-                    flex-shrink: 0;
-                  ">
-                    <button class="p-icon-btn-warning" 
-                            onclick="generateModal('pEditAllocationModal{{ ba.category_id }}','pEditAllocationClose{{ ba.category_id }}','')">
-                      <i class="fa fa-pencil"></i>
-                    </button>
-                    <form method="POST" 
-                          action="/dashboard/allocations/{{ budget_details.id }}/delete/{{ ba.allocation_id }}" 
-                          onsubmit="return confirmSubmit(this,'Delete allocation?')"
-                          style="margin: 0;">
-                      <button class="p-icon-btn-danger" type="submit">
-                        <i class="fa fa-trash"></i>
+                    <!-- Category Name -->
+                    <div style="
+                      font-weight: 500;
+                      overflow: hidden;
+                      text-overflow: ellipsis;
+                      white-space: nowrap;
+                    ">
+                      {{ ba.category_name }}
+                    </div>
+                    
+                    <!-- Amount - Right aligned -->
+                    <div style="
+                      font-weight: 600;
+                      text-align: center;
+                      color: var(--success);
+                    ">
+                      {{ ba.allocated_amount | commafy(0) }}
+                    </div>
+                    
+                    <!-- Actions -->
+                    <div style="
+                      display: flex;
+                      gap: 0.5em;
+                      justify-content: flex-end;
+                      flex-shrink: 0;
+                    ">
+                      <button class="p-icon-btn-warning" 
+                              onclick="generateModal('pEditAllocationModal{{ ba.category_id }}','pEditAllocationClose{{ ba.category_id }}','')">
+                        <i class="fa fa-pencil"></i>
                       </button>
-                    </form>
-                  </div>
-                </li>
-              {% endfor %}
-            </ul>
+                      <form method="POST" 
+                            action="/dashboard/allocations/{{ budget_details.id }}/delete/{{ ba.allocation_id }}" 
+                            onsubmit="return confirmSubmit(this,'Delete allocation?')"
+                            style="margin: 0;">
+                        <button class="p-icon-btn-danger" type="submit">
+                          <i class="fa fa-trash"></i>
+                        </button>
+                      </form>
+                    </div>
+                  </li>
+                {% endfor %}
+              </ul>
+            </div>
           {% else %}
             <div class="p-category-progress-no-content" style="padding: 1.5em; text-align: center;">
               <strong class="p-no-expense" style="color: #6b7280;">
@@ -555,10 +556,11 @@
         </div>
         <!-- Transfers -->
         <div class="p-category-progress-transfer-divider">
-          <h4 style="font-size: 0.9em;">Transfers</h4>
+          <h4 style="font-size: 0.9em; padding-bottom: 0.4em;">Transfers</h4>
         </div>
         <div class="p-category-transfers-list">
           {% if cat.transfers_in or cat.transfers_out %}
+          <div style="padding: 0.4em; max-height: 100px; overflow-y: auto; border: 1px solid var(--border-muted); border-radius: 6px; margin-bottom: 0.4em;">
             <ul class="p-category-progress-ul">
               {% for t in cat.transfers_in %}
               <li class="p-category-progress-li">
@@ -587,6 +589,7 @@
               </li>
               {% endfor %}
             </ul>
+          </div>
           {% else %}
             <div class="p-category-progress-no-content">
               <strong class="p-no-expense">No transfer/topup this month.</strong>
@@ -618,7 +621,7 @@
             </button>
             </div>
           </div>
-          <div style="padding: 0.2em 0em 0em 0.4em; margin-left: 0.4em;">
+          <div style="margin-top: 0.6em; max-height: 200px; overflow-y: auto; border: 1px solid var(--border-muted); border-radius: 6px; padding: 0.4em;">
             {% if cat.expenses %}
               <ul class="p-category-progress-ul">
                 {% for e in cat.expenses %}
