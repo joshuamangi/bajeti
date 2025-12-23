@@ -196,7 +196,7 @@
       <!-- Budget Header Section -->
       <div class="p-modal-divider">
         <div class="p-category-header">
-          <span>
+          <span style="align-self: center;">
             <h3 class="p-modal-limit-name">{{ budget_allocations.budget.name }} Budget</h3>
           </span>
           
@@ -206,35 +206,38 @@
           {% set display_percent = allocation_percent if allocation_percent <= 100 else 100 %}
           
           <!-- Calculate unallocated percentage (unallocated/allocated * 100) -->
-          {% set unallocated_percent = (budget_allocations.summary.unallocated / budget_allocations.summary.total_allocated * 100) if budget_allocations.summary.total_allocated > 0 else 0 %}
-          
-          {% if allocation_exceeded %}
-            <span style="align-self: center;" class="p-category-status exceeded">
-              {{ (allocation_percent - 100) | round(1) }}% over
+          {% set unallocated_percent = (budget_allocations.summary.unallocated / budget_allocations.summary.total_allocated * 100) if budget_allocations.summary.total_allocated > 0 else 0 %}      
+          <div style="display: flex; gap: 0.4em;">
+            <span style="align-items: center;">
+              <div onclick="generateModal('pBudgetEditModal{{ budget_details.id }}','pEditBudgetClose{{ budget_details.id }}','')"
+              style="box-shadow: var(--shadow); padding: 0.2em 0.4em 0.2em 0em;
+               background: var(--bg-light); border-radius: 0.4em; display: flex; gap: 0.2em;">
+                <p style="flex: 1;" class="p-category-limit-amount sensitive" 
+                   data-value="{{ budget_allocations.budget.amount | commafy(0) }}">
+                  {{ budget_allocations.budget.amount | commafy(0) }}
+                </p>
+                <i style="margin-left: 0.8em; font-size: 0.8em; align-self: center; color: var(--warning);" class="fa fa-pencil"></i>
+              </div>
             </span>
-          {% else %}
-            <span style="align-self: center;" class="p-category-status ok">
-              {{ allocation_percent | round(1) }}% allocated
-            </span>
-          {% endif %}         
-          
-          <span style="align-self: center;">
-            <div onclick="generateModal('pBudgetEditModal{{ budget_details.id }}','pEditBudgetClose{{ budget_details.id }}','')"
-            style="box-shadow: var(--shadow); padding: 0.2em 0.4em 0.2em 0em;
-             background: var(--bg-light); border-radius: 0.4em; display: flex; gap: 0.2em;">
-              <p style="flex: 1;" class="p-category-limit-amount sensitive" 
-                 data-value="{{ budget_allocations.budget.amount | commafy(0) }}">
-                {{ budget_allocations.budget.amount | commafy(0) }}
-              </p>
-            </div>
-          </span>
-        </div>     
+          </div>
+        </div>
         
         <!-- Progress Bar for ALLOCATION (like in your working example) -->
         <div style="margin-bottom: 0.2em;" class="p-progress-bar">
           <div class="p-progress-fill {% if allocation_exceeded %}p-exceeded-fill{% else %}p-ok-fill{% endif %}"
                style="width: {{ display_percent }}%;">
           </div>
+        </div>
+        <div style="font-size: 0.8em;">
+          {% if allocation_exceeded %}
+             <span class="p-category-status exceeded">
+               {{ (allocation_percent - 100) | round(1) }}% over
+             </span>
+           {% else %}
+             <span class="p-category-status ok">
+               {{ allocation_percent | round(1) }}% allocated
+             </span>
+           {% endif %}   
         </div>
         </div>
       </div>
