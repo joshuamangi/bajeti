@@ -34,15 +34,28 @@ def get_budget_overview(
     )
 
 
-@router.post("", response_model=AllocationOut, status_code=status.HTTP_201_CREATED)
 @router.post("/", response_model=AllocationOut, status_code=status.HTTP_201_CREATED)
 def create_new_allocation(budget_id: int,
                           allocation: AllocationCreate,
                           db: Session = Depends(get_db),
                           current_user: UserOut = Depends(get_current_user)):
-    logger.info("Allocation request: category_id=%s, budget_id=%s, amount=%s",
-                allocation.category_id, budget_id, allocation.allocated_amount)
     return AllocationService.add_allocation(
         db=db, budget_id=budget_id, user_id=current_user.id, data=allocation)
 # put
-# delete
+
+
+@router.put("/")
+def update_allocation(
+        budget_id: int,
+        allocation: AllocationCreate,
+        db: Session = Depends(get_db),
+        current_user: UserOut = Depends(get_current_user)):
+    return AllocationService.edit_allocation(db=db, budget_id=budget_id, allocation=allocation)
+
+
+@router.delete("/{allocation_id}", status_code=status.HTTP_204_NO_CONTENT)
+def remove_allocation(budget_id: int,
+                      allocation_id: int,
+                      db: Session = Depends(get_db),
+                      current_user: UserOut = Depends(get_current_user)):
+    return AllocationService.delete_allocation(db=db, budget_id=budget_id, allocation_id=allocation_id)

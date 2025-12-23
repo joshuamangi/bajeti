@@ -148,3 +148,37 @@ class AllocationService:
             },
             "allocations": allocation_rows
         }
+
+    @staticmethod
+    def edit_allocation(db: Session,
+                        budget_id: int, allocation: AllocationCreate):
+        existing_allocation = db.query(Allocation).filter(
+            Allocation.budget_id == budget_id,
+            Allocation.category_id == allocation.category_id
+        ).first()
+        if not existing_allocation:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                detail="Allocation Not Found")
+        existing_allocation.allocated_amount = allocation.allocated_amount
+        existing_allocation.updated_at = datetime.utcnow()
+
+        db.commit()
+        db.refresh(existing_allocation)
+        return existing_allocation
+
+    @staticmethod
+    def delete_allocation(db: Session,
+                          budget_id: int,
+                          allocation_id: int):
+        existing_allocation = db.query(Allocation).filter(
+            Allocation.budget_id == budget_id,
+            Allocation.id == allocation_id
+        ).first()
+
+        if not existing_allocation:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Allocation not found")
+
+        db.delete(existing_allocation)
+        db.commit()

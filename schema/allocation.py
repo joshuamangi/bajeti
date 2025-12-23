@@ -15,3 +15,7 @@ class AllocationOut(AllocationCreate):
     category_id: int
     created_at: datetime
     updated_at: datetime
+
+    class Config:
+        """describes the class that allows sqlalchemy objects"""
+        orm_mode = True

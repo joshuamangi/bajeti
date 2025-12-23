@@ -20,7 +20,7 @@ async def update_budget(request: Request,
     if resp.status_code == status.HTTP_200_OK:
         return redirect_with_toast(
             base_url="/dashboard",
-            message="Amount changed successfully",
+            message="Amount updated successfully",
             type_="success",)
 
     user_response = await svc_get_current_user(token)
