@@ -12,8 +12,6 @@ async def create_allocation(token: str,
                             budget_id: int,
                             category_id: int,
                             allocated_amount: float):
-    print(
-        f"BudgetId: {budget_id}, Category_Id {category_id}, Allocated {allocated_amount}")
     resp = await post(
         path=f"/budgets/{budget_id}/allocations/",
         json={

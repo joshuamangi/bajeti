@@ -54,6 +54,8 @@ router.post(
     "/dashboard/transfers/{transfer_id}/undo")(transfer_handlers.undo_transfer)
 
 # ---------- BUDGET CRUD ----------
+router.post(
+    "/dashboard/budgets/{budget_id}/edit")(budget_handlers.update_budget)
 # ---------- ALLOCATIONS CRUD ------------
 router.post("/dashboard/allocations")(allocation_handlers.add_allocation)
 

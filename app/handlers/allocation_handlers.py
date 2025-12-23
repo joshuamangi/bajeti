@@ -18,6 +18,8 @@ async def add_allocation(request: Request,
                          category_id: int = Form(...),
                          budget_id: int = Form(...),
                          token: str = Depends(get_current_user)):
+    logger.info("Allocation request: category_id=%s, budget_id=%s, amount=%s",
+                category_id, budget_id, allocated_amount)
     token = get_current_user(request)
     allocation_response = await allocation_service.create_allocation(
         token=token,

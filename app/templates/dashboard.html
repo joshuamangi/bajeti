@@ -219,7 +219,9 @@
           {% endif %}         
           
           <span style="align-self: center;">
-            <div style="box-shadow: var(--shadow); padding: 0.2em 0.4em 0.2em 0em; background: var(--bg-light); border-radius: 0.4em; display: flex; gap: 0.2em;">
+            <div onclick="generateModal('pBudgetEditModal{{ budget_details.id }}','pEditBudgetClose{{ budget_details.id }}','')"
+            style="box-shadow: var(--shadow); padding: 0.2em 0.4em 0.2em 0em;
+             background: var(--bg-light); border-radius: 0.4em; display: flex; gap: 0.2em;">
               <p style="flex: 1;" class="p-category-limit-amount sensitive" 
                  data-value="{{ budget_allocations.budget.amount | commafy(0) }}">
                 {{ budget_allocations.budget.amount | commafy(0) }}
@@ -358,10 +360,6 @@
                 outline: none;
                 cursor: pointer;
                 appearance: none;
-                background-image: url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"10\" height=\"10\" viewBox=\"0 0 10 10\" fill=\"gray\"><path d=\"M5 7L1 3h8z\"/></svg>');
-                background-repeat: no-repeat;
-                background-position: right 0.6em center;
-                background-size: 10px;
               " 
               name="category_id" 
               required>
@@ -804,8 +802,25 @@
   </div>
 {% endfor %}
 
-
-
+<!-- Edit Budget -->
+ {% set budget_id=budget_details.id%}
+ <div class="p-modal" id="pBudgetEditModal{{ budget_id }}">
+   <div class="p-modal-content">
+    <form class="p-category-form" method="POST" action="/dashboard/budgets/{{ budget_id }}/edit">
+      <a href="#" id="pEditBudgetClose{{ budget_id}}" class="p-close"><i class="fa fa-close"></i></a>
+      <h2 class="p-modal-limit-name">Edit Budget</h2>
+      <div class="p-modal-details">
+        <div class="p-modal-form-content">
+          <label>Budget Name</label>
+          <input type="text" name="budget_name" value="{{ budget_details.name }}" readonly>
+          <label>Budget Amount</label>
+          <input type="number" name="budget_amount" value="{{ budget_details.amount }}" required>
+          <button type="submit" class="p-modal-btn" id="pCloseEditBudgetBtn{{ budget_id }}">Save</button>
+        </div>
+      </div>
+    </form>
+   </div>
+ </div>
 
 <!-- Alert & Confirm (single) -->
 <div id="pAlert" class="p-alert">

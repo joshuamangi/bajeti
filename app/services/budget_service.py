@@ -9,9 +9,10 @@ async def get_budget(token: str):
 
 async def edit_budget(token: str,
                       budget_id: int,
-                      amount: float):
+                      amount: float,
+                      budget_name: str):
     resp = await put(path=f"/budgets/{budget_id}", json={
-        "name": "Monthly",
+        "name": budget_name,
         "amount": amount,
     }, headers={"Authorization": f"Bearer {token}"})
     return resp

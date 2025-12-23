@@ -34,6 +34,7 @@ def get_budget_overview(
     )
 
 
+@router.post("", response_model=AllocationOut, status_code=status.HTTP_201_CREATED)
 @router.post("/", response_model=AllocationOut, status_code=status.HTTP_201_CREATED)
 def create_new_allocation(budget_id: int,
                           allocation: AllocationCreate,
