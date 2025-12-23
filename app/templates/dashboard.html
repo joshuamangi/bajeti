@@ -219,13 +219,11 @@
           {% endif %}         
           
           <span style="align-self: center;">
-            <div style="display: flex; gap: 0.2em;">
+            <div style="box-shadow: var(--shadow); padding: 0.2em 0.4em 0.2em 0em; background: var(--bg-light); border-radius: 0.4em; display: flex; gap: 0.2em;">
               <p style="flex: 1;" class="p-category-limit-amount sensitive" 
                  data-value="{{ budget_allocations.budget.amount | commafy(0) }}">
                 {{ budget_allocations.budget.amount | commafy(0) }}
               </p>
-              <i style="flex: 1; align-self: center; color: var(--secondary);" 
-                 class="fa fa-pencil"></i>
             </div>
           </span>
         </div>     
@@ -419,7 +417,7 @@
           <!-- Allocation list will go here -->
           <div style="padding: 0.2em 0em 0em 0.4em; margin-top: 0.6em;">
           {% if budget_allocations.allocations %}
-            <div style="display: grid; grid-template-columns: 2fr 1fr auto; gap: 0.4em; padding-bottom: 0.4em;
+            <div style="display: grid; grid-template-columns: 1.5fr 1fr auto; gap: 0.4em; padding-bottom: 0.4em;
                         border-bottom: 1px solid var(--bg-light); font-size: 0.9em; font-weight: 600; color: var(--highlight);">
               <div>Category Name</div>
               <div>Amount</div>
@@ -430,7 +428,7 @@
               {% for a in budget_allocations.allocations | sort(attribute='category_name') %}
                 <li class="p-category-progress-li" style="
                   display: grid;
-                  grid-template-columns: 2fr 1fr auto;
+                  grid-template-columns: 1.5fr 1fr auto;
                   gap: 0.4em;
                   align-items: center;
                   padding: 0.8em 0.4em;
