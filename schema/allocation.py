@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 class AllocationCreate(BaseModel):
     category_id: int
-    allocated_amount: Decimal
+    allocated_amount: float
 
 
 class AllocationOut(AllocationCreate):
