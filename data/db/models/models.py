@@ -73,7 +73,8 @@ class Category(Base):
         foreign_keys="Transfer.to_category_id",
         back_populates="to_category"
     )
-    allocations = relationship("Allocation", back_populates="category")
+    allocations = relationship(
+        "Allocation", back_populates="category", cascade="all, delete-orphan")
 
     __table_args__ = (
         UniqueConstraint(
@@ -147,7 +148,8 @@ class Allocation(Base):
     budget_id = Column(Integer, ForeignKey(
         "budgets.id", ondelete="CASCADE"), nullable=False)
 
-    category_id = Column(Integer, ForeignKey("categories.id"), nullable=False)
+    category_id = Column(Integer, ForeignKey(
+        "categories.id", ondelete="CASCADE"), nullable=False)
 
     allocated_amount = Column(Numeric, nullable=False)
 
