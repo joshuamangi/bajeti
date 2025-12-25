@@ -23,8 +23,7 @@ class TestCategories:
     def test_create_category_success(self, auth_headers):
         """Test creating a new category"""
         category_data = {
-            "name": "Groceries",
-            "limit_amount": 500.0
+            "name": "Groceries"
         }
 
         response = client.post(
@@ -33,13 +32,12 @@ class TestCategories:
 
         data = response.json()
         assert data["name"] == category_data["name"]
-        assert data["limit_amount"] == category_data["limit_amount"]
         assert "id" in data
         assert "user_id" in data
 
     def test_create_category_unauthorized(self):
         """Test creating category without authentication"""
-        category_data = {"name": "Groceries", "limit_amount": 500.0}
+        category_data = {"name": "Groceries"}
         response = client.post("/api/categories/", json=category_data)
         assert response.status_code == 401
 
@@ -70,8 +68,7 @@ class TestCategories:
         """Test updating a category"""
         category = create_category
         update_data = {
-            "name": "Updated Groceries",
-            "limit_amount": 600.0
+            "name": "Updated Groceries"
         }
 
         response = client.put(
@@ -83,11 +80,10 @@ class TestCategories:
 
         data = response.json()
         assert data["name"] == update_data["name"]
-        assert data["limit_amount"] == update_data["limit_amount"]
 
     def test_update_category_not_found(self, auth_headers):
         """Test updating non-existent category"""
-        update_data = {"name": "Test", "limit_amount": 100.0}
+        update_data = {"name": "Test"}
         response = client.put("/api/categories/999",
                               json=update_data, headers=auth_headers)
         assert response.status_code == 404
@@ -164,7 +160,6 @@ def create_category(auth_headers):
     import uuid
     category_data = {
         "name": f"Test Category {uuid.uuid4().hex[:8]}",  # Make unique
-        "limit_amount": 300.0
     }
     response = client.post(
         "/api/categories/", json=category_data, headers=auth_headers)

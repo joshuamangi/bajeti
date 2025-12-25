@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 
 from app.routers import requests_router
 from data.db.db import engine, Base
-from routers import auth, categories, expenses, transfers, users
+from routers import allocations, auth, budgets, categories, expenses, transfers, users
 from app import requests
 from app.config import IS_PRODUCTION
 
@@ -50,4 +50,6 @@ app.include_router(expenses.router)
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(transfers.router)
+app.include_router(budgets.router)
+app.include_router(allocations.router)
 app.include_router(requests_router.router)

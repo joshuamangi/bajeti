@@ -3,7 +3,7 @@
 from datetime import datetime
 
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 from schema.expense import ExpenseOut
 from schema.transfer import TransferOut, TransferStats
@@ -12,7 +12,7 @@ from schema.transfer import TransferOut, TransferStats
 class CategoryBase(BaseModel):
     """defines the structure of Category Base"""
     name: str
-    limit_amount: float
+    type: Literal["expense", "savings"] = "expense"
 
 
 class CategoryOut(CategoryBase):
@@ -31,6 +31,7 @@ class CategoryStats(CategoryOut):
     """Category plus aggregated stats for dashboard"""
     expense_count: int
     balance: float
+    allocated_amount: float
     expenses: List[ExpenseOut]
     used: float
     transfers_in: List[TransferStats]

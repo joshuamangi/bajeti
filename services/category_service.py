@@ -3,7 +3,7 @@ from datetime import datetime
 from decimal import Decimal
 from sqlalchemy.orm import Session
 
-from data.db.models.models import Category, Expense, Transfer
+from data.db.models.models import Allocation, Category, Expense, Transfer
 from schema.category import CategoryBase
 
 logger = logging.getLogger(__name__)
@@ -22,14 +22,16 @@ class CategoryService:
     def get_categories_with_stats(db: Session, user_id: int):
         current_year_month = datetime.utcnow().strftime("%Y-%m")
         categories = db.query(Category).filter(
-            Category.user_id == user_id).all()
+            Category.user_id == user_id,
+            Category.type == "expense").all()
         result = []
 
         for category in categories:
             expenses = db.query(Expense).filter(
                 Expense.user_id == user_id,
                 Expense.category_id == category.id,
-                Expense.month == current_year_month
+                Expense.month == current_year_month,
+                Expense.type == "spend"
             ).all()
 
             total_spend = sum(Decimal(str(exp.amount)) for exp in expenses)
@@ -96,9 +98,15 @@ class CategoryService:
             net_topup = total_incoming - total_outgoing
 
             # balance = (limit + net_topup) - used
-            category_limit = Decimal(
-                str(category.limit_amount)) if category.limit_amount is not None else Decimal("0")
-            balance = (category_limit + net_topup) - total_spend
+            allocation = db.query(Allocation).filter(
+                Allocation.category_id == category.id
+            ).first()
+
+            allocated_amount = (
+                Decimal(str(allocation.allocated_amount))
+                if allocation else Decimal("0")
+            )
+            balance = (allocated_amount + net_topup) - total_spend
 
             # convert expenses to dicts (same as before)
             expenses_list = [
@@ -109,6 +117,7 @@ class CategoryService:
                     "description": exp.description,
                     "category_id": exp.category_id,
                     "user_id": exp.user_id,
+                    "type": exp.type,
                     "created_at": exp.created_at,
                     "updated_at": exp.updated_at,
                 }
@@ -118,8 +127,9 @@ class CategoryService:
             result.append({
                 "id": category.id,
                 "name": category.name,
-                "limit_amount": float(category.limit_amount) if category.limit_amount is not None else None,
+                "allocated_amount": float(allocated_amount),
                 "user_id": category.user_id,
+                "type": category.type,
                 "created_at": category.created_at,
                 "updated_at": category.updated_at,
                 "expense_count": expense_count,
@@ -137,15 +147,16 @@ class CategoryService:
     def get_category_by_id(db: Session, user_id: int, category_id: int):
         category = db.query(Category).filter(
             Category.id == category_id,
-            Category.user_id == user_id
+            Category.user_id == user_id,
         ).first()
         return category
 
     @staticmethod
-    def create_category(db: Session, user_id: int, category: CategoryBase):
+    def get_existing_category(db: Session, user_id: int, category: CategoryBase):
         existing_category = db.query(Category).filter(
             Category.name == category.name,
-            Category.user_id == user_id
+            Category.user_id == user_id,
+            Category.type == category.type
         ).first()
 
         return existing_category
@@ -154,7 +165,7 @@ class CategoryService:
     def save_new_category(db: Session, user_id: int, category: CategoryBase):
         new_category = Category(
             name=category.name,
-            limit_amount=category.limit_amount,
+            type=category.type,
             user_id=user_id
         )
         db.add(new_category)
@@ -165,7 +176,6 @@ class CategoryService:
     @staticmethod
     def update_category(db: Session, existing_category: Category, update_data: CategoryBase):
         existing_category.name = update_data.name
-        existing_category.limit_amount = update_data.limit_amount
         existing_category.updated_at = datetime.utcnow()
 
         db.commit()

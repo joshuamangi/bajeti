@@ -1,8 +1,9 @@
 """Describes the database operations with sqlalchemy"""
 
 import os
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.engine import Engine
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")
@@ -29,3 +30,10 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+@event.listens_for(Engine, "connect")
+def enable_sqlite_fk(dbapi_connection, connection_record):
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()

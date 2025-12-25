@@ -15,3 +15,15 @@ alembic upgrade 2ffc2b03c4bf
 ## Rollback if needed
 
 alembic downgrade -1
+
+## Check for duplicate allocations first
+
+SELECT budget_id, category_id, COUNT(*)
+FROM allocations
+GROUP BY budget_id, category_id
+HAVING COUNT(*) > 1;
+
+## Production
+
+docker compose run --rm bajeti_app alembic upgrade head
+docker compose run --rm bajeti_app alembic stamp 57a2c175a301

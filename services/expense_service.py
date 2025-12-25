@@ -16,7 +16,8 @@ class ExpenseService:
     @staticmethod
     def get_all_expenses(db: Session, current_user: UserOut):
         expenses = db.query(Expense).filter(
-            Expense.user_id == current_user.id
+            Expense.user_id == current_user.id,
+            Expense.type == "spend"
         ).all()
 
         if not expenses:
@@ -34,7 +35,8 @@ class ExpenseService:
         expenses = db.query(Expense).filter(
             and_(
                 Expense.month == current_year_month,
-                Expense.user_id == current_user.id
+                Expense.user_id == current_user.id,
+                Expense.type == "spend"
             )
         ).all()
 
@@ -51,7 +53,8 @@ class ExpenseService:
         expenses = db.query(Expense).filter(
             and_(
                 Expense.month == month,
-                Expense.user_id == current_user.id
+                Expense.user_id == current_user.id,
+                Expense.type == "spend"
             )
         ).all()
 
@@ -68,7 +71,8 @@ class ExpenseService:
         expenses = db.query(Expense).filter(
             and_(
                 Expense.category_id == category_id,
-                Expense.user_id == current_user.id
+                Expense.user_id == current_user.id,
+                Expense.type == "spend"
             )
         ).all()
 
@@ -91,7 +95,8 @@ class ExpenseService:
             and_(
                 Expense.category_id == category_id,
                 Expense.month == month,
-                Expense.user_id == current_user.id
+                Expense.user_id == current_user.id,
+                Expense.type == "spend"
             )
         ).all()
 
@@ -113,6 +118,7 @@ class ExpenseService:
             amount=expense.amount,
             description=expense.description,
             month=expense.month,
+            type=expense.type,
             created_at=now,
             updated_at=now
         )
@@ -142,6 +148,7 @@ class ExpenseService:
         db_expense.amount = expense.amount
         db_expense.description = expense.description
         db_expense.month = expense.month
+        db_expense.type = expense.type
         db_expense.updated_at = datetime.utcnow()
 
         db.commit()

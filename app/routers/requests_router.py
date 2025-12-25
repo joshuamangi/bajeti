@@ -2,7 +2,9 @@
 from fastapi import APIRouter
 
 from app.handlers import (
+    allocation_handlers,
     auth_handlers,
+    budget_handlers,
     dashboard_handlers,
     category_handlers,
     expense_handlers,
@@ -51,6 +53,15 @@ router.post("/dashboard/transfers")(transfer_handlers.add_transfer)
 router.post(
     "/dashboard/transfers/{transfer_id}/undo")(transfer_handlers.undo_transfer)
 
+# ---------- BUDGET CRUD ----------
+router.post(
+    "/dashboard/budgets/{budget_id}/edit")(budget_handlers.update_budget)
+# ---------- ALLOCATIONS CRUD ------------
+router.post("/dashboard/allocations")(allocation_handlers.add_allocation)
+router.post(
+    "/dashboard/allocations/{budget_id}/edit")(allocation_handlers.edit_allocation)
+router.post(
+    "/dashboard/allocations/{budget_id}/delete/{allocation_id}")(allocation_handlers.delete_allocation)
 # ---------- STATIC PAGES ----------
 router.get(
     "/reports", response_class=page_handlers.HTMLResponse)(page_handlers.reports_page)

@@ -3,6 +3,8 @@ import logging
 from datetime import datetime
 from fastapi import Depends, Request, Form, status
 from fastapi.responses import RedirectResponse, HTMLResponse
+from app.services.allocation_service import fetch_budget_overview
+from app.services.budget_service import get_budget
 from app.utils.templates import render_with_user
 from app.utils.tokens import get_current_user
 from app.services.auth_service import get_current_user as svc_get_current_user
@@ -17,7 +19,17 @@ HTMLResponse = HTMLResponse  # expose to router
 
 
 async def profile(request: Request):
-    return await render_with_user("profile.html", request)
+    token: str = get_current_user(request)
+    user_response = await svc_get_current_user(token)
+    if user_response.status_code != status.HTTP_200_OK:
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+    user = user_response.json()
+    return await render_with_user("profile.html", request, {
+        "token": token,
+        "current_month": datetime.now().strftime('%B'),
+        "user": user,
+        "now": datetime.now().strftime("%Y-%m"),
+    })
 
 
 async def profile_update(request: Request,
@@ -46,7 +58,7 @@ async def profile_update(request: Request,
             "last_name": last_name,
             "security_answer": security_answer,
         })
-    if (response.status_code == status.HTTP_404_BAD_REQUEST):
+    if (response.status_code == status.HTTP_404_NOT_FOUND):
         return await render_with_user("profile.html", request, {
             "error": response.json().get('detail', 'User not found'),
             "email": email,
@@ -79,8 +91,19 @@ async def dashboard(request: Request, token: str = Depends(get_current_user)):
     categories_with_stats = categories_response.json(
     ) if categories_response.status_code == status.HTTP_200_OK else []
 
+    budget_response = await get_budget(token=token)
+    budget = budget_response.json(
+    ) if budget_response.status_code == status.HTTP_200_OK else None
+
+    budget_allocations_response = await fetch_budget_overview(token=token,
+                                                              budget_id=budget["id"])
+    budget_allocations = budget_allocations_response.json(
+    ) if budget_allocations_response.status_code == status.HTTP_200_OK else {}
+
     return await render_with_user("dashboard.html", request, {
         "categories_with_stats": categories_with_stats,
+        "budget_allocations": budget_allocations,
+        "budget_details": budget,
         "token": token,
         "current_month": datetime.now().strftime('%B'),
         "user": user,
