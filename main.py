@@ -16,7 +16,7 @@ from app.config import IS_PRODUCTION
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    Base.metadata.create_all(bind=engine)
+    # Base.metadata.create_all(bind=engine)
     yield
     # Shutdown (optional future cleanup)
 

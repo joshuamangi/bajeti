@@ -8,6 +8,8 @@ Create Date: 2025-12-17 20:32:38.314433
 from typing import Sequence, Union
 
 from alembic import op
+from sqlalchemy import text
+
 import sqlalchemy as sa
 
 
@@ -19,6 +21,12 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade():
+    conn = op.get_bind()
+
+    # Disable FK enforcement for batch rebuild
+    conn.execute(text("PRAGMA foreign_keys=OFF"))
+    conn.execute(text("DROP TABLE IF EXISTS _alembic_tmp_categories"))
+    conn.execute(text("DROP TABLE IF EXISTS _alembic_tmp_expenses"))
     # ---------- CATEGORIES ----------
     with op.batch_alter_table("categories", recreate="always") as batch:
         batch.add_column(
@@ -60,6 +68,8 @@ def upgrade():
             "ck_expenses_type",
             "type IN ('spend','withdrawal')"
         )
+
+    conn.execute(text("PRAGMA foreign_keys=ON"))
 
     # Backfill existing expenses explicitly
     op.execute("UPDATE expenses SET type = 'spend' WHERE type IS NULL")
