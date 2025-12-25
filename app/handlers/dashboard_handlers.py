@@ -19,7 +19,17 @@ HTMLResponse = HTMLResponse  # expose to router
 
 
 async def profile(request: Request):
-    return await render_with_user("profile.html", request)
+    token: str = get_current_user(request)
+    user_response = await svc_get_current_user(token)
+    if user_response.status_code != status.HTTP_200_OK:
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+    user = user_response.json()
+    return await render_with_user("profile.html", request, {
+        "token": token,
+        "current_month": datetime.now().strftime('%B'),
+        "user": user,
+        "now": datetime.now().strftime("%Y-%m"),
+    })
 
 
 async def profile_update(request: Request,
