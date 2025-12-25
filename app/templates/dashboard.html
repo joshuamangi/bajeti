@@ -38,7 +38,7 @@
 
 <!-- Summary & Add Category -->
 <section>
-  {% set total_limit = categories_with_stats | sum(attribute='limit_amount') %}
+  {% set total_limit = categories_with_stats | sum(attribute='allocated_amount') %}
   {% set total_balance = categories_with_stats | sum(attribute='balance') %}
   {% set total_used = total_limit - total_balance %}
   {% set progress_percent = (total_used / total_limit * 100) if total_limit > 0 else 0 %}
@@ -48,7 +48,7 @@
           style="width: {{ progress_percent }}%;">
     </div>
   </div>-->
-
+  <p style="margin-left: 0.8em; font-weight: 600; margin-top: 0.4em; margin-bottom: 0.4em;"> Budget</p>
   <div class="p-summary-card">
     <div class="p-summary-cards">
       <div onclick="generateModal('pBudgetModal','pBudgetClose','')">
@@ -68,11 +68,11 @@
     </div>
   </div>
 </section>
-<section>
+<!-- <section>
   <div class="p-add-category">
       <button class="p-button-info" id="launchAddCategory" onclick="generateModal('pCategoryModal','pCategoryClose','closeCategoryModalBtn')">+ Add New Category</button>
   </div>
-</section>
+</section> -->
 
 <!-- Category Progress section -->
 <section>
@@ -81,7 +81,7 @@
     
     {% for c in categories_with_stats %}
       {% set used = c.used %}
-      {% set limit = c.limit_amount %}
+      {% set limit = c.allocated_amount %}
       {% set balance = c.balance %}
       {% set exceeded = balance < 0 %}
       {% set percent = (used / limit * 100) if limit > 0 else 0 %}
@@ -147,7 +147,7 @@
       {% for cat in categories_with_stats %}
       <tr style="border-bottom:1px dashed var(--border);">
         <td style="padding:.6rem; font-weight:500;" data-label="Category">{{ cat.name }}</td>
-        <td style="padding:.6rem;" data-label="Limit"><span class="sensitive" data-value="{{ cat.limit_amount }}">{{ cat.limit_amount }}</span></td>
+        <td style="padding:.6rem;" data-label="Limit"><span class="sensitive" data-value="{{ cat.allocated_amount }}">{{ cat.allocated_amount}}</span></td>
         <td style="padding:.6rem;" data-label="Expenses">
           <a href="#" class="p-expense-amount {% if cat.expense_count == 0 %} p-empty-exp {% endif %}" onclick="generateModal('expensesModal{{ cat.id }}','expensesClose{{ cat.id }}','')">
             {{ cat.expense_count }}
@@ -160,9 +160,9 @@
         </td>
         <td style="padding:.6rem;" data-label="Actions">
           <div style="display:flex; gap:.4rem; flex-wrap:wrap;">
-            <form method="POST" action="/dashboard/expenses" onsubmit="return confirmSubmit(this, 'Add Quick expense of {{ cat.limit_amount }} to {{ cat.name }}?')">
+            <form method="POST" action="/dashboard/expenses" onsubmit="return confirmSubmit(this, 'Add Quick expense of {{ cat.allocated_amount }} to {{ cat.name }}?')">
               <input type="hidden" name="category_id" value="{{ cat.id }}">
-              <input type="hidden" name="amount" value="{{ cat.limit_amount }}">
+              <input type="hidden" name="amount" value="{{ cat.allocated_amount }}">
               <input type="hidden" name="description" value="Quick Expense">
               <input type="hidden" name="month" value="{{ now }}">
               <button class="p-actions-btns p-actions-btns-primary" type="submit" title="Quick Expense"><i class="fa fa-bolt"></i></button>
@@ -293,7 +293,7 @@
               maxlength="16" 
               required>
               
-              <input style="
+              <!-- <input style="
                 width: 100%; 
                 height: 28px;
                 padding: 0 0.6em;
@@ -310,7 +310,7 @@
               name="limit_amount" 
               type="number" 
               placeholder="Amount" 
-              required>
+              required> -->
               
               <button style="
                 width: 28px;
@@ -510,8 +510,8 @@
         <div class="p-modal-form-content">
           <label for="name">Name</label>
           <input name="name" type="text" placeholder="Category Name (16 characters)" maxlength="16" required>
-          <label for="limit_amount">Limit</label>
-          <input name="limit_amount" type="number" placeholder="Category Limit" required>
+          <!-- <label for="limit_amount">Limit</label>
+          <input name="limit_amount" type="number" placeholder="Category Limit" required> -->
         </div>
         <button type="submit" class="p-modal-btn" id="closeCategoryModalBtn">Add Category</button>
       </div>
@@ -522,7 +522,7 @@
 <!-- Category Modal -->
 {% for cat in categories_with_stats %}
   {% set used = cat.used %}
-  {% set limit = cat.limit_amount %}
+  {% set limit = cat.allocated_amount %}
   {% set balance = cat.balance %}
   {% set percent = (used / limit * 100) if limit > 0 else 0 %}
   {% set exceeded = percent > 100 %}
@@ -543,7 +543,7 @@
             </span>
           {% endif %}
            <span style="align-self:center;">
-            <p class="p-category-limit-amount sensitive" data-value="{{ cat.limit_amount | commafy(0) }}">{{ cat.limit_amount | commafy(0) }}</p>
+            <p class="p-category-limit-amount sensitive" data-value="{{ limit | commafy(0) }}">{{ limit | commafy(0) }}</p>
            </span>
         </div>
           <div class="p-category-progress-balance-container">
@@ -607,9 +607,9 @@
         <div class="p-category-progress-expenses">   
           <div style="flex:1;">
             <form method="POST" action="/dashboard/expenses"
-              onsubmit="return confirmSubmit(this, 'Add Quick expense of {{ cat.limit_amount }} to {{ cat.name }}?')">
+              onsubmit="return confirmSubmit(this, 'Add Quick expense of {{ limit }} to {{ cat.name }}?')">
               <input type="hidden" name="category_id" value="{{ cat.id }}">
-              <input type="hidden" name="amount" value="{{ cat.limit_amount }}">
+              <input type="hidden" name="amount" value="{{ limit }}">
               <input type="hidden" name="description" value="Quick Expense">
               <input type="hidden" name="month" value="{{ now }}">
               <button class="p-modal-btn-tertiary" type="submit" title="Quick Expense">
@@ -740,8 +740,8 @@
           <div class="p-modal-form-content">
             <label>Name</label>
             <input type="text" name="name" value="{{ cat.name }}" maxlength="16" required>
-            <label>Limit</label>
-            <input name="limit_amount" type="number" value="{{ cat.limit_amount }}" required>
+            <!-- <label>Limit</label>
+            <input name="limit_amount" type="number" value="{{ cat.limit_amount }}" required> -->
           </div>
           <button type="submit" class="p-modal-btn" id="closeEditCategoryBtn{{ cat.id }}">Save</button>
         </div>

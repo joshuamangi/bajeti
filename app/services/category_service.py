@@ -5,18 +5,16 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-async def create_category(token: str, name: str, limit_amount: float):
+async def create_category(token: str, name: str):
     resp = await post("/categories/", json={
-        "name": name,
-        "limit_amount": limit_amount
+        "name": name
     }, headers={"Authorization": f"Bearer {token}"})
     return resp
 
 
-async def update_category(token: str, category_id: int, name: str, limit_amount: float):
+async def update_category(token: str, category_id: int, name: str):
     resp = await put(f"/categories/{category_id}", json={
-        "name": name,
-        "limit_amount": limit_amount
+        "name": name
     }, headers={"Authorization": f"Bearer {token}"})
     return resp
 
