@@ -92,8 +92,14 @@ async def dashboard(request: Request, token: str = Depends(get_current_user)):
     ) if categories_response.status_code == status.HTTP_200_OK else []
 
     budget_response = await get_budget(token=token)
-    budget = budget_response.json(
-    ) if budget_response.status_code == status.HTTP_200_OK else None
+    if budget_response.status_code != status.HTTP_200_OK:
+        return redirect_with_toast(
+            "/dashboard",
+            "Please create your first budget to continue.",
+            "error"
+        )
+
+    budget = budget_response.json()
 
     budget_allocations_response = await fetch_budget_overview(token=token,
                                                               budget_id=budget["id"])

@@ -1,4 +1,5 @@
 from datetime import datetime
+from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
 from data.db.models.models import Budget
@@ -15,6 +16,25 @@ class BudgetService:
         ).first()
 
         return existing_budget
+
+    @staticmethod
+    def fetch_current_budget(db: Session, user_id: int):
+        # 1️⃣ Try to find the 'Monthly' budget
+        monthly_budget = db.query(Budget).filter(
+            Budget.user_id == user_id,
+            Budget.name == "Monthly"
+        ).first()
+
+        if monthly_budget:
+            return monthly_budget
+
+        # 2️⃣ Otherwise return the most recently created one
+        return (
+            db.query(Budget)
+            .filter(Budget.user_id == user_id)
+            .order_by(desc(Budget.created_at))
+            .first()
+        )
 
     @staticmethod
     def save_new_budget(db: Session, user_id: int, budget: BudgetBase):
