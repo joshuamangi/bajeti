@@ -18,6 +18,22 @@ async def get_all_budgets(
     return BudgetService.get_all_budgets(db=db, user_id=current_user.id)
 
 
+@router.get("/current", response_model=BudgetOut)
+async def get_current_budget(
+        db: Session = Depends(get_db),
+        current_user: UserOut = Depends(get_current_user)):
+
+    budget = BudgetService.fetch_current_budget(db=db, user_id=current_user.id)
+
+    if not budget:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No budget found for user"
+        )
+
+    return budget
+
+
 @router.get("/{budget_id}", response_model=BudgetOut)
 async def get_single_budget(
     budget_id: int,

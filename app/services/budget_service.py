@@ -2,8 +2,7 @@ from app.services.http_client import get, post, put
 
 
 async def get_budget(token: str):
-    budget_id: int = 1
-    resp = await get(path=f"/budgets/{budget_id}", headers={"Authorization": f"Bearer {token}"})
+    resp = await get(path=f"/budgets/current", headers={"Authorization": f"Bearer {token}"})
     return resp
 
 
