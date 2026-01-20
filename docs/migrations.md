@@ -10,7 +10,7 @@ alembic upgrade head
 
 ## Test specific migration
 
-alembic upgrade 2ffc2b03c4bf
+alembic upgrade 57a2c175a301
 
 ## Rollback if needed
 
@@ -26,4 +26,4 @@ HAVING COUNT(*) > 1;
 ## Production
 
 docker compose run --rm bajeti_app alembic upgrade head
-docker compose run --rm bajeti_app alembic stamp 57a2c175a301
+docker compose run --rm bajeti_app alembic stamp fb0f9940d407
