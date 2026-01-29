@@ -18,11 +18,10 @@ class BudgetService:
         return existing_budget
 
     @staticmethod
-    def fetch_current_budget(db: Session, user_id: int):
-        # 1️⃣ Try to find the 'Monthly' budget
+    def fetch_current_budget(db: Session, user_id: int, budget_type: str = "expense"):
         monthly_budget = db.query(Budget).filter(
             Budget.user_id == user_id,
-            Budget.name == "Monthly"
+            Budget.name == "Monthly" if budget_type == "expense" else True
         ).first()
 
         if monthly_budget:

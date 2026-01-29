@@ -10,7 +10,7 @@ alembic upgrade head
 
 ## Test specific migration
 
-alembic upgrade 57a2c175a301
+alembic upgrade fb0f9940d407
 
 ## Rollback if needed
 

@@ -162,6 +162,55 @@ class CategoryService:
         return existing_category
 
     @staticmethod
+    def get_savings_categories_with_stats(db: Session, user_id: int):
+        current_year_month = datetime.utcnow().strftime("%Y-%m")
+
+        categories = db.query(Category).filter(
+            Category.user_id == user_id,
+            Category.type == "savings"
+        ).all()
+
+        result = []
+
+        for category in categories:
+            incoming = db.query(Transfer).filter(
+                Transfer.user_id == user_id,
+                Transfer.to_category_id == category.id,
+                Transfer.month == current_year_month
+            ).all()
+
+            outgoing = db.query(Transfer).filter(
+                Transfer.user_id == user_id,
+                Transfer.from_category_id == category.id,
+                Transfer.month == current_year_month
+            ).all()
+
+            total_incoming = sum(Decimal(str(t.amount)) for t in incoming)
+            total_outgoing = sum(Decimal(str(t.amount)) for t in outgoing)
+
+            allocation = db.query(Allocation).filter(
+                Allocation.category_id == category.id
+            ).first()
+
+            allocated_amount = (
+                Decimal(str(allocation.allocated_amount))
+                if allocation else Decimal("0")
+            )
+
+            balance = allocated_amount + total_incoming - total_outgoing
+
+            result.append({
+                "id": category.id,
+                "name": category.name,
+                "allocated_amount": float(allocated_amount),
+                "balance": float(balance),
+                "total_deposits": float(total_incoming),
+                "total_withdrawals": float(total_outgoing),
+            })
+
+        return result
+
+    @staticmethod
     def save_new_category(db: Session, user_id: int, category: CategoryBase):
         new_category = Category(
             name=category.name,
