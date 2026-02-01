@@ -40,6 +40,7 @@ class BudgetService:
         new_budget = Budget(
             name=budget.name,
             amount=budget.amount,
+            type=budget.type,
             user_id=user_id
         )
         db.add(new_budget)
@@ -66,6 +67,7 @@ class BudgetService:
     def update_budget(db: Session, existing_budget: Budget, updated_budget: BudgetBase):
         existing_budget.name = updated_budget.name
         existing_budget.amount = updated_budget.amount
+        existing_budget.type = updated_budget.type
         existing_budget.updated_at = datetime.utcnow()
 
         db.commit()

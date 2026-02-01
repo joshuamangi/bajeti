@@ -4,7 +4,7 @@ from datetime import datetime
 from fastapi import Depends, Request, Form, status
 from fastapi.responses import RedirectResponse, HTMLResponse
 from app.services.allocation_service import fetch_budget_overview
-from app.services.budget_service import get_budget
+from app.services.budget_service import get_all_budgets, get_budget
 from app.utils.templates import render_with_user
 from app.utils.tokens import get_current_user
 from app.services.auth_service import get_current_user as svc_get_current_user
@@ -106,10 +106,20 @@ async def dashboard(request: Request, token: str = Depends(get_current_user)):
     budget_allocations = budget_allocations_response.json(
     ) if budget_allocations_response.status_code == status.HTTP_200_OK else {}
 
+    # Get all budgets by calling the budgets endpoint
+
+    # Get budgets response
+    all_budgets_response = await get_all_budgets(token=token)
+
+    all_budgets = all_budgets_response.json(
+    ) if all_budgets_response.status_code == status.HTTP_200_OK else {}
+    # Separate expenses from savings
+
     return await render_with_user("dashboard.html", request, {
         "categories_with_stats": categories_with_stats,
         "budget_allocations": budget_allocations,
         "budget_details": budget,
+        "all_budgets": all_budgets,
         "token": token,
         "current_month": datetime.now().strftime('%B'),
         "user": user,

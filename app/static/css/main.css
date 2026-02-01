@@ -720,6 +720,24 @@ input {
     pointer-events: auto;
 }
 
+/* ----------------- Budgets -------------------- */
+.p-budgets-container {
+    display: flex;
+    flex-direction: row;
+    gap: 0.8em;
+    margin: 0em 0.6em;
+    justify-content: space-between;
+}
+
+.p-budgets-containers {
+    flex: 1;
+}
+
+.p-budget-title {
+    padding-left: 0.2em;
+    font-size: 0.8em;
+}
+
 /* ---------------------- Category Progress section ---------------------- */
 .p-category-progress-paragraph {
     font-weight: 600;
@@ -729,7 +747,6 @@ input {
     border-color: var(--primary);
     border-width: .1em;
     padding: 0.4em 0em 0.4em 0.2em;
-    border-top: 0.4em solid var(--border-muted);
 }
 
 .p-modal-gap {

@@ -6,6 +6,11 @@ async def get_budget(token: str):
     return resp
 
 
+async def get_all_budgets(token: str):
+    resp = await get(path=f"/budgets/", headers={"Authorization": f"Bearer {token}"})
+    return resp
+
+
 async def edit_budget(token: str,
                       budget_id: int,
                       amount: float,
