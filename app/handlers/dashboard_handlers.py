@@ -112,14 +112,19 @@ async def dashboard(request: Request, token: str = Depends(get_current_user)):
     all_budgets_response = await get_all_budgets(token=token)
 
     all_budgets = all_budgets_response.json(
-    ) if all_budgets_response.status_code == status.HTTP_200_OK else {}
+    ) if all_budgets_response.status_code == status.HTTP_200_OK else []
     # Separate expenses from savings
+
+    expense_budgets = [b for b in all_budgets if b.get("type") == "expense"]
+    savings_budgets = [b for b in all_budgets if b.get("type") == "savings"]
 
     return await render_with_user("dashboard.html", request, {
         "categories_with_stats": categories_with_stats,
         "budget_allocations": budget_allocations,
         "budget_details": budget,
         "all_budgets": all_budgets,
+        "expense_budgets": expense_budgets,
+        "savings_budgets": savings_budgets,
         "token": token,
         "current_month": datetime.now().strftime('%B'),
         "user": user,

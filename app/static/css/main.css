@@ -738,6 +738,15 @@ input {
     font-size: 0.8em;
 }
 
+.p-budget-items {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.4em;
+    flex-wrap: wrap;
+}
+
+.p-budget-item {}
+
 /* ---------------------- Category Progress section ---------------------- */
 .p-category-progress-paragraph {
     font-weight: 600;

@@ -80,9 +80,23 @@
       <div class="p-budgets-containers">
         <div class="p-budget-title">
           Expenses
-          {% for a_b in all_budgets%}
-            {{a_b.name}}
-          {% endfor %}
+          {% if expense_budgets %}
+            {% for expbudget in expense_budgets %}
+              <!-- Add loop for radio button -->
+               <div class="p-budget-items">
+                 <div class="p-budget-item">
+                   <input type="radio" id="budget-{{expbudget.id}}" name="selected_budget" value="{{expbudget.name}}">
+                   <label for="budget-{{expbudget.id}}">
+                     {{ expbudget.name}}
+                   </label>
+                 </div>
+               </div>
+            {% endfor %}
+            {% else %}
+              <div>
+                No Expenses
+              </div>
+          {% endif %}
         </div>
       </div>
     
@@ -90,6 +104,20 @@
       <div class="p-budgets-containers">
         <div class="p-budget-title">
           Savings
+          {% if savings_budgets %}
+            {% for savbudget in savings_budgets %}
+              <div>
+                <input type="radio" id="budget-{{savbudget.id}}" name="selected_budget" value="{{savbudget.name}}">
+                <label for="budget-{{savbudget.id}}">
+                  {{ savbudget.name}}
+                </label>
+              </div>
+            {% endfor %}
+            {% else %}
+              <div>
+                No Savings
+              </div>
+          {% endif %}
         </div>
       </div>
   </div>
