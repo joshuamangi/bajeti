@@ -741,11 +741,18 @@ input {
 .p-budget-items {
     display: flex;
     justify-content: space-between;
-    gap: 0.4em;
+    gap: 0.8em;
     flex-wrap: wrap;
 }
 
-.p-budget-item {}
+.p-budget-item {
+    flex: 1;
+    box-shadow: var(--shadow);
+    border-radius: 0.6em;
+    background: var(--bg-light);
+    padding: 0.8em;
+
+}
 
 /* ---------------------- Category Progress section ---------------------- */
 .p-category-progress-paragraph {
