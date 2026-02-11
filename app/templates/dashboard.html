@@ -72,54 +72,124 @@
 </section>
 <section>
   <!-- Budgets -->
-  <p style="margin-left: 0.8em; font-weight: 600; margin-top: 0.4em; margin-bottom: 0.4em;"> Budgets</p>
+  <div class="p-budget-create-container">
+    <p style="margin-left: 0.8em; font-weight: 600; margin-top: 0.4em; margin-bottom: 0.4em;"> Budgets</p>
+    <button class="p-budget-create-btn p-actions-btns-primary" id="launchCreateBudget" onclick="generateModal('pBudgetCreateModal','pBudgetCreateModalClose','closeBudgetCreateModalBtn')"><i class="fa-solid fa-plus"></i></button>
+  </div>
+
 
   <!-- Budget Container -->
   <div class="p-budgets-container">
-    <!-- Expenses Container -->
-      <div class="p-budgets-containers">
-        <div class="p-budget-title">
-          Expenses
-          {% if expense_budgets %}
-            {% for expbudget in expense_budgets %}
-              <!-- Add loop for radio button -->
-               <div class="p-budget-items">
-                 <div class="p-budget-item">
-                   <input type="radio" id="budget-{{expbudget.id}}" name="selected_budget" value="{{expbudget.name}}">
-                   <label for="budget-{{expbudget.id}}">
-                     {{ expbudget.name}}
-                   </label>
-                 </div>
-               </div>
-            {% endfor %}
-            {% else %}
-              <div>
-                No Expenses
-              </div>
-          {% endif %}
-        </div>
-      </div>
-    
     <!-- Savings Container -->
+    {% set savings_budgets = all_budgets | selectattr("type", "equalto", "savings") | list %}
+    <div class="p-budgets-containers">
+      <div>
+        <p class="p-budget-title">Savings Budgets</p>
+      </div>
+
+      <div class="p-budget-items">
+        {% if savings_budgets %}
+          {% for budget in savings_budgets %}
+            <div class="p-budget-item">
+              <div class="p-budget-item-containers">
+
+                <div class="p-budget-item-container" style="flex:2;">
+                  <input
+                    type="radio"
+                    id="budget-sav-{{ budget.id }}"
+                    name="selected_budget"
+                    value="sav-{{ budget.id }}"
+                    {% if budget_details.id == budget.id %}checked{% endif %}
+                  >
+                  <label for="budget-sav-{{ budget.id }}">
+                    {{ budget.name }}
+                  </label>
+                </div>
+
+                <div class="p-budget-item-container" style="flex:1;">
+                  <div style="display:flex; gap:0.4em;">
+                    <button class="p-icon-btn-warning"
+                            onclick="generateModal('pBudgetEditModal{{ budget.id }}','pEditBudgetClose{{ budget.id }}','')">
+                      <i class="fa fa-pencil"></i>
+                    </button>
+
+                    <form method="POST"
+                          action="/dashboard/{{ budget.id }}/delete"
+                          onsubmit="return confirmSubmit(this,'Delete Budget?')"
+                          style="margin:0;">
+                      <button class="p-icon-btn-danger">
+                        <i class="fa fa-trash"></i>
+                      </button>
+                    </form>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="p-budget-item">No Savings Budgets</div>
+        {% endif %}
+      </div>
+    </div>
+
+
+    <!-- Expenses Container -->
+     {% set expense_budgets = all_budgets | selectattr("type", "equalto", "expense") | list %}
       <div class="p-budgets-containers">
-        <div class="p-budget-title">
-          Savings
-          {% if savings_budgets %}
-            {% for savbudget in savings_budgets %}
-              <div>
-                <input type="radio" id="budget-{{savbudget.id}}" name="selected_budget" value="{{savbudget.name}}">
-                <label for="budget-{{savbudget.id}}">
-                  {{ savbudget.name}}
-                </label>
+        <div>
+          <p class="p-budget-title">Expense Budgets</p>
+        </div>
+
+        <div class="p-budget-items">
+          {% if expense_budgets %}
+            {% for budget in expense_budgets %}
+              <div class="p-budget-item">
+                <div class="p-budget-item-containers">
+
+                  <div class="p-budget-item-container" style="flex:2;">
+                    <input
+                      type="radio"
+                      id="budget-{{ budget.id }}"
+                      name="selected_budget"
+                      value="/dashboard?budget_id={{ budget.id }}"
+                      onchange="window.location.href=this.value"
+                      {% if budget_details.id == budget.id %}checked{% endif %}
+                    >
+                    <label for="budget-{{ budget.id }}">
+                      {{ budget.name }}
+                    </label>
+                  </div>
+
+                  <div class="p-budget-item-container" style="flex:1;">
+                    <div style="display:flex; gap:0.4em;">
+                      <button class="p-icon-btn-warning"
+                              onclick="generateModal('pBudgetEditModal{{ budget.id }}','pEditBudgetClose{{ budget.id }}','')">
+                        <i class="fa fa-pencil"></i>
+                      </button>
+
+                      <form method="POST"
+                            action="/dashboard/{{ budget.id }}/delete"
+                            onsubmit="return confirmSubmit(this,'Delete Budget?')"
+                            style="margin:0;">
+                        <button class="p-icon-btn-danger"
+                                {% if budget.name|lower == 'monthly' %}disabled{% endif %}>
+                          <i class="fa fa-trash"></i>
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+
+                </div>
               </div>
             {% endfor %}
-            {% else %}
-              <div>
-                No Savings
-              </div>
+          {% else %}
+            <div class="p-budget-item">No Expense Budgets</div>
           {% endif %}
         </div>
       </div>
+
+    
   </div>
 </section>
 <!-- <section>
@@ -863,24 +933,71 @@
 {% endfor %}
 
 <!-- Edit Budget Modal-->
-{% set budget_id=budget_details.id%}
+{% for budget in all_budgets %}
+{% set budget_id=budget.id%}
+{% set is_monthly = budget.name|lower == 'monthly' %}
+
 <div class="p-modal" id="pBudgetEditModal{{ budget_id }}">
   <div class="p-modal-content">
     <form class="p-category-form" method="POST" action="/dashboard/budgets/{{ budget_id }}/edit">
       <a href="#" id="pEditBudgetClose{{ budget_id}}" class="p-close"><i class="fa fa-close"></i></a>
-      <h2 class="p-modal-limit-name">Edit Budget</h2>
+      <h2 class="p-modal-limit-name">Edit {{budget.name}}</h2>
       <div class="p-modal-details">
         <div class="p-modal-form-content">
           <label>Budget Name</label>
-          <input type="text" name="budget_name" value="{{ budget_details.name }}" readonly>
+          <input type="text" name="budget_name" value="{{ budget.name }}" {% if is_monthly %} readonly {% endif %} maxlength="10" required>
+          <label>Expense Type</label>
+          {% if is_monthly %}
+            <input type="hidden" name="expense_type" value="{{ budget.type }}">
+          {% endif %}
+          <select name="budget_type" {% if is_monthly %} disabled {% endif %} required>
+            <option value="expense" {% if budget.type == 'expense' %}selected{% endif %}>Expense</option>
+            <option value="savings" {% if budget.type == 'savings' %}selected{% endif %}>Savings</option>
+          </select>
           <label>Budget Amount</label>
-          <input type="number" name="budget_amount" value="{{ budget_details.amount }}" step="any" required>
+          <input class="sensitive" type="number" name="budget_amount" value="{{ budget.amount }}" step="any" required>
+          {% if is_monthly %}
+            <small class="p-text-muted">
+              Monthly budgets can only have the amount edited.
+            </small>
+          {% endif %}
           <button type="submit" class="p-modal-btn" id="pCloseEditBudgetBtn{{ budget_id }}">Save</button>
         </div>
       </div>
     </form>
   </div>
 </div>
+{% endfor %}
+
+<!-- Create Budget Modal -->
+ <div class="p-modal" id="pBudgetCreateModal">
+  <div class="p-modal-content">
+    <form class="p-category-form" method="POST" action="/dashboard/budgets">
+      <a href="#" id="pBudgetCreateModalClose" class="p-close"><i class="fa fa-close"></i></a>
+      <!-- Title -->
+       <h2 class="p-modal-limit-name">Create Budget</h2>
+       <div class="p-modal-details">
+        <div class="p-modal-form-content">
+          <!-- Budget Type -->
+           <label>Budget Type</label>
+           <select style="border: 1px solid var(--text-muted);" name="budget_type" required>
+              <option value="" disabled selected>Select</option>
+             <!-- <option value="expense">Expense</option> -->
+              <option value="savings">Savings</option>
+            </select>
+          <!-- Budget Name -->
+           <label>Budget Name</label>
+           <input type="text" name="budget_name" placeholder="Enter Budget Name" maxlength="10" required>
+          <!-- Budget Amount -->
+           <label>Budget Amount</label>
+           <input type="number" name="budget_amount" placeholder="Enter Budget Amount" step="any" required>
+          <!-- Budget Submit Button -->
+           <button type="submit" class="p-modal-btn" id="pBudgetCreateCloseBtn">Submit</button>
+        </div>
+       </div>
+    </form>
+  </div>
+ </div>
 
 
 <!-- Edit Allocation Modal -->

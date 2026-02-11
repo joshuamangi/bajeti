@@ -721,12 +721,31 @@ input {
 }
 
 /* ----------------- Budgets -------------------- */
+.p-budget-create-container {
+    padding: 0.4em 0.4em 0em 0em;
+    display: flex;
+    gap: 0.6em;
+}
+
+.p-budget-create-btn {
+    margin-top: 0.1em;
+    background: var(--bg-light);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease, background 0.3s ease;
+}
+
 .p-budgets-container {
     display: flex;
     flex-direction: row;
     gap: 0.8em;
     margin: 0em 0.6em;
     justify-content: space-between;
+    margin-top: 0.4em;
 }
 
 .p-budgets-containers {
@@ -735,13 +754,15 @@ input {
 
 .p-budget-title {
     padding-left: 0.2em;
+    padding-bottom: 0.2em;
     font-size: 0.8em;
+    font-weight: 500;
 }
 
 .p-budget-items {
     display: flex;
-    justify-content: space-between;
-    gap: 0.8em;
+    flex-direction: column;
+    gap: 0.4em;
     flex-wrap: wrap;
 }
 
@@ -749,8 +770,58 @@ input {
     flex: 1;
     box-shadow: var(--shadow);
     border-radius: 0.6em;
-    background: var(--bg-light);
-    padding: 0.8em;
+    background: var(--gradient-hover);
+    padding: 0.8em 0em 0.3em 0.8em;
+    font-size: 0.8em;
+    font-weight: 500;
+    position: relative;
+}
+
+.p-budget-item label {
+    position: absolute;
+    padding-left: 0.2em;
+    /* padding-top: 0.2em; */
+    flex-wrap: wrap;
+    max-width: 60px;
+    align-self: center;
+}
+
+.p-budget-item input[type="radio"] {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    cursor: pointer;
+}
+
+.p-budget-item input[type="radio"]::before {
+    content: '';
+    position: absolute;
+    top: 1.1em;
+    left: 0.8em;
+    width: 1em;
+    height: 1em;
+    border: solid 2px var(--border);
+    border-radius: 50%;
+
+}
+
+.p-budget-item input[type="radio"]:checked::before {
+    background-size: cover;
+    border: solid 2px var(--bg-dark);
+    background-color: var(--primary);
+}
+
+.p-budget-item-containers {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+}
+
+.p-budget-item-container {
+    padding-top: -0.2em;
+    padding-right: 0.8em;
+    padding-bottom: 0.4em;
 
 }
 

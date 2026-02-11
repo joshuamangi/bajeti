@@ -56,6 +56,8 @@ router.post(
 # ---------- BUDGET CRUD ----------
 router.post(
     "/dashboard/budgets/{budget_id}/edit")(budget_handlers.update_budget)
+router.post("/dashboard/budgets")(budget_handlers.create_budget)
+router.post("/dashboard/{budget_id}/delete")(budget_handlers.remove_budget)
 # ---------- ALLOCATIONS CRUD ------------
 router.post("/dashboard/allocations")(allocation_handlers.add_allocation)
 router.post(
