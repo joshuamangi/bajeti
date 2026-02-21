@@ -15,10 +15,11 @@ async def add_expense(request: Request,
                       category_id: int = Form(...),
                       amount: float = Form(...),
                       description: str = Form(""),
+                      expense_type: str = Form(...),
                       month: Optional[str] = Form(None)):
     token = get_current_user(request)
     payload = {"category_id": category_id,
-               "amount": amount, "description": description}
+               "amount": amount, "description": description, "type": expense_type}
     if month:
         payload["month"] = month
 

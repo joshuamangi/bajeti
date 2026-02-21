@@ -12,9 +12,10 @@ logger = logging.getLogger(__name__)
 
 async def add_category(request: Request,
                        name: str = Form(...),
+                       category_type: str = Form(...),
                        token: str = Depends(get_current_user)):  # note: Depends not allowed at top-level; we'll use get_current_user inside
     token = get_current_user(request)
-    resp = await create_category(token, name)
+    resp = await create_category(token, name, category_type)
 
     if resp.status_code == status.HTTP_201_CREATED:
         return redirect_with_toast("/dashboard", f"{name} created successfully!", "success")

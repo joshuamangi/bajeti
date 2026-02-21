@@ -89,7 +89,7 @@ class AllocationService:
             .filter(
                 Allocation.budget_id == budget_id,
                 Category.user_id == user_id,
-                Category.type == "expense"
+                # Category.type == "expense"
             )
             .all()
         )
@@ -109,7 +109,7 @@ class AllocationService:
                     Expense.user_id == user_id,
                     Expense.category_id == category.id,
                     Expense.month == month,
-                    Expense.type == "spend"
+                    # Expense.type == "spend"
                 )
                 .scalar()
             )

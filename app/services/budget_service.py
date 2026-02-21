@@ -1,3 +1,4 @@
+from typing import Optional
 from app.services.http_client import delete, get, post, put
 
 
@@ -15,7 +16,12 @@ async def add_budget(token: str,
     return resp
 
 
-async def get_budget(token: str):
+async def get_active_budget(token: str, budget_id: Optional[int] = None):
+    if budget_id:
+        resp = await get(path=f"/budgets/{budget_id}",
+                         headers={"Authorization": f"Bearer {token}"})
+        return resp
+
     resp = await get(path=f"/budgets/current", headers={"Authorization": f"Bearer {token}"})
     return resp
 

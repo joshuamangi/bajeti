@@ -96,7 +96,7 @@ class ExpenseService:
                 Expense.category_id == category_id,
                 Expense.month == month,
                 Expense.user_id == current_user.id,
-                Expense.type == "spend"
+                # Expense.type == "spend"
             )
         ).all()
 

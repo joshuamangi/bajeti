@@ -1,14 +1,16 @@
 # app/handlers/dashboard_handlers.py
 import logging
 from datetime import datetime
-from fastapi import Depends, Request, Form, status
+from typing import Optional
+from fastapi import Depends, Request, Form, Response, status
 from fastapi.responses import RedirectResponse, HTMLResponse
 from app.services.allocation_service import fetch_budget_overview
-from app.services.budget_service import get_all_budgets, get_budget
+from app.services.budget_service import get_active_budget, get_all_budgets
+from app.utils.active_budget import resolve_active_budget_id
 from app.utils.templates import render_with_user
 from app.utils.tokens import get_current_user
 from app.services.auth_service import get_current_user as svc_get_current_user
-from app.services.category_service import get_categories_with_stats as svc_get_categories
+from app.services.category_service import get_categories_by_type, get_categories_with_stats as svc_get_categories
 from app.services.user_service import reset_password as svc_reset_password
 from app.services.auth_service import login as svc_login
 from app.utils.redirects import redirect_with_toast
@@ -80,18 +82,30 @@ async def profile_update(request: Request,
     })
 
 
-async def dashboard(request: Request, token: str = Depends(get_current_user)):
-    # get_current_user returns token string (same behaviour)
-    user_response = await svc_get_current_user(token)
+async def dashboard(
+    request: Request,
+    token: str = Depends(get_current_user),
+    budget_id: Optional[int] = None
+):
+    # 1. Resolve user
+    user_response = await svc_get_current_user(token=token)
     if user_response.status_code != status.HTTP_200_OK:
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
     user = user_response.json()
 
-    categories_response = await svc_get_categories(token)
-    categories_with_stats = categories_response.json(
-    ) if categories_response.status_code == status.HTTP_200_OK else []
+    # 2. Resolve active budget id (NO COOKIE MUTATION HERE)
+    resolved_budget_id = resolve_active_budget_id(
+        request=request,
+        budget_id=budget_id
+    )
 
-    budget_response = await get_budget(token=token)
+    # 3. Ask backend for active budget
+    budget_response = await get_active_budget(
+        token=token,
+        budget_id=resolved_budget_id
+    )
+
     if budget_response.status_code != status.HTTP_200_OK:
         return redirect_with_toast(
             "/dashboard",
@@ -99,37 +113,80 @@ async def dashboard(request: Request, token: str = Depends(get_current_user)):
             "error"
         )
 
-    budget = budget_response.json()
+    active_budget = budget_response.json()
 
-    budget_allocations_response = await fetch_budget_overview(token=token,
-                                                              budget_id=budget["id"])
-    budget_allocations = budget_allocations_response.json(
-    ) if budget_allocations_response.status_code == status.HTTP_200_OK else {}
+    # 4. Fetch dashboard data
+    categories_response = await svc_get_categories(
+        token=token,
+        budget_id=active_budget["id"]
+    )
 
-    # Get all budgets by calling the budgets endpoint
+    categories_with_stats = (
+        categories_response.json()
+        if categories_response.status_code == status.HTTP_200_OK
+        else []
+    )
 
-    # Get budgets response
+    budget_allocations_response = await fetch_budget_overview(
+        token=token,
+        budget_id=active_budget["id"]
+    )
+
+    budget_allocations = (
+        budget_allocations_response.json()
+        if budget_allocations_response.status_code == status.HTTP_200_OK
+        else {}
+    )
+
     all_budgets_response = await get_all_budgets(token=token)
+    all_budgets = (
+        all_budgets_response.json()
+        if all_budgets_response.status_code == status.HTTP_200_OK
+        else []
+    )
 
-    all_budgets = all_budgets_response.json(
-    ) if all_budgets_response.status_code == status.HTTP_200_OK else []
-    # Separate expenses from savings
+    budget_categories_response = await get_categories_by_type(
+        token=token,
+        category_type=active_budget["type"]
+    )
 
-    expense_budgets = [b for b in all_budgets if b.get("type") == "expense"]
-    savings_budgets = [b for b in all_budgets if b.get("type") == "savings"]
+    budget_categories = (
+        budget_categories_response.json()
+        if budget_categories_response.status_code == status.HTTP_200_OK
+        else []
+    )
 
-    return await render_with_user("dashboard.html", request, {
-        "categories_with_stats": categories_with_stats,
-        "budget_allocations": budget_allocations,
-        "budget_details": budget,
-        "all_budgets": all_budgets,
-        "expense_budgets": expense_budgets,
-        "savings_budgets": savings_budgets,
-        "token": token,
-        "current_month": datetime.now().strftime('%B'),
-        "user": user,
-        "now": datetime.now().strftime("%Y-%m"),
-    })
+    # 5. Render template FIRST
+    template_response = await render_with_user(
+        "dashboard.html",
+        request,
+        {
+            "categories_with_stats": categories_with_stats,
+            "budget_allocations": budget_allocations,
+            "budget_details": active_budget,
+            "all_budgets": all_budgets,
+            "budget_categories": budget_categories,
+            "token": token,
+            "current_month": datetime.now().strftime("%B"),
+            "user": user,
+            "now": datetime.now().strftime("%Y-%m"),
+        }
+    )
+
+    # 6. Persist cookie ONLY if:
+    # - Explicit budget selected
+    # - OR cookie missing
+    existing_cookie = request.cookies.get("active_budget_id")
+
+    if budget_id or not existing_cookie:
+        template_response.set_cookie(
+            key="active_budget_id",
+            value=str(active_budget["id"]),
+            httponly=True,
+            samesite="lax"
+        )
+
+    return template_response
 
 
 async def forgot_password(request: Request):

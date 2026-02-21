@@ -103,7 +103,7 @@ class TestCategories:
     def test_get_categories_with_stats_success(self, auth_headers):
         """Test getting categories with expense stats"""
         response = client.get(
-            "/api/categories/with-stats", headers=auth_headers)
+            "/api/categories/with-stats/1", headers=auth_headers)
         assert response.status_code == 200
 
         data = response.json()

@@ -52,7 +52,7 @@
   <div class="p-summary-card">
     <div class="p-summary-cards">
       <div onclick="generateModal('pBudgetModal','pBudgetClose','')">
-        <p>Monthly Budget</p>
+        <p>{{ budget_details.name }} Budget</p>
         {% if budget_details and budget_details.amount %}
           <h3 class="p-summary-value sensitive">{{budget_details.amount | commafy(2)}}</h3>
         {% else %}
@@ -98,7 +98,8 @@
                     type="radio"
                     id="budget-sav-{{ budget.id }}"
                     name="selected_budget"
-                    value="sav-{{ budget.id }}"
+                    value="/dashboard?budget_id={{ budget.id }}"
+                    onchange="window.location.href=this.value"
                     {% if budget_details.id == budget.id %}checked{% endif %}
                   >
                   <label for="budget-sav-{{ budget.id }}">
@@ -188,8 +189,8 @@
           {% endif %}
         </div>
       </div>
-
-    
+  </div>
+    <div style="border-bottom: 0.4em solid var(--border-muted); margin: 1em 0.6em -0.2em 0.6em;">
   </div>
 </section>
 <!-- <section>
@@ -201,58 +202,68 @@
 <!-- Category Progress section -->
 <section>
   <p class="p-category-progress-paragraph"> Categories</p>
-  <div class="p-category-progress-list">
-    
-    {% for c in categories_with_stats %}
-      {% set used = c.used %}
-      {% set limit = c.allocated_amount %}
-      {% set balance = c.balance %}
-      {% set exceeded = balance < 0 %}
-      {% set percent = (used / limit * 100) if limit > 0 else 0 %}
-      {% set display_percent = percent if percent <= 100 else 100 %}
-      <div class="p-category-item" onclick="generateModal('categoryDetailModal{{ c.id }}','pCategoryDetailClose{{ c.id }}','')">
-          <div class="p-category-header">
-            <span class="p-category-name">{{ c.name }}</span>
-            {% if balance == 0 %}
-                <span class="sensitive p-category-status zero">
-                    No balance
-                </span>
-            {% elif exceeded %}
-                <span class="sensitive p-category-status exceeded">
-                    {{ (balance * -1) | commafy(0) }} over
-                </span>
-            {% else %}
-                <span class="sensitive p-category-status ok">
-                    {{ balance | commafy(0) }} left
-                </span>
-            {% endif %}
-          </div>
-
-          <!-- Progress bar container -->
-          <div class="p-progress-wrapper">
-            <div class="p-progress-bar">
-                <div class="p-progress-fill
-                    {% if balance == 0 %}
-                        p-zero-fill
-                    {% elif exceeded %}
-                        p-exceeded-fill
-                    {% else %}
-                        p-ok-fill
-                    {% endif %}"
-                    style="width: {{ display_percent }}%;">
+    {% if categories_with_stats|length > 0 %}
+      <div class="p-category-progress-list">
+        {% for c in categories_with_stats %}
+          {% set used = c.used %}
+          {% set limit = c.allocated_amount %}
+          {% set balance = c.balance %}
+          {% set exceeded = balance < 0 %}
+          {% set percent = (used / limit * 100) if limit > 0 else 0 %}
+          {% set display_percent = percent if percent <= 100 else 100 %}
+          {% set allocated_category_ids = budget_allocations.allocations | map(attribute='category_id') | list %}
+          {% set allocated_category_ids = (budget_allocations.allocations | default([])) | map(attribute='category_id') | list %}
+          {% if c.id in allocated_category_ids %}
+            <div class="p-category-item" onclick="generateModal('categoryDetailModal{{ c.id }}','pCategoryDetailClose{{ c.id }}','')">
+              <div class="p-category-header">
+                  <span class="p-category-name">{{ c.name }}</span>
+                  {% if balance == 0 %}
+                      <span class="sensitive p-category-status zero">
+                          No balance
+                      </span>
+                  {% elif exceeded %}
+                      <span class="sensitive p-category-status exceeded">
+                          {{ (balance * -1) | commafy(0) }} over
+                      </span>
+                  {% else %}
+                      <span class="sensitive p-category-status ok">
+                          {{ balance | commafy(0) }} left
+                      </span>
+                  {% endif %}
                 </div>
+
+                <!-- Progress bar container -->
+                <div class="p-progress-wrapper">
+                  <div class="p-progress-bar">
+                      <div class="p-progress-fill
+                          {% if balance == 0 %}
+                              p-zero-fill
+                          {% elif exceeded %}
+                              p-exceeded-fill
+                          {% else %}
+                              p-ok-fill
+                          {% endif %}"
+                          style="width: {{ display_percent }}%;">
+                      </div>
+                  </div>
+
+                  <span class="p-progress-percent
+                      {% if percent > 100 %}p-percent-exceeded{% endif %}">
+                      {{ percent | round(1) }}%
+                  </span>
+                </div>
+
             </div>
-
-            <span class="p-progress-percent
-                {% if percent > 100 %}p-percent-exceeded{% endif %}">
-                {{ percent | round(1) }}%
-            </span>
-          </div>
-
+          {% else %}
+          No Categories exist
+          {% endif %}
+        {% endfor %}
       </div>
-    {% endfor %}
-
-  </div>
+    {% else %}
+      <div class="p-category-item" style="margin-left: 0.6em; margin-right: 0.6em;">
+        Please create and allocate Categories to this Budget
+      </div>
+    {% endif %}
 </section>
 
 <!-- DESKTOP: table view -->
@@ -386,8 +397,6 @@
           </h4>
         </div>
       </div>
-      
-      <!-- The rest of your code remains unchanged -->
       <!-- Categories Section -->
       <!-- Categories Section - Compact -->
       <div>
@@ -397,63 +406,18 @@
         <div>    
           <form action="/dashboard/categories" method="POST">
             <div style="display: grid; grid-template-columns: 1fr 1fr 28px; gap: 0.5em; align-items: center;">
-              <input style="
-                width: 100%; 
-                height: 28px;
-                padding: 0 0.6em;
-                box-sizing: border-box;
-                font-family: var(--ff);
-                font-size: 0.8rem;
-                color: var(--text);
-                background: var(--bg-light);
-                border: 1px solid var(--border-muted);
-                border-radius: 4px;
-                outline: none;
-                transition: border-color 0.15s ease;
-              " 
-              name="name" 
-              type="text" 
-              placeholder="Name" 
-              maxlength="16" 
-              required>
-              
-              <!-- <input style="
-                width: 100%; 
-                height: 28px;
-                padding: 0 0.6em;
-                box-sizing: border-box;
-                font-family: var(--ff);
-                font-size: 0.8rem;
-                color: var(--text);
-                background: var(--bg-light);
-                border: 1px solid var(--border-muted);
-                border-radius: 4px;
-                outline: none;
-                transition: border-color 0.15s ease;
-              " 
-              name="limit_amount" 
-              type="number" 
-              placeholder="Amount" 
-              required> -->
-              
-              <button style="
-                width: 28px;
-                height: 28px;
-                padding: 0;
-                background: var(--primary);
-                color: var(--bg);
-                border: none;
-                border-radius: 4px;
-                font-size: 0.8rem;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                transition: opacity 0.15s ease;
-              " 
-              type="submit"
-              title="Add Category">
-                <i class="fa fa-add"></i>
+              {% if categories_with_stats.stats == 'expense' %}
+                <input type="hidden" name="category_type" value="expense">
+              {% else %}
+                <input type="hidden" name="category_type" value="savings">
+              {% endif %}
+              <input style=" width: 100%; height: 28px; padding: 0 0.6em; box-sizing: border-box;font-family: var(--ff);
+                font-size: 0.8rem; color: var(--text);background: var(--bg-light);border: 1px solid var(--border-muted);
+                border-radius: 4px;outline: none; transition: border-color 0.15s ease;"  name="name" type="text" placeholder="Name" maxlength="16" required>
+              <button style=" width: 28px; height: 28px; padding: 0;background: var(--primary); color: var(--bg);
+                border: none; border-radius: 4px; font-size: 0.8rem; cursor: pointer;
+                display: flex; align-items: center; justify-content: center; transition: opacity 0.15s ease;" 
+              type="submit"title="Add Category"> <i class="fa fa-add"></i>
               </button>
             </div>
           </form>
@@ -473,66 +437,27 @@
 
               <input type="hidden" name="budget_id" value="{{ budget_allocations.budget.id }}">
               
-              <select style="
-                width: 100%; 
-                height: 28px;
-                padding: 0 0.6em;
-                box-sizing: border-box;
-                font-family: var(--ff);
-                font-size: 0.8rem;
-                color: var(--text);
-                background: var(--bg-light);
-                border: 1px solid var(--border-muted);
-                border-radius: 4px;
-                outline: none;
-                cursor: pointer;
-                appearance: none;
-              " 
+              <select style="width: 100%; height: 28px; padding: 0 0.6em; box-sizing: border-box;font-family: var(--ff);
+                font-size: 0.8rem; color: var(--text); background: var(--bg-light); border: 1px solid var(--border-muted);
+                border-radius: 4px; outline: none; cursor: pointer; appearance: none;" 
               name="category_id" 
               required>
                 <option value="" style="color: var(--text-muted);">Select Category</option>
-                {% for c in categories_with_stats %}
-                  {% if c.id not in allocated_category_ids %}
-                    <option value="{{ c.id }}" style="color: var(--text);">{{ c.name }}</option>
+                {% for bc in budget_categories %}
+                  {% if bc.id not in allocated_category_ids %}
+                    <option value="{{ bc.id }}" style="color: var(--text);">{{ bc.name }}</option>
                   {% endif %}
                 {% endfor %}
               </select>
               
-              <input style="
-                width: 100%; 
-                height: 28px;
-                padding: 0 0.6em;
-                box-sizing: border-box;
-                font-family: var(--ff);
-                font-size: 0.8rem;
-                color: var(--text);
-                background: var(--bg-light);
-                border: 1px solid var(--border-muted);
-                border-radius: 4px;
-                outline: none;
-              " 
-              type="number" 
-              name="allocated_amount" 
-              placeholder="Amount" 
-              required>
+              <input style="width: 100%; height: 28px; padding: 0 0.6em; box-sizing: border-box; font-family: var(--ff);
+                font-size: 0.8rem; color: var(--text); background: var(--bg-light); border: 1px solid var(--border-muted);
+                border-radius: 4px; outline: none;"type="number" name="allocated_amount" placeholder="Amount" required>
               
-              <button style="
-                width: 28px;
-                height: 28px;
-                padding: 0;
-                background: var(--primary);
-                color: var(--bg);
-                border: none;
-                border-radius: 4px;
-                font-size: 0.8rem;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                transition: opacity 0.15s ease;
-              " 
-              type="submit"
-              title="Add Allocation">
+              <button style="width: 28px; height: 28px; padding: 0; background: var(--primary); color: var(--bg);
+                border: none; border-radius: 4px; font-size: 0.8rem; cursor: pointer; display: flex;
+                align-items: center; justify-content: center; transition: opacity 0.15s ease;" 
+              type="submit"title="Add Allocation">
                 <i class="fa fa-add"></i>
               </button>
             </div>
@@ -551,41 +476,20 @@
             <div style="padding: 0.4em; max-height: 200px; overflow-y: auto; border: 1px solid var(--border-muted); border-radius: 6px;">
               <ul class="p-category-progress-ul" style="margin-top: 0; padding: 0;">
                 {% for ba in budget_allocations.allocations | sort(attribute='category_name') %}
-                  <li class="p-category-progress-li" style="
-                    display: grid;
-                    grid-template-columns: 1.5fr 1fr auto;
-                    gap: 0.4em;
-                    align-items: center;
-                    padding: 0.8em 0.6em;
-                    border-bottom: 1px solid var(--bg-light);
-                    margin: 0;
-                  ">
+                  <li class="p-category-progress-li" style="display: grid; grid-template-columns: 1.5fr 1fr auto;
+                    gap: 0.4em; align-items: center; padding: 0.8em 0.6em; border-bottom: 1px solid var(--bg-light);margin: 0;">
                     <!-- Category Name -->
-                    <div style="
-                      font-weight: 500;
-                      overflow: hidden;
-                      text-overflow: ellipsis;
-                      white-space: nowrap;
-                    ">
+                    <div style="font-weight: 500;overflow: hidden;text-overflow: ellipsis;white-space: nowrap;">
                       {{ ba.category_name }}
                     </div>
                     
                     <!-- Amount - Right aligned -->
-                    <div style="
-                      font-weight: 600;
-                      text-align: center;
-                      color: var(--success);
-                    ">
+                    <div class="sensitive" style="font-weight: 600;text-align: center;color: var(--success);">
                       {{ ba.allocated_amount | commafy(0) }}
                     </div>
                     
                     <!-- Actions -->
-                    <div style="
-                      display: flex;
-                      gap: 0.5em;
-                      justify-content: flex-end;
-                      flex-shrink: 0;
-                    ">
+                    <div style="display: flex;gap: 0.5em;justify-content: flex-end;flex-shrink: 0;">
                       <button class="p-icon-btn-warning" 
                               onclick="generateModal('pEditAllocationModal{{ ba.category_id }}','pEditAllocationClose{{ ba.category_id }}','')">
                         <i class="fa fa-pencil"></i>
@@ -726,7 +630,9 @@
         <!-- TODO: Add is this a mandatory expense --> 
          <!-- Expenses -->
         <div class="p-category-progress-expense-divider">
-          <h4 style="font-size: 0.9em;">Expenses</h4>
+          <h4 style="font-size: 0.9em;">
+            {{ "Expenses" if cat.type == "expense" else "Withdrawals" }}
+          </h4>
         </div>
         <div class="p-category-progress-expenses">   
           <div style="flex:1;">
@@ -737,14 +643,14 @@
               <input type="hidden" name="description" value="Quick Expense">
               <input type="hidden" name="month" value="{{ now }}">
               <button class="p-modal-btn-tertiary" type="submit" title="Quick Expense">
-                Quick Expense
+                {{"Quick Expense" if cat.type == "expense" else "Quick Withdrawal" }}
               </button>
             </form>
           </div>
           <div style="flex:1;">
               <button class="p-modal-btn-primary" title="Add Expense"
               onclick="generateModal('addExpenseModal{{ cat.id }}','addExpenseClose{{ cat.id }}','')">
-              Add Expense
+              {{"Add Expense" if cat.type == "expense" else "Add Withdrawal" }}
             </button>
             </div>
           </div>
@@ -803,10 +709,16 @@
 <!-- Per-category modals -->
 {% for cat in categories_with_stats %}
   <!-- Expenses list modal -->
+   {% if cat.type == 'expense' %}
+   {% endif %}
   <div class="p-modal" id="expensesModal{{ cat.id }}">
     <div class="p-modal-content">
       <a href="#" id="expensesClose{{ cat.id }}" class="p-close"><i class="fa fa-close"></i></a>
-      <h2 style="text-align: center;">Expenses — {{ cat.name }}</h2>
+      {% if cat.type == 'expense' %}
+        <h2 style="text-align: center;">Expenses — {{ cat.name }}</h2>
+        {% else %}
+        <h2 style="text-align: center;">Withdrawals — {{ cat.name }}</h2>
+      {% endif %}
       <div class="p-modal-body">
         {% if cat.expenses %}
           <ul style="list-style:none;padding:1.2em;margin:0;">
@@ -837,9 +749,14 @@
     <div class="p-modal-content">
       <form class="p-category-form" method="POST" action="/dashboard/expenses">
         <a href="#" id="addExpenseClose{{ cat.id }}" class="p-close"><i class="fa fa-close"></i></a>
-        <p style="font-size: 1.1em;" class="p-modal-limit-name">Add Expense to {{ cat.name }}</p>
+        <p style="font-size: 1.1em;" class="p-modal-limit-name">{{ "Add Expense to" if cat.type == "expense" else "Add Withdrawal to"}} {{ cat.name }}</p>
         <div class="p-modal-details">
           <div class="p-modal-form-content">
+            {% if cat.type == 'expense' %}
+              <input type="hidden" name="expense_type" value="spend">
+            {% else %}
+              <input type="hidden" name="expense_type" value="withdrawal">
+            {% endif %}
             <input type="hidden" name="category_id" value="{{ cat.id }}">
             <label>Amount</label>
             <input name="amount" type="number" placeholder="Enter Expense Amount" required>
@@ -848,7 +765,7 @@
             <label>Month</label>
             <input name="month" type="text" placeholder="YYYY-MM" value="{{ now }}" readonly>
           </div>
-          <button type="submit" class="p-modal-btn" id="closeAddExpenseBtn{{ cat.id }}">Add Expense</button>
+          <button type="submit" class="p-modal-btn" id="closeAddExpenseBtn{{ cat.id }}">{{ "Add Expense" if cat.type == "expense" else "Add Withdrawal"}}</button>
         </div>
       </form>
     </div>
@@ -879,7 +796,8 @@
     <div class="p-modal-content">
       <form class="p-category-form" method="POST" action="/dashboard/expenses/{{ e.id }}/edit">
         <a href="#" id="editExpenseClose{{ e.id }}" class="p-close"><i class="fa fa-close"></i></a>
-        <h2 class="p-modal-limit-name">Edit Expense</h2>
+        <h2 class="p-modal-limit-name">
+          {{ "Edit Expense" if cat.type == "expense" else "Edit Withdrawals" }}</h2>
         <div class="p-modal-details">
           <div class="p-modal-form-content">
             <label>Amount</label>

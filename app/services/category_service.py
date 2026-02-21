@@ -5,9 +5,10 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-async def create_category(token: str, name: str):
+async def create_category(token: str, name: str, category_type: str):
     resp = await post("/categories/", json={
-        "name": name
+        "name": name,
+        "type": category_type,
     }, headers={"Authorization": f"Bearer {token}"})
     return resp
 
@@ -24,6 +25,13 @@ async def delete_category(token: str, category_id: int):
     return resp
 
 
-async def get_categories_with_stats(token: str):
-    resp = await get("/categories/with-stats", headers={"Authorization": f"Bearer {token}"})
+async def get_categories_with_stats(token: str, budget_id: int):
+    resp = await get(f"/categories/with-stats/{budget_id}",
+                     headers={"Authorization": f"Bearer {token}"})
+    return resp
+
+
+async def get_categories_by_type(token: str, category_type: str):
+    resp = await get(f"/categories/category_type/{category_type}",
+                     headers={"Authorization": f"Bearer {token}"})
     return resp

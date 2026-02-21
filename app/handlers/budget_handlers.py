@@ -2,7 +2,7 @@ from datetime import datetime
 from fastapi import Depends, Form, Request, status
 from fastapi.responses import RedirectResponse
 
-from app.services.budget_service import add_budget, delete_budget, edit_budget, get_budget
+from app.services.budget_service import add_budget, delete_budget, edit_budget, get_active_budget
 from app.utils.redirects import redirect_with_toast
 from app.utils.templates import render_with_user
 from app.utils.tokens import get_current_user
