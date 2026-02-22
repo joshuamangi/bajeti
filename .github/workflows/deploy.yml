@@ -31,17 +31,25 @@ jobs:
           ENVIRONMENT=${{ secrets.ENVIRONMENT }}
           EOF
 
-      - name: Run Alembic migrations
-        run: |
-          cd /home/joshuamangi/projects/bajeti
-          docker compose run --rm bajeti_app alembic upgrade head
-
-      - name: Build and deploy containers
+      - name: Build and deploy containers FIRST
         run: |
           cd /home/joshuamangi/projects/bajeti
           docker compose down bajeti_app || true
           docker compose build --no-cache bajeti_app
           docker compose up -d bajeti_app
+
+      - name: Wait for container to be ready
+        run: sleep 10
+
+      - name: Run Alembic migrations on the NEW container
+        run: |
+          cd /home/joshuamangi/projects/bajeti
+          echo "Current migration before upgrade:"
+          docker compose exec bajeti_app alembic current
+          echo "Running migrations to head..."
+          docker compose exec bajeti_app alembic upgrade head
+          echo "Migration completed. Current revision:"
+          docker compose exec bajeti_app alembic current
 
       - name: Clean up
         run: docker image prune -f
@@ -49,6 +57,6 @@ jobs:
       - name: Verify deployment
         run: |
           cd /home/joshuamangi/projects/bajeti
-          sleep 10  # Wait for app to start
+          sleep 5
           docker compose ps
           docker compose logs bajeti_app --tail=20
