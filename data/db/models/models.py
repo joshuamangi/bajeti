@@ -29,6 +29,9 @@ class Budget(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
     amount = Column(Numeric, nullable=False)
+
+    type = Column(String(20), nullable=False,
+                  default="expense", server_default="expense")
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -44,6 +47,8 @@ class Budget(Base):
 
     __table_args__ = (
         UniqueConstraint("user_id", "name", name="uq_user_budget_name"),
+        CheckConstraint("type IN ('expense', 'savings')",
+                        name="ck_budgets_type")
     )
 
 

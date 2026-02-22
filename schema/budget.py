@@ -1,10 +1,12 @@
 from datetime import datetime
+from typing import Literal
 from pydantic import BaseModel
 
 
 class BudgetBase(BaseModel):
     name: str
     amount: float
+    type: Literal["expense", "savings"] = "expense"
 
 
 class BudgetOut(BudgetBase):

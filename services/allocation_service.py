@@ -36,6 +36,12 @@ class AllocationService:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Category not Found")
 
+        if existing_budget.type != existing_category.type:
+            raise HTTPException(
+                status_code=400,
+                detail="Category type does not match budget type"
+            )
+
         existing_allocation = AllocationService.check_allocation_exists(db=db,
                                                                         budget_id=budget_id, category_id=data.category_id)
 
@@ -83,7 +89,7 @@ class AllocationService:
             .filter(
                 Allocation.budget_id == budget_id,
                 Category.user_id == user_id,
-                Category.type == "expense"
+                # Category.type == "expense"
             )
             .all()
         )
@@ -103,7 +109,7 @@ class AllocationService:
                     Expense.user_id == user_id,
                     Expense.category_id == category.id,
                     Expense.month == month,
-                    Expense.type == "spend"
+                    # Expense.type == "spend"
                 )
                 .scalar()
             )

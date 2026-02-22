@@ -18,11 +18,10 @@ class BudgetService:
         return existing_budget
 
     @staticmethod
-    def fetch_current_budget(db: Session, user_id: int):
-        # 1️⃣ Try to find the 'Monthly' budget
+    def fetch_current_budget(db: Session, user_id: int, budget_type: str = "expense"):
         monthly_budget = db.query(Budget).filter(
             Budget.user_id == user_id,
-            Budget.name == "Monthly"
+            Budget.name == "Monthly" if budget_type == "expense" else True
         ).first()
 
         if monthly_budget:
@@ -41,6 +40,7 @@ class BudgetService:
         new_budget = Budget(
             name=budget.name,
             amount=budget.amount,
+            type=budget.type,
             user_id=user_id
         )
         db.add(new_budget)
@@ -67,6 +67,7 @@ class BudgetService:
     def update_budget(db: Session, existing_budget: Budget, updated_budget: BudgetBase):
         existing_budget.name = updated_budget.name
         existing_budget.amount = updated_budget.amount
+        existing_budget.type = updated_budget.type
         existing_budget.updated_at = datetime.utcnow()
 
         db.commit()
