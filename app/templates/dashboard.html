@@ -79,7 +79,7 @@
 
 
   <!-- Budget Container -->
-  <div class="p-budgets-container">
+  <div class="p-budgets-container" style="max-height: 150px; overflow-y: auto; padding: 0.4em;">
     <!-- Savings Container -->
     {% set savings_budgets = all_budgets | selectattr("type", "equalto", "savings") | list %}
     <div class="p-budgets-containers">
@@ -129,7 +129,7 @@
             </div>
           {% endfor %}
         {% else %}
-          <div class="p-budget-item">No Savings Budgets</div>
+          <div class="p-category-item" style="font-size: 0.8em; font-weight: 500; height: 45px; text-align: center; align-content: center;">Create Savings Budgets</div>
         {% endif %}
       </div>
     </div>
@@ -185,7 +185,7 @@
               </div>
             {% endfor %}
           {% else %}
-            <div class="p-budget-item">No Expense Budgets</div>
+            <div class="p-category-item" style="font-size: 0.8em; font-weight: 500; height: 45px; text-align: center; align-content: center;">Create Expense Budgets</div>
           {% endif %}
         </div>
       </div>
@@ -203,7 +203,7 @@
 <section>
   <p class="p-category-progress-paragraph"> Categories</p>
     {% if categories_with_stats|length > 0 %}
-      <div class="p-category-progress-list">
+      <div class="p-category-progress-list" style="max-height: 220px; overflow-y: auto; padding: 0.4em;">
         {% for c in categories_with_stats %}
           {% set used = c.used %}
           {% set limit = c.allocated_amount %}
@@ -260,7 +260,7 @@
         {% endfor %}
       </div>
     {% else %}
-      <div class="p-category-item" style="margin-left: 0.6em; margin-right: 0.6em;">
+      <div class="p-category-item" style="margin-left: 0.6em; margin-right: 0.6em; font-size: 0.8em; font-weight: 500; height: 45px; text-align: center; align-content: center;">
         Please create and allocate Categories to this Budget
       </div>
     {% endif %}
