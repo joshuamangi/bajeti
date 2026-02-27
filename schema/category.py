@@ -46,3 +46,8 @@ class CategoryProgress(BaseModel):
     used: float
     limit: float
     balance: float
+
+
+class CategoryAllocationCreate(CategoryBase):
+    amount: float
+    budget_id: int

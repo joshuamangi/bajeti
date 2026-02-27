@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from core.security import get_current_user
 from data.db.db import get_db
-from schema.category import CategoryBase, CategoryOut, CategoryStats
+from schema.category import CategoryAllocationCreate, CategoryBase, CategoryOut, CategoryStats
 from schema.user import UserOut
 
 from services.category_service import CategoryService
@@ -76,6 +76,28 @@ async def create_category(
 
     new_category = CategoryService.save_new_category(
         db, current_user.id, category)
+
+    return new_category
+
+
+@router.post("/category_allocation", response_model=CategoryOut, status_code=status.HTTP_201_CREATED)
+async def create_category_and_allocation(
+    category: CategoryAllocationCreate,
+    db: Session = Depends(get_db),
+    current_user: UserOut = Depends(get_current_user),
+):
+    existing = CategoryService.get_existing_category(
+        db, current_user.id, category)
+
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Category already exists"
+        )
+
+    new_category = CategoryService.save_new_category_with_allocation(
+        db, current_user.id, category)
+
     return new_category
 
 

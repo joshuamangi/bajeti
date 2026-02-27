@@ -401,12 +401,13 @@
       <!-- Categories Section - Compact -->
       <div>
         <div class="p-category-progress-transfer-divider">
-          <h4 style="font-size: 0.9em; color: var(--text); margin: 0 0 0.3em 0;">Categories</h4>
+          <h4 style="font-size: 0.9em; color: var(--text); margin: 0 0 0.3em 0;">Category Allocation</h4>
         </div>   
         <div>    
           <form action="/dashboard/categories" method="POST">
             <div style="display: grid; grid-template-columns: 1fr 1fr 28px; gap: 0.5em; align-items: center;">
-              {% if categories_with_stats.stats == 'expense' %}
+              <input type="hidden" name="budget_id" value="{{ budget_details.id }}">
+              {% if budget_details.type == 'expense' %}
                 <input type="hidden" name="category_type" value="expense">
               {% else %}
                 <input type="hidden" name="category_type" value="savings">
@@ -414,6 +415,11 @@
               <input style=" width: 100%; height: 28px; padding: 0 0.6em; box-sizing: border-box;font-family: var(--ff);
                 font-size: 0.8rem; color: var(--text);background: var(--bg-light);border: 1px solid var(--border-muted);
                 border-radius: 4px;outline: none; transition: border-color 0.15s ease;"  name="name" type="text" placeholder="Name" maxlength="16" required>
+              
+              <input style="width: 100%; height: 28px; padding: 0 0.6em; box-sizing: border-box; font-family: var(--ff);
+              font-size: 0.8rem; color: var(--text); background: var(--bg-light); border: 1px solid var(--border-muted);
+              border-radius: 4px; outline: none;"type="number" name="allocated_amount" placeholder="Amount" required>
+              
               <button style=" width: 28px; height: 28px; padding: 0;background: var(--primary); color: var(--bg);
                 border: none; border-radius: 4px; font-size: 0.8rem; cursor: pointer;
                 display: flex; align-items: center; justify-content: center; transition: opacity 0.15s ease;" 
@@ -642,6 +648,11 @@
               <input type="hidden" name="amount" value="{{ limit }}">
               <input type="hidden" name="description" value="Quick Expense">
               <input type="hidden" name="month" value="{{ now }}">
+              {% if cat.type == 'expense' %}
+                <input type="hidden" name="expense_type" value="spend">
+              {% else %}
+                <input type="hidden" name="expense_type" value="withdrawal">
+              {% endif %}
               <button class="p-modal-btn-tertiary" type="submit" title="Quick Expense">
                 {{"Quick Expense" if cat.type == "expense" else "Quick Withdrawal" }}
               </button>

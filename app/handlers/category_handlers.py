@@ -2,10 +2,13 @@
 import logging
 from fastapi import Depends, Request, Form, status
 from datetime import datetime
+
+from fastapi.responses import RedirectResponse
 from app.utils.tokens import get_current_user
 from app.utils.templates import render_with_user
 from app.services.category_service import create_category, update_category, delete_category as delete_category_service
 from app.utils.redirects import redirect_with_toast
+from app.services.auth_service import get_current_user as svc_get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -13,19 +16,33 @@ logger = logging.getLogger(__name__)
 async def add_category(request: Request,
                        name: str = Form(...),
                        category_type: str = Form(...),
+                       budget_id: int = Form(...),
+                       allocated_amount: float = Form(...),
                        token: str = Depends(get_current_user)):  # note: Depends not allowed at top-level; we'll use get_current_user inside
     token = get_current_user(request)
-    resp = await create_category(token, name, category_type)
+    print("PAYLOAD: ", "budget id: ", budget_id, "allocated amount: ",
+          allocated_amount, "Category type: ", category_type, "name: ", name)
+    resp = await create_category(token=token, name=name,
+                                 category_type=category_type, budget_id=budget_id,
+                                 allocated_amount=allocated_amount)
 
     if resp.status_code == status.HTTP_201_CREATED:
         return redirect_with_toast("/dashboard", f"{name} created successfully!", "success")
     if resp.status_code == status.HTTP_409_CONFLICT:
         return redirect_with_toast("/dashboard", f"{name} already exists!", "error")
 
+    user_response = await svc_get_current_user(token)
+    if user_response.status_code != status.HTTP_200_OK:
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+    user = user_response.json()
     return await render_with_user("dashboard.html", request, {
         "error": "Category creation failed",
         "token": token,
         "categories_with_stats": [],
+        "budget_allocations": [],
+        "budget_details": {},
+        "current_month": datetime.now().strftime('%B'),
+        "user": user,
         "now": datetime.now().strftime("%Y-%m"),
     })
 

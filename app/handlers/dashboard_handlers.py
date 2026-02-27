@@ -184,7 +184,7 @@ async def dashboard(
         if budget_categories_response.status_code == status.HTTP_200_OK
         else []
     )
-
+    print("Categories", categories_with_stats)
     # --------------------------------------------------
     # 5. Render template
     # --------------------------------------------------

@@ -2,10 +2,13 @@ import logging
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional
+from fastapi import HTTPException, status
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from data.db.models.models import Allocation, Budget, Category, Expense, Transfer
-from schema.category import CategoryBase
+from schema.category import CategoryAllocationCreate, CategoryBase
+from services.budget_service import BudgetService
 
 logger = logging.getLogger(__name__)
 
@@ -56,11 +59,10 @@ class CategoryService:
 
     @staticmethod
     def get_categories_with_stats(
-        db: Session,
-        user_id: int,
-        budget_id: int,
-        month: Optional[str] = None
-    ):
+            db: Session,
+            user_id: int,
+            budget_id: int,
+            month: Optional[str] = None):
         current_month = month or datetime.utcnow().strftime("%Y-%m")
 
         # Get budget
@@ -276,7 +278,7 @@ class CategoryService:
         return result
 
     @staticmethod
-    def save_new_category(db: Session, user_id: int, category: CategoryBase):
+    def save_new_category(db: Session, user_id: int, category: CategoryAllocationCreate):
         new_category = Category(
             name=category.name,
             type=category.type,
@@ -286,6 +288,63 @@ class CategoryService:
         db.commit()
         db.refresh(new_category)
         return new_category
+
+    @staticmethod
+    def save_new_category_with_allocation(
+            db: Session,
+            user_id: int,
+            category: CategoryAllocationCreate):
+        try:
+            # 1 Create Category
+            new_category = Category(
+                name=category.name,
+                type=category.type,
+                user_id=user_id
+            )
+
+            db.add(new_category)
+            db.flush()
+
+            budget_id = category.budget_id
+            allocated_amount = category.amount
+            # 2 Optionally Create Allocation
+            if budget_id and allocated_amount is not None:
+
+                existing_budget = BudgetService.get_budget_by_id(
+                    db=db,
+                    budget_id=budget_id,
+                    user_id=user_id
+                )
+
+                if not existing_budget:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail="Budget not found"
+                    )
+
+                if existing_budget.type != new_category.type:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Category type does not match budget type"
+                    )
+
+                allocation = Allocation(
+                    budget_id=budget_id,
+                    category_id=new_category.id,
+                    allocated_amount=allocated_amount
+                )
+
+                db.add(allocation)
+
+            # 3 Commit Once (Atomic)
+            db.commit()
+            db.refresh(new_category)
+
+            return new_category
+
+        except SQLAlchemyError:
+            db.rollback()
+            raise
 
     @staticmethod
     def update_category(db: Session, existing_category: Category, update_data: CategoryBase):
