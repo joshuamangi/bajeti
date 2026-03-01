@@ -677,6 +677,7 @@
                   <div style="display:flex; gap:.8rem;">
                     <button class="p-icon-btn-warning" onclick="generateModal('editExpenseModal{{ e.id }}','editExpenseClose{{ e.id }}','')"><i class="fa fa-pencil"></i></button>
                     <form method="POST" action="/dashboard/expenses/{{ e.id }}/delete" onsubmit="return confirmSubmit(this,'Delete expense?')">
+                      <input type="hidden" name="expense_type" value="{{ e.type }}">
                       <button class="p-icon-btn-danger" type="submit"><i class="fa fa-trash"></i></button>
                     </form>
                   </div>
@@ -812,6 +813,7 @@
         <div class="p-modal-details">
           <div class="p-modal-form-content">
             <label>Amount</label>
+            <input name="expense_type" type="hidden" value="{{ e.type }}">
             <input name="amount" type="number" value="{{ e.amount }}" required>
             <label>Description</label>
             <input name="description" type="text" placeholder="Optional" value="{{ e.description }}">
@@ -878,6 +880,7 @@
           <label>Expense Type</label>
           {% if is_monthly %}
             <input type="hidden" name="expense_type" value="{{ budget.type }}">
+            <input type="hidden" name="budget_type" value="{{ budget.type }}">
           {% endif %}
           <select name="budget_type" {% if is_monthly %} disabled {% endif %} required>
             <option value="expense" {% if budget.type == 'expense' %}selected{% endif %}>Expense</option>

@@ -87,18 +87,14 @@ async def dashboard(
     token: str = Depends(get_current_user),
     budget_id: Optional[int] = None
 ):
-    # --------------------------------------------------
     # 1. Resolve authenticated user
-    # --------------------------------------------------
     user_response = await svc_get_current_user(token=token)
     if user_response.status_code != status.HTTP_200_OK:
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
 
     user = user_response.json()
 
-    # --------------------------------------------------
     # 2. Fetch ALL budgets for this user FIRST
-    # --------------------------------------------------
     all_budgets_response = await get_all_budgets(token=token)
 
     if all_budgets_response.status_code != status.HTTP_200_OK:
@@ -118,9 +114,7 @@ async def dashboard(
             "error"
         )
 
-    # --------------------------------------------------
     # 3. Safely resolve active budget
-    # --------------------------------------------------
     valid_budget_ids = {b["id"] for b in all_budgets}
 
     resolved_budget_id = None
@@ -149,9 +143,7 @@ async def dashboard(
         b for b in all_budgets if b["id"] == resolved_budget_id
     )
 
-    # --------------------------------------------------
     # 4. Fetch dashboard data safely
-    # --------------------------------------------------
     categories_response = await svc_get_categories(
         token=token,
         budget_id=resolved_budget_id
@@ -184,10 +176,8 @@ async def dashboard(
         if budget_categories_response.status_code == status.HTTP_200_OK
         else []
     )
-    print("Categories", categories_with_stats)
-    # --------------------------------------------------
+
     # 5. Render template
-    # --------------------------------------------------
     template_response = await render_with_user(
         "dashboard.html",
         request,
@@ -203,10 +193,7 @@ async def dashboard(
             "now": datetime.now().strftime("%Y-%m"),
         }
     )
-
-    # --------------------------------------------------
     # 6. Normalize / Repair Cookie
-    # --------------------------------------------------
     existing_cookie = request.cookies.get("active_budget_id")
 
     if str(resolved_budget_id) != existing_cookie:

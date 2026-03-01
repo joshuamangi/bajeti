@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from core.security import get_current_user
 from data.db.db import get_db
-from schema.expense import ExpenseCreate, ExpenseOut
+from schema.expense import ExpenseCreate, ExpenseOut, WithdrawalCreate
 from schema.user import UserOut
 
 from services.expense_service import ExpenseService
@@ -95,6 +95,20 @@ async def create_expense(
     )
 
 
+@router.post("/withdrawal", response_model=ExpenseOut, status_code=status.HTTP_201_CREATED)
+async def add_withdrawal(
+    withdrawal: ExpenseCreate,
+    current_user: UserOut = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    # add expense in the db and reduce budget by specific amount
+    return ExpenseService.create_withdrawal(
+        db=db,
+        withdrawal=withdrawal,
+        current_user=current_user
+    )
+
+
 @router.put("/{expense_id}", response_model=ExpenseOut)
 def update_expense(
     expense_id: int,
@@ -110,6 +124,20 @@ def update_expense(
     )
 
 
+@router.put("/withdrawal/{expense_id}", response_model=ExpenseOut)
+def edit_withdrawal(
+    expense_id: int,
+    withdrawal: ExpenseCreate,
+    current_user: UserOut = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    return ExpenseService.update_withdrawal(
+        db=db,
+        expense_id=expense_id,
+        withdrawal=withdrawal,
+        current_user=current_user)
+
+
 @router.delete("/{expense_id}", status_code=status.HTTP_204_NO_CONTENT)
 def remove_expense(
     expense_id: int,
@@ -117,6 +145,20 @@ def remove_expense(
     db: Session = Depends(get_db)
 ):
     ExpenseService.delete_expense(
+        db=db,
+        expense_id=expense_id,
+        current_user=current_user
+    )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.delete("/withdrawal/{expense_id}", status_code=status.HTTP_204_NO_CONTENT)
+def remove_withdrawal(
+    expense_id: int,
+    current_user: UserOut = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    ExpenseService.delete_withdrawal(
         db=db,
         expense_id=expense_id,
         current_user=current_user

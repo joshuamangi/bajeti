@@ -35,3 +35,8 @@ class ExpenseOut(ExpenseBase):
     class Config:
         """describes the class that allows sqlalchemy objects"""
         orm_mode = True
+
+
+class WithdrawalCreate(ExpenseCreate):
+    """describes the structure for Withdrawal operations"""
+    budget_id: int

@@ -20,8 +20,6 @@ async def add_category(request: Request,
                        allocated_amount: float = Form(...),
                        token: str = Depends(get_current_user)):  # note: Depends not allowed at top-level; we'll use get_current_user inside
     token = get_current_user(request)
-    print("PAYLOAD: ", "budget id: ", budget_id, "allocated amount: ",
-          allocated_amount, "Category type: ", category_type, "name: ", name)
     resp = await create_category(token=token, name=name,
                                  category_type=category_type, budget_id=budget_id,
                                  allocated_amount=allocated_amount)
