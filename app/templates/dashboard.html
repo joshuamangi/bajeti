@@ -70,8 +70,9 @@
   <div style="border-bottom: 0.4em solid var(--border-muted); margin: 0.1em 0.6em; 0em 0.6em;">
   </div>
 </section>
+
+<!-- Budgets -->
 <section>
-  <!-- Budgets -->
   <div class="p-budget-create-container">
     <p style="margin-left: 0.8em; font-weight: 600; margin-top: 0.4em; margin-bottom: 0.4em;"> Budgets</p>
     <button class="p-budget-create-btn p-actions-btns-primary" id="launchCreateBudget" onclick="generateModal('pBudgetCreateModal','pBudgetCreateModalClose','closeBudgetCreateModalBtn')"><i class="fa-solid fa-plus"></i></button>
@@ -84,8 +85,10 @@
     {% set savings_budgets = all_budgets | selectattr("type", "equalto", "savings") | list %}
     <div class="p-budgets-containers">
       <div>
-        <p class="p-budget-title">Savings Budgets</p>
-      </div>
+  <p class="p-budget-title">
+    Savings <span class="p-budget-total sensitive">Total: {{ total_savings_amount | commafy(0)}}</span> 
+  </p>
+</div>
 
       <div class="p-budget-items">
         {% if savings_budgets %}
@@ -139,7 +142,9 @@
      {% set expense_budgets = all_budgets | selectattr("type", "equalto", "expense") | list %}
       <div class="p-budgets-containers">
         <div>
-          <p class="p-budget-title">Expense Budgets</p>
+          <p class="p-budget-title">
+            Expense <span class="p-budget-total sensitive">Total: {{ total_expense_amount | commafy(0)}}</span> 
+          </p>
         </div>
 
         <div class="p-budget-items">

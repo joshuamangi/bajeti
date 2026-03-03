@@ -1,4 +1,5 @@
 # app/handlers/dashboard_handlers.py
+from decimal import Decimal
 import logging
 from datetime import datetime
 from typing import Optional
@@ -114,6 +115,21 @@ async def dashboard(
             "error"
         )
 
+    savings_budgets = [
+        b for b in all_budgets if b["type"] == "savings"
+    ]
+
+    expense_budgets = [
+        b for b in all_budgets if b["type"] == "expense"
+    ]
+    # Calculate totals safely using Decimal
+    total_savings_amount = sum(
+        Decimal(str(b["amount"])) for b in savings_budgets
+    )
+
+    total_expense_amount = sum(
+        Decimal(str(b["amount"])) for b in expense_budgets
+    )
     # 3. Safely resolve active budget
     valid_budget_ids = {b["id"] for b in all_budgets}
 
@@ -186,6 +202,8 @@ async def dashboard(
             "budget_allocations": budget_allocations,
             "budget_details": active_budget,
             "all_budgets": all_budgets,
+            "total_savings_amount": total_savings_amount,
+            "total_expense_amount": total_expense_amount,
             "budget_categories": budget_categories,
             "token": token,
             "current_month": datetime.now().strftime("%B"),
