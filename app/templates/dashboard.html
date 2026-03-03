@@ -70,8 +70,9 @@
   <div style="border-bottom: 0.4em solid var(--border-muted); margin: 0.1em 0.6em; 0em 0.6em;">
   </div>
 </section>
+
+<!-- Budgets -->
 <section>
-  <!-- Budgets -->
   <div class="p-budget-create-container">
     <p style="margin-left: 0.8em; font-weight: 600; margin-top: 0.4em; margin-bottom: 0.4em;"> Budgets</p>
     <button class="p-budget-create-btn p-actions-btns-primary" id="launchCreateBudget" onclick="generateModal('pBudgetCreateModal','pBudgetCreateModalClose','closeBudgetCreateModalBtn')"><i class="fa-solid fa-plus"></i></button>
@@ -84,8 +85,10 @@
     {% set savings_budgets = all_budgets | selectattr("type", "equalto", "savings") | list %}
     <div class="p-budgets-containers">
       <div>
-        <p class="p-budget-title">Savings Budgets</p>
-      </div>
+  <p class="p-budget-title">
+    Savings <span class="p-budget-total sensitive">Total: {{ total_savings_amount | commafy(0)}}</span> 
+  </p>
+</div>
 
       <div class="p-budget-items">
         {% if savings_budgets %}
@@ -139,7 +142,9 @@
      {% set expense_budgets = all_budgets | selectattr("type", "equalto", "expense") | list %}
       <div class="p-budgets-containers">
         <div>
-          <p class="p-budget-title">Expense Budgets</p>
+          <p class="p-budget-title">
+            Expense <span class="p-budget-total sensitive">Total: {{ total_expense_amount | commafy(0)}}</span> 
+          </p>
         </div>
 
         <div class="p-budget-items">
@@ -216,42 +221,81 @@
           {% if c.id in allocated_category_ids %}
             <div class="p-category-item" onclick="generateModal('categoryDetailModal{{ c.id }}','pCategoryDetailClose{{ c.id }}','')">
               <div class="p-category-header">
+                {% if c.type == 'expense' %}
                   <span class="p-category-name">{{ c.name }}</span>
                   {% if balance == 0 %}
-                      <span class="sensitive p-category-status zero">
-                          No balance
-                      </span>
+                    <span class="sensitive p-category-status zero">
+                        No balance
+                    </span>
                   {% elif exceeded %}
-                      <span class="sensitive p-category-status exceeded">
-                          {{ (balance * -1) | commafy(0) }} over
-                      </span>
+                    <span class="sensitive p-category-status exceeded">
+                        {{ (balance * -1) | commafy(0) }} over
+                    </span>
                   {% else %}
-                      <span class="sensitive p-category-status ok">
-                          {{ balance | commafy(0) }} left
-                      </span>
+                    <span class="sensitive p-category-status ok">
+                        {{ balance | commafy(0) }} left
+                    </span>
                   {% endif %}
+                {% else %}
+                  <span class="p-category-name">{{ c.name }}</span>
+                  {% if balance == 0 %}
+                    <span class="sensitive p-category-status zero">
+                        {{ balance | commafy(0) }} left
+                    </span>
+                  {% else %}
+                    <span class="sensitive p-category-status ok">
+                        {{ balance | commafy(0) }} left
+                    </span>
+                  {% endif %}
+                {% endif %}
                 </div>
 
                 <!-- Progress bar container -->
-                <div class="p-progress-wrapper">
-                  <div class="p-progress-bar">
-                      <div class="p-progress-fill
-                          {% if balance == 0 %}
-                              p-zero-fill
-                          {% elif exceeded %}
-                              p-exceeded-fill
-                          {% else %}
-                              p-ok-fill
-                          {% endif %}"
-                          style="width: {{ display_percent }}%;">
-                      </div>
-                  </div>
+                {% if c.type == 'expense' %}
+                  <div class="p-progress-wrapper">
+                    <div class="p-progress-bar">
+                        <div class="p-progress-fill
+                            {% if balance == 0 %}
+                                p-zero-fill
+                            {% elif exceeded %}
+                                p-exceeded-fill
+                            {% else %}
+                                p-ok-fill
+                            {% endif %}"
+                            style="width: {{ display_percent }}%;">
+                        </div>
+                    </div>
 
-                  <span class="p-progress-percent
-                      {% if percent > 100 %}p-percent-exceeded{% endif %}">
-                      {{ percent | round(1) }}%
-                  </span>
-                </div>
+                    <span class="p-progress-percent
+                        {% if percent > 100 %}p-percent-exceeded{% endif %}">
+                        {{ percent | round(1) }}%
+                    </span>
+                  </div>
+                {% else %}
+                  {% if balance != 0 %}
+                    <div class="p-progress-wrapper">
+                      <div class="p-progress-bar">
+                          <div class="p-progress-fill p-ok-fill" style="width: 100%;">
+                          </div>
+                      </div>
+                      <span class="p-progress-percent
+                          {% if percent > 100 %}p-percent-exceeded{% endif %}">
+                          100%
+                      </span>
+                    </div>
+                  {% else %}
+                  <div class="p-progress-wrapper">
+                      <div class="p-progress-bar">
+                          <div class="p-progress-fill p-zero-fill" style="width: 100%;">
+                          </div>
+                      </div>
+                      <span class="p-progress-percent
+                          {% if percent > 100 %}p-percent-exceeded{% endif %}">
+                          {{ balance | commafy(0) }}%
+                      </span>
+                    </div>
+                  {% endif %}
+                {% endif %}
 
             </div>
           {% else %}
@@ -401,12 +445,13 @@
       <!-- Categories Section - Compact -->
       <div>
         <div class="p-category-progress-transfer-divider">
-          <h4 style="font-size: 0.9em; color: var(--text); margin: 0 0 0.3em 0;">Categories</h4>
+          <h4 style="font-size: 0.9em; color: var(--text); margin: 0 0 0.3em 0;">Category Allocation</h4>
         </div>   
         <div>    
           <form action="/dashboard/categories" method="POST">
             <div style="display: grid; grid-template-columns: 1fr 1fr 28px; gap: 0.5em; align-items: center;">
-              {% if categories_with_stats.stats == 'expense' %}
+              <input type="hidden" name="budget_id" value="{{ budget_details.id }}">
+              {% if budget_details.type == 'expense' %}
                 <input type="hidden" name="category_type" value="expense">
               {% else %}
                 <input type="hidden" name="category_type" value="savings">
@@ -414,6 +459,11 @@
               <input style=" width: 100%; height: 28px; padding: 0 0.6em; box-sizing: border-box;font-family: var(--ff);
                 font-size: 0.8rem; color: var(--text);background: var(--bg-light);border: 1px solid var(--border-muted);
                 border-radius: 4px;outline: none; transition: border-color 0.15s ease;"  name="name" type="text" placeholder="Name" maxlength="16" required>
+              
+              <input style="width: 100%; height: 28px; padding: 0 0.6em; box-sizing: border-box; font-family: var(--ff);
+              font-size: 0.8rem; color: var(--text); background: var(--bg-light); border: 1px solid var(--border-muted);
+              border-radius: 4px; outline: none;"type="number" name="allocated_amount" placeholder="Amount" required>
+              
               <button style=" width: 28px; height: 28px; padding: 0;background: var(--primary); color: var(--bg);
                 border: none; border-radius: 4px; font-size: 0.8rem; cursor: pointer;
                 display: flex; align-items: center; justify-content: center; transition: opacity 0.15s ease;" 
@@ -642,6 +692,11 @@
               <input type="hidden" name="amount" value="{{ limit }}">
               <input type="hidden" name="description" value="Quick Expense">
               <input type="hidden" name="month" value="{{ now }}">
+              {% if cat.type == 'expense' %}
+                <input type="hidden" name="expense_type" value="spend">
+              {% else %}
+                <input type="hidden" name="expense_type" value="withdrawal">
+              {% endif %}
               <button class="p-modal-btn-tertiary" type="submit" title="Quick Expense">
                 {{"Quick Expense" if cat.type == "expense" else "Quick Withdrawal" }}
               </button>
@@ -666,6 +721,7 @@
                   <div style="display:flex; gap:.8rem;">
                     <button class="p-icon-btn-warning" onclick="generateModal('editExpenseModal{{ e.id }}','editExpenseClose{{ e.id }}','')"><i class="fa fa-pencil"></i></button>
                     <form method="POST" action="/dashboard/expenses/{{ e.id }}/delete" onsubmit="return confirmSubmit(this,'Delete expense?')">
+                      <input type="hidden" name="expense_type" value="{{ e.type }}">
                       <button class="p-icon-btn-danger" type="submit"><i class="fa fa-trash"></i></button>
                     </form>
                   </div>
@@ -801,6 +857,7 @@
         <div class="p-modal-details">
           <div class="p-modal-form-content">
             <label>Amount</label>
+            <input name="expense_type" type="hidden" value="{{ e.type }}">
             <input name="amount" type="number" value="{{ e.amount }}" required>
             <label>Description</label>
             <input name="description" type="text" placeholder="Optional" value="{{ e.description }}">
@@ -867,6 +924,7 @@
           <label>Expense Type</label>
           {% if is_monthly %}
             <input type="hidden" name="expense_type" value="{{ budget.type }}">
+            <input type="hidden" name="budget_type" value="{{ budget.type }}">
           {% endif %}
           <select name="budget_type" {% if is_monthly %} disabled {% endif %} required>
             <option value="expense" {% if budget.type == 'expense' %}selected{% endif %}>Expense</option>

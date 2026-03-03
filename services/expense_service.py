@@ -1,9 +1,11 @@
+from decimal import Decimal
 import logging
 from datetime import datetime
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 
-from data.db.models.models import Expense
+from data.db.models.models import Allocation, Budget, Expense
 from schema.expense import ExpenseCreate
 from schema.user import UserOut
 from fastapi import HTTPException, status
@@ -130,6 +132,74 @@ class ExpenseService:
         return new_expense
 
     @staticmethod
+    def create_withdrawal(
+        db: Session,
+        withdrawal: ExpenseCreate,
+        current_user: UserOut
+    ):
+        try:
+            # Get Allocation + Budget
+            allocation = db.query(Allocation).join(
+                Budget,
+                Allocation.budget_id == Budget.id
+            ).filter(
+                Allocation.category_id == withdrawal.category_id,
+                Budget.user_id == current_user.id
+            ).first()
+
+            if not allocation:
+                raise HTTPException(
+                    status_code=404,
+                    detail="No allocation found for this category"
+                )
+
+            budget = allocation.budget
+            amount = Decimal(withdrawal.amount)
+
+            if Decimal(budget.amount) < amount:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Insufficient budget balance"
+                )
+
+            if Decimal(allocation.allocated_amount) < amount:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Insufficient allocated amount"
+                )
+
+            # Create Withdrawal
+            now = datetime.utcnow()
+
+            db_withdrawal = Expense(
+                user_id=current_user.id,
+                category_id=withdrawal.category_id,
+                amount=amount,
+                description=withdrawal.description,
+                month=withdrawal.month,
+                type="withdrawal",
+                created_at=now,
+                updated_at=now
+            )
+
+            db.add(db_withdrawal)
+
+            # Reduce Budget + Allocation
+            budget.amount = Decimal(budget.amount) - amount
+            allocation.allocated_amount = (
+                Decimal(allocation.allocated_amount) - amount
+            )
+
+            db.commit()
+            db.refresh(db_withdrawal)
+
+            return db_withdrawal
+
+        except SQLAlchemyError:
+            db.rollback()
+            raise
+
+    @staticmethod
     def update_expense(db: Session, expense_id: int, expense: ExpenseCreate, current_user: UserOut):
         db_expense = db.query(Expense).filter(
             and_(
@@ -157,6 +227,67 @@ class ExpenseService:
         return db_expense
 
     @staticmethod
+    def update_withdrawal(
+        db: Session,
+        expense_id: int,
+        withdrawal: ExpenseCreate,
+        current_user: UserOut
+    ):
+        try:
+            db_withdrawal = db.query(Expense).filter(
+                Expense.id == expense_id,
+                Expense.user_id == current_user.id,
+                Expense.type == "withdrawal"
+            ).first()
+
+            if not db_withdrawal:
+                raise HTTPException(404, "Withdrawal not found")
+
+            allocation = db.query(Allocation).join(
+                Budget
+            ).filter(
+                Allocation.category_id == db_withdrawal.category_id,
+                Budget.user_id == current_user.id
+            ).first()
+
+            if not allocation:
+                raise HTTPException(404, "Allocation not found")
+
+            budget = allocation.budget
+
+            old_amount = Decimal(db_withdrawal.amount)
+            new_amount = Decimal(withdrawal.amount)
+            difference = new_amount - old_amount
+
+            # If increasing withdrawal
+            if difference > 0:
+                if Decimal(budget.amount) < difference:
+                    raise HTTPException(400, "Insufficient budget balance")
+                if Decimal(allocation.allocated_amount) < difference:
+                    raise HTTPException(400, "Insufficient allocated amount")
+
+            # Adjust Budget + Allocation
+            budget.amount = Decimal(budget.amount) - difference
+            allocation.allocated_amount = (
+                Decimal(allocation.allocated_amount) - difference
+            )
+
+            # Update withdrawal
+            db_withdrawal.amount = new_amount
+            db_withdrawal.description = withdrawal.description
+            db_withdrawal.month = withdrawal.month
+            db_withdrawal.updated_at = datetime.utcnow()
+
+            db.commit()
+            db.refresh(db_withdrawal)
+
+            return db_withdrawal
+
+        except SQLAlchemyError:
+            db.rollback()
+            raise
+
+    @staticmethod
     def delete_expense(db: Session, expense_id: int, current_user: UserOut):
         db_expense = db.query(Expense).filter(
             and_(
@@ -173,3 +304,47 @@ class ExpenseService:
 
         db.delete(db_expense)
         db.commit()
+
+    @staticmethod
+    def delete_withdrawal(
+        db: Session,
+        expense_id: int,
+        current_user: UserOut
+    ):
+        try:
+            db_withdrawal = db.query(Expense).filter(
+                Expense.id == expense_id,
+                Expense.user_id == current_user.id,
+                Expense.type == "withdrawal"
+            ).first()
+
+            if not db_withdrawal:
+                raise HTTPException(404, "Withdrawal not found")
+
+            allocation = db.query(Allocation).join(
+                Budget
+            ).filter(
+                Allocation.category_id == db_withdrawal.category_id,
+                Budget.user_id == current_user.id
+            ).first()
+
+            if not allocation:
+                raise HTTPException(404, "Allocation not found")
+
+            budget = allocation.budget
+            amount = Decimal(db_withdrawal.amount)
+
+            # Restore values
+            budget.amount = Decimal(budget.amount) + amount
+            allocation.allocated_amount = (
+                Decimal(allocation.allocated_amount) + amount
+            )
+
+            db.delete(db_withdrawal)
+            db.commit()
+
+            return {"detail": "Withdrawal deleted successfully"}
+
+        except SQLAlchemyError:
+            db.rollback()
+            raise

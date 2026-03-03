@@ -11,11 +11,26 @@ async def create_expense(token: str, payload: dict):
     return resp
 
 
+async def create_withdrawal(token: str, payload: dict):
+    resp = await post("/expenses/withdrawal", json=payload, headers={"Authorization": f"Bearer {token}"})
+    return resp
+
+
 async def update_expense(token: str, expense_id: int, payload: dict):
     resp = await put(f"/expenses/{expense_id}", json=payload, headers={"Authorization": f"Bearer {token}"})
     return resp
 
 
+async def update_withdrawal(token: str, expense_id: int, payload: dict):
+    resp = await put(f"/expenses/withdrawal/{expense_id}", json=payload, headers={"Authorization": f"Bearer {token}"})
+    return resp
+
+
 async def delete_expense(token: str, expense_id: int):
     resp = await delete(f"/expenses/{expense_id}", headers={"Authorization": f"Bearer {token}"})
+    return resp
+
+
+async def delete_withdrawal(token: str, expense_id: int):
+    resp = await delete(f"/expenses/withdrawal/{expense_id}", headers={"Authorization": f"Bearer {token}"})
     return resp

@@ -5,10 +5,13 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-async def create_category(token: str, name: str, category_type: str):
-    resp = await post("/categories/", json={
+async def create_category(token: str, name: str, category_type: str,
+                          budget_id: int, allocated_amount: float):
+    resp = await post("/categories/category_allocation", json={
         "name": name,
         "type": category_type,
+        "budget_id": budget_id,
+        "amount": allocated_amount
     }, headers={"Authorization": f"Bearer {token}"})
     return resp
 

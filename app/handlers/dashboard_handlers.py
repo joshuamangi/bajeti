@@ -1,4 +1,5 @@
 # app/handlers/dashboard_handlers.py
+from decimal import Decimal
 import logging
 from datetime import datetime
 from typing import Optional
@@ -87,18 +88,14 @@ async def dashboard(
     token: str = Depends(get_current_user),
     budget_id: Optional[int] = None
 ):
-    # --------------------------------------------------
     # 1. Resolve authenticated user
-    # --------------------------------------------------
     user_response = await svc_get_current_user(token=token)
     if user_response.status_code != status.HTTP_200_OK:
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
 
     user = user_response.json()
 
-    # --------------------------------------------------
     # 2. Fetch ALL budgets for this user FIRST
-    # --------------------------------------------------
     all_budgets_response = await get_all_budgets(token=token)
 
     if all_budgets_response.status_code != status.HTTP_200_OK:
@@ -118,9 +115,22 @@ async def dashboard(
             "error"
         )
 
-    # --------------------------------------------------
+    savings_budgets = [
+        b for b in all_budgets if b["type"] == "savings"
+    ]
+
+    expense_budgets = [
+        b for b in all_budgets if b["type"] == "expense"
+    ]
+    # Calculate totals safely using Decimal
+    total_savings_amount = sum(
+        Decimal(str(b["amount"])) for b in savings_budgets
+    )
+
+    total_expense_amount = sum(
+        Decimal(str(b["amount"])) for b in expense_budgets
+    )
     # 3. Safely resolve active budget
-    # --------------------------------------------------
     valid_budget_ids = {b["id"] for b in all_budgets}
 
     resolved_budget_id = None
@@ -149,9 +159,7 @@ async def dashboard(
         b for b in all_budgets if b["id"] == resolved_budget_id
     )
 
-    # --------------------------------------------------
     # 4. Fetch dashboard data safely
-    # --------------------------------------------------
     categories_response = await svc_get_categories(
         token=token,
         budget_id=resolved_budget_id
@@ -185,9 +193,7 @@ async def dashboard(
         else []
     )
 
-    # --------------------------------------------------
     # 5. Render template
-    # --------------------------------------------------
     template_response = await render_with_user(
         "dashboard.html",
         request,
@@ -196,6 +202,8 @@ async def dashboard(
             "budget_allocations": budget_allocations,
             "budget_details": active_budget,
             "all_budgets": all_budgets,
+            "total_savings_amount": total_savings_amount,
+            "total_expense_amount": total_expense_amount,
             "budget_categories": budget_categories,
             "token": token,
             "current_month": datetime.now().strftime("%B"),
@@ -203,10 +211,7 @@ async def dashboard(
             "now": datetime.now().strftime("%Y-%m"),
         }
     )
-
-    # --------------------------------------------------
     # 6. Normalize / Repair Cookie
-    # --------------------------------------------------
     existing_cookie = request.cookies.get("active_budget_id")
 
     if str(resolved_budget_id) != existing_cookie:

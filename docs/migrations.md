@@ -26,4 +26,4 @@ HAVING COUNT(*) > 1;
 ## Production
 
 docker compose run --rm bajeti_app alembic upgrade head
-docker compose run --rm bajeti_app alembic stamp fb0f9940d407
+docker compose run --rm bajeti_app alembic stamp 877adbb8bce2
