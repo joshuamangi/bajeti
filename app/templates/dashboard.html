@@ -216,42 +216,81 @@
           {% if c.id in allocated_category_ids %}
             <div class="p-category-item" onclick="generateModal('categoryDetailModal{{ c.id }}','pCategoryDetailClose{{ c.id }}','')">
               <div class="p-category-header">
+                {% if c.type == 'expense' %}
                   <span class="p-category-name">{{ c.name }}</span>
                   {% if balance == 0 %}
-                      <span class="sensitive p-category-status zero">
-                          No balance
-                      </span>
+                    <span class="sensitive p-category-status zero">
+                        No balance
+                    </span>
                   {% elif exceeded %}
-                      <span class="sensitive p-category-status exceeded">
-                          {{ (balance * -1) | commafy(0) }} over
-                      </span>
+                    <span class="sensitive p-category-status exceeded">
+                        {{ (balance * -1) | commafy(0) }} over
+                    </span>
                   {% else %}
-                      <span class="sensitive p-category-status ok">
-                          {{ balance | commafy(0) }} left
-                      </span>
+                    <span class="sensitive p-category-status ok">
+                        {{ balance | commafy(0) }} left
+                    </span>
                   {% endif %}
+                {% else %}
+                  <span class="p-category-name">{{ c.name }}</span>
+                  {% if balance == 0 %}
+                    <span class="sensitive p-category-status zero">
+                        {{ balance | commafy(0) }} left
+                    </span>
+                  {% else %}
+                    <span class="sensitive p-category-status ok">
+                        {{ balance | commafy(0) }} left
+                    </span>
+                  {% endif %}
+                {% endif %}
                 </div>
 
                 <!-- Progress bar container -->
-                <div class="p-progress-wrapper">
-                  <div class="p-progress-bar">
-                      <div class="p-progress-fill
-                          {% if balance == 0 %}
-                              p-zero-fill
-                          {% elif exceeded %}
-                              p-exceeded-fill
-                          {% else %}
-                              p-ok-fill
-                          {% endif %}"
-                          style="width: {{ display_percent }}%;">
-                      </div>
-                  </div>
+                {% if c.type == 'expense' %}
+                  <div class="p-progress-wrapper">
+                    <div class="p-progress-bar">
+                        <div class="p-progress-fill
+                            {% if balance == 0 %}
+                                p-zero-fill
+                            {% elif exceeded %}
+                                p-exceeded-fill
+                            {% else %}
+                                p-ok-fill
+                            {% endif %}"
+                            style="width: {{ display_percent }}%;">
+                        </div>
+                    </div>
 
-                  <span class="p-progress-percent
-                      {% if percent > 100 %}p-percent-exceeded{% endif %}">
-                      {{ percent | round(1) }}%
-                  </span>
-                </div>
+                    <span class="p-progress-percent
+                        {% if percent > 100 %}p-percent-exceeded{% endif %}">
+                        {{ percent | round(1) }}%
+                    </span>
+                  </div>
+                {% else %}
+                  {% if balance != 0 %}
+                    <div class="p-progress-wrapper">
+                      <div class="p-progress-bar">
+                          <div class="p-progress-fill p-ok-fill" style="width: 100%;">
+                          </div>
+                      </div>
+                      <span class="p-progress-percent
+                          {% if percent > 100 %}p-percent-exceeded{% endif %}">
+                          100%
+                      </span>
+                    </div>
+                  {% else %}
+                  <div class="p-progress-wrapper">
+                      <div class="p-progress-bar">
+                          <div class="p-progress-fill p-zero-fill" style="width: 100%;">
+                          </div>
+                      </div>
+                      <span class="p-progress-percent
+                          {% if percent > 100 %}p-percent-exceeded{% endif %}">
+                          {{ balance | commafy(0) }}%
+                      </span>
+                    </div>
+                  {% endif %}
+                {% endif %}
 
             </div>
           {% else %}

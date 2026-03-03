@@ -75,7 +75,8 @@ class CategoryService:
             return []
 
         category_type = budget.type  # expense OR savings
-        expense_type = "spend" if category_type == "expense" else "withdrawal"
+        # expense_type = "spend" if category_type == "expense" else "withdrawal"
+        is_expense_budget = category_type == "expense"
 
         # Get allocations for this budget ONCE
         allocations = db.query(Allocation).filter(
@@ -112,14 +113,25 @@ class CategoryService:
         for category in categories:
 
             # Expenses (spend OR withdrawal depending on budget type)
-            expenses = db.query(Expense).filter(
-                Expense.user_id == user_id,
-                Expense.category_id == category.id,
-                Expense.month == current_month,
-                Expense.type == expense_type
-            ).all()
+            if is_expense_budget:
+                expenses = db.query(Expense).filter(
+                    Expense.user_id == user_id,
+                    Expense.category_id == category.id,
+                    Expense.month == current_month,
+                    Expense.type == "spend"
+                ).all()
 
-            total_used = sum(Decimal(str(e.amount)) for e in expenses)
+                total_used = sum(Decimal(str(e.amount)) for e in expenses)
+
+            else:
+                # For savings budgets, withdrawals are already reflected
+                expenses = db.query(Expense).filter(
+                    Expense.user_id == user_id,
+                    Expense.category_id == category.id,
+                    Expense.month == current_month,
+                    Expense.type == "withdrawal"
+                ).all()
+                total_used = Decimal("0")
 
             # Transfers
             incoming = db.query(Transfer).filter(
