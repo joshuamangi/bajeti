@@ -6,9 +6,15 @@ on:
     types: [closed]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   deploy:
-    if: github.event.pull_request.merged == true
+    # Only deploy merged PRs whose branch lives in this repository, never a fork.
+    if: >-
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: self-hosted
 
     steps:
@@ -22,6 +28,7 @@ jobs:
         run: |
           cd /home/joshuamangi/projects/bajeti
           echo "Writing .env file..."
+          umask 077
           cat <<EOF > .env
           SECRET_KEY=${{ secrets.SECRET_KEY }}
           ALGORITHM=${{ secrets.ALGORITHM }}
@@ -30,12 +37,13 @@ jobs:
           API_SERVER=${{ secrets.API_SERVER }}
           ENVIRONMENT=${{ secrets.ENVIRONMENT }}
           EOF
+          chmod 600 .env
 
       - name: Build and deploy containers FIRST
         run: |
           cd /home/joshuamangi/projects/bajeti
           docker compose down bajeti_app || true
-          docker compose build --no-cache bajeti_app
+          docker compose build bajeti_app
           docker compose up -d bajeti_app
 
       - name: Wait for container to be ready
@@ -52,7 +60,9 @@ jobs:
           docker compose exec bajeti_app alembic current
 
       - name: Clean up
-        run: docker image prune -f
+        run: |
+          docker image prune -f
+          docker builder prune -f --filter until=168h
 
       - name: Verify deployment
         run: |

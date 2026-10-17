@@ -2,6 +2,9 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     libsqlite3-dev sqlite3 build-essential \
@@ -11,8 +14,14 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Run as a non-root user. UID 1000 matches the owner of ./data on the Pi
+# (check with `id -u` there), so the SQLite file and its journal stay writable.
+RUN useradd --uid 1000 --create-home --shell /usr/sbin/nologin bajeti
+
 # Copy entire app including built frontend
-COPY . .
+COPY --chown=bajeti:bajeti . .
+
+USER bajeti
 
 EXPOSE 8000
 
