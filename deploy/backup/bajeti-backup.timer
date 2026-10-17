@@ -1,0 +1,11 @@
+[Unit]
+Description=Bajeti nightly database backup
+
+[Timer]
+OnCalendar=*-*-* 02:00:00
+RandomizedDelaySec=300
+# If the Pi was off or unreachable at 02:00 (a power cut), run as soon as it is next up.
+Persistent=true
+
+[Install]
+WantedBy=timers.target
