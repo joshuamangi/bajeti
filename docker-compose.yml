@@ -35,8 +35,10 @@ services:
 
   # Cloudflare tunnel
   cloudflared:
-    # TODO: pin to a specific release tag instead of "latest" (see docs/runbooks/pi-hardening-now.md)
-    image: cloudflare/cloudflared:latest
+    # Pinned to the release that was running (same digest as :latest on 2025-10-17).
+    # To upgrade: pick a newer release tag, change it here in a PR, then run
+    # `docker compose up -d cloudflared` on the Pi and check the tunnel.
+    image: cloudflare/cloudflared:2025.9.1
     container_name: cloudflared
     restart: unless-stopped
     user: "0"  # run as root so it can read certs
