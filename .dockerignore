@@ -34,3 +34,4 @@ pytest.ini
 allfileshas.txt
 pi-audit-report.txt
 scripts
+deploy

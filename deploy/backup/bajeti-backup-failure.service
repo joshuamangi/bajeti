@@ -1,0 +1,13 @@
+# Started by OnFailure= in bajeti-backup.service. Writes a loud line to the journal and, if
+# BACKUP_PING_URL is set, tells the monitoring service the backup failed.
+[Unit]
+Description=Bajeti backup failure alert
+
+[Service]
+Type=oneshot
+User=@USER@
+Group=@USER@
+EnvironmentFile=-@HOME@/.config/bajeti/backup.env
+ExecStart=/bin/sh -c 'logger -p user.crit -t bajeti-backup "BACKUP FAILED: run journalctl -u bajeti-backup.service"; if [ -n "$BACKUP_PING_URL" ]; then curl -fsS -m 10 --retry 3 -o /dev/null "$BACKUP_PING_URL/fail" || true; fi'
+NoNewPrivileges=yes
+PrivateTmp=yes
