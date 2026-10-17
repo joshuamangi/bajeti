@@ -159,6 +159,38 @@ def test_get_current_user_invalid_token():
     assert "Could not validate credentials" in response.json()["detail"]
 
 
+def test_get_current_user_token_signed_with_other_key():
+    """A token signed with a key other than the server's must be rejected,
+    even when its claims name a real user."""
+    from datetime import datetime, timedelta
+    import secrets
+    from jose import jwt
+
+    from app.config import settings
+
+    user_payload = {
+        "first_name": "Forged",
+        "last_name": "Token",
+        "email": "forged@example.com",
+        "password": "testpassword123",
+        "security_answer": "TestAnswer"
+    }
+    created = client.post("/api/auth/", json=user_payload).json()
+
+    forged = jwt.encode(
+        {"sub": "forged@example.com", "user_id": created["id"],
+         "exp": datetime.utcnow() + timedelta(minutes=5)},
+        secrets.token_hex(32),
+        algorithm=settings.ALGORITHM,
+    )
+
+    response = client.get(
+        "/api/auth/users/me",
+        headers={"Authorization": f"Bearer {forged}"}
+    )
+    assert response.status_code == 401
+
+
 def test_get_current_user_no_token():
     """Test getting current user without token"""
     response = client.get("/api/auth/users/me")
