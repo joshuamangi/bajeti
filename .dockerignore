@@ -12,3 +12,25 @@ app/static/vendor/fontawesome/fontawesome-free-6.4.0-web/metadata
 app/static/vendor/fontawesome/fontawesome-free-6.4.0-web/scss
 app/static/vendor/fontawesome/fontawesome-free-6.4.0-web/sprites
 app/static/vendor/fontawesome/fontawesome-free-6.4.0-web/svgs
+
+# Secrets and data must never be copied into an image layer.
+# The app gets its settings from env_file and its database from the ./data bind mount.
+.env
+.env.*
+*.pem
+*.db
+*.sqlite3
+data/db/data
+cloudflared
+
+# Not needed at runtime
+.git
+.github
+.claude
+.pytest_cache
+tests
+pytest.ini
+*.zip
+allfileshas.txt
+pi-audit-report.txt
+scripts

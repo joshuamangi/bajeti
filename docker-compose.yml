@@ -3,19 +3,39 @@ services:
     build: .
     container_name: bajeti_app
     ports:
-      - "8000:8000"
+      # Published on the host loopback only. cloudflared reaches the app over the
+      # Docker network (http://bajeti_app:8000), so the LAN does not need this port.
+      - "127.0.0.1:8000:8000"
     volumes:
-      - ./data:/app/data                # persist entire data folder
-      - ./app/templates:/app/app/templates   # hot-reload templates
-      - ./app/static:/app/app/static         # static files
+      - ./data:/app/data                     # persist entire data folder
+      - ./app/templates:/app/app/templates:ro   # hot-reload templates
+      - ./app/static:/app/app/static:ro         # static files
     env_file:
       - .env
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 768m
+    pids_limit: 256
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/openapi.json', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
     networks:
       - bajeti-net
-    
+
   # Cloudflare tunnel
   cloudflared:
+    # TODO: pin to a specific release tag instead of "latest" (see docs/runbooks/pi-hardening-now.md)
     image: cloudflare/cloudflared:latest
     container_name: cloudflared
     restart: unless-stopped
@@ -23,6 +43,13 @@ services:
     command: tunnel --config /root/.cloudflared/config.yml run bajeti
     volumes:
       - ./cloudflared:/root/.cloudflared
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     depends_on:
       - bajeti_app
     networks:
