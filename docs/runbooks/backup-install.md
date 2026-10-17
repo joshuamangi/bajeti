@@ -9,7 +9,7 @@ What changed compared with the old script:
 | `cp` of the live database | SQLite backup API (consistent), through `python3` because the Pi has no `sqlite3` binary |
 | Never checked the copy | `PRAGMA integrity_check` must say `ok`; written as `.partial`, then renamed |
 | No error handling; a failed step looked like success | `set -Eeuo pipefail`, every step checked, non-zero exit on any failure |
-| Local prune looked for `*.sqlite3` so it never deleted anything | Keeps the newest 30 `db_backup_*.db` |
+| Local prune looked for `*.sqlite3` so it never deleted anything | Keeps the newest 365 `db_backup_*.db` (set `BACKUP_KEEP`; pruning is permanent, and the first run on a folder that held old copies deletes everything beyond the limit, so check `ls ~/backups/db_backups | wc -l` first) |
 | S3 retention loop parsed `aws s3 ls` text | S3 lifecycle rule (below); upload is verified by size |
 | cron: a missed night is lost | systemd timer with `Persistent=true` runs when the Pi is next up |
 | Silent failures | `OnFailure=` unit logs a critical line; optional dead-man's-switch ping alerts you when a night is missed |

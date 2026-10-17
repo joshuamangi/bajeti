@@ -12,7 +12,8 @@
 # Settings come from the environment (the systemd unit loads ~/.config/bajeti/backup.env):
 #   DB_PATH               live database      (default $HOME/projects/bajeti/data/db/data/bajeti.db)
 #   BACKUP_DIR            local copies       (default $HOME/backups/db_backups)
-#   BACKUP_KEEP           copies to keep     (default 30)
+#   BACKUP_KEEP           copies to keep     (default 365; each copy is small, and pruning is
+#                         permanent, so err on the side of keeping more)
 #   S3_BUCKET             s3://bucket[/prefix] for the off-device copy (empty = skip)
 #   BACKUP_COPY_COMMAND   optional second copy; shell command run with the new file as "$1"
 #   BACKUP_PING_URL       optional dead-man's-switch URL (for example a healthchecks.io check);
@@ -25,7 +26,7 @@ umask 077
 
 DB_PATH="${DB_PATH:-$HOME/projects/bajeti/data/db/data/bajeti.db}"
 BACKUP_DIR="${BACKUP_DIR:-$HOME/backups/db_backups}"
-KEEP="${BACKUP_KEEP:-30}"
+KEEP="${BACKUP_KEEP:-365}"
 S3_BUCKET="${S3_BUCKET:-}"
 MIN_FREE_MB="${BACKUP_MIN_FREE_MB:-200}"
 DRY_RUN=0
