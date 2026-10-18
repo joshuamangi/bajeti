@@ -34,7 +34,7 @@ The rules that apply to every stage (public repo, placeholders for hosts, no com
 |---|---|---|---|---|
 | S00 | [Rotate the leaked SECRET_KEY](S00-rotate-secret-key.md) | claude+human | none | done |
 | S01 | [Pi inventory and necessity audit (both Pis)](S01-pi-audit.md) | claude+human | none | done |
-| S02 | [Backups: backup Pi SSD, Mac pull, offsite](S02-backups-two-pis.md) | design-gate | S01 | todo |
+| S02 | [Backups: backup Pi SSD, Mac pull, offsite](S02-backups-two-pis.md) | design-gate | S01 | in-progress |
 | S03 | [Pi OS end-of-life decision and upgrade runbook](S03-pi-os-upgrade.md) | design-gate | S01, S02 | todo |
 | S04 | [Ansible infrastructure as code for both Pis](S04-ansible-iac.md) | claude+human | S01, S02, S03 | todo |
 | S05 | [Rebuild rehearsal and cutover](S05-rebuild-rehearsal-cutover.md) | claude+human | S02, S03, S04 | todo |
