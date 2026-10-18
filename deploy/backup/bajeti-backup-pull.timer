@@ -1,0 +1,11 @@
+[Unit]
+Description=Pull Bajeti backups from the app Pi
+
+[Timer]
+# One hour after the app Pi's backup (02:00 plus up to 5 minutes).
+OnCalendar=*-*-* 03:00:00
+RandomizedDelaySec=300
+Persistent=true
+
+[Install]
+WantedBy=timers.target

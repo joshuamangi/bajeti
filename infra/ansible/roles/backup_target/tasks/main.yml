@@ -1,0 +1,29 @@
+---
+- name: Pull script
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../deploy/backup/pull-from-app.sh"
+    dest: "/home/{{ backup_user }}/bajeti-backup/pull-from-app.sh"
+    owner: "{{ backup_user }}"
+    mode: "0755"
+
+- name: Pull settings (secret values come from the vault)
+  ansible.builtin.copy:
+    dest: "/home/{{ backup_user }}/.config/bajeti/pull.env"
+    owner: "{{ backup_user }}"
+    mode: "0600"
+    content: |
+      APP_SSH_TARGET={{ app_pi_user }}@{{ app_pi_host }}
+      DEST_DIR={{ backup_dir }}
+      PULL_PING_URL={{ pull_ping_url | default('') }}
+  no_log: true
+
+- name: Pull unit and timer
+  ansible.builtin.template:
+    src: "{{ item }}"
+    dest: "/etc/systemd/system/{{ item | basename }}"
+    mode: "0644"
+  loop:
+    - "{{ playbook_dir }}/../../deploy/backup/bajeti-backup-pull.service"
+    - "{{ playbook_dir }}/../../deploy/backup/bajeti-backup-pull.timer"
+  notify: reload systemd
+# TODO(S04): @USER@/@HOME@/@DEST_DIR@ substitution, handler, enable the timer.

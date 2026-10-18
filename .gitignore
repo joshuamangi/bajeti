@@ -37,3 +37,6 @@ app/static/dist/
 # Cloudflared secrets (ignore cert + tunnel credentials, but not config.yml)
 cloudflared/cert.pem
 cloudflared/*.json
+
+# Ansible inventory has real hosts
+infra/ansible/inventory.ini

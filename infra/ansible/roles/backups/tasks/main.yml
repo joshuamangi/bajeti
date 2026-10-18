@@ -1,0 +1,14 @@
+---
+- name: Outgoing folder (ciphertext only)
+  ansible.builtin.file:
+    path: "/home/{{ app_pi_user }}/backups/outgoing"
+    state: directory
+    owner: "{{ app_pi_user }}"
+    mode: "0700"
+
+- name: Pull key may only read the outgoing folder
+  ansible.posix.authorized_key:
+    user: "{{ app_pi_user }}"
+    key: "{{ pull_public_key }}"
+    key_options: 'restrict,command="/usr/bin/rrsync -ro /home/{{ app_pi_user }}/backups/outgoing"'
+# TODO(S04): backup.env with AGE_RECIPIENT/AGE_BIN, systemd backup units, pinned age binary.

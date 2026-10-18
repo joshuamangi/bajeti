@@ -1,0 +1,10 @@
+---
+# Creates one folder on the existing SSD mount. Does not format, partition or touch anything else.
+- name: Backups folder exists on the existing mount
+  ansible.builtin.file:
+    path: "{{ backup_dir }}"
+    state: directory
+    owner: "{{ backup_user }}"
+    group: "{{ backup_user }}"
+    mode: "0700"  # exFAT ignores modes; the real protection is age encryption
+  when: backup_dir is defined

@@ -133,6 +133,63 @@ docker compose start bajeti_app
 docker compose ps
 ```
 
-## 9. Second copy on the other Pi
+## 9. Encryption with age (the private key never touches a Pi)
 
-Set `BACKUP_COPY_COMMAND` in `backup.env`, for example `rsync -a "$1" <USER>@<PI_BACKUP_HOST>:/srv/bajeti-backups/`, after creating a restricted ssh key for it (stage S02 designs this). Until then the copies are on the Pi's SD card and in S3.
+On the Mac (age is already installed there with Homebrew):
+
+```bash
+age-keygen -o ~/age-bajeti.txt          # prints the public key (age1...)
+```
+
+Put `~/age-bajeti.txt` in your password manager as a secure note, then delete the file. Send only the public key (`age1...`) to the Pi; never the `AGE-SECRET-KEY-...` line.
+
+On the app Pi, install one pinned release binary in your home folder (no apt, nothing system-wide). Pick the same version as the Mac (`age --version`), take the file name and SHA-256 for `linux-arm64` from the release page, and compare before extracting:
+
+```bash
+cd "$(mktemp -d)"
+curl -fsSLO https://github.com/FiloSottile/age/releases/download/<VERSION>/age-<VERSION>-linux-arm64.tar.gz
+sha256sum age-<VERSION>-linux-arm64.tar.gz      # must equal the digest shown on the release page
+tar -xzf age-<VERSION>-linux-arm64.tar.gz
+mkdir -p ~/.local/bin && install -m 755 age/age ~/.local/bin/age
+~/.local/bin/age --version
+```
+
+Undo: `rm ~/.local/bin/age`.
+
+Then in `~/.config/bajeti/backup.env` (mode 600) set `AGE_RECIPIENT=age1...` and `AGE_BIN=/home/<USER>/.local/bin/age`, and run the backup once by hand (step 3). Encrypted copies appear in `~/backups/outgoing/` with a `.sha256` file each; the plain copies stay in `~/backups/db_backups/`. The S3 upload then holds the `.age` file.
+
+## 10. Pull on the backup Pi (replaces pushing a copy from the app Pi)
+
+Do not set `BACKUP_COPY_COMMAND`. The app Pi must hold no key for the backup Pi.
+
+1. On the backup Pi, create a key just for this: `ssh-keygen -t ed25519 -N '' -f ~/.ssh/bajeti_pull -C bajeti-pull`.
+2. On the app Pi, add its public key to `~/.ssh/authorized_keys` as one line that can only read the outgoing folder:
+
+   ```
+   restrict,command="/usr/bin/rrsync -ro /home/<USER>/backups/outgoing" ssh-ed25519 AAAA... bajeti-pull
+   ```
+
+3. Pin the app Pi's host key on the backup Pi: `ssh-keyscan -t ed25519 <PI_APP_HOST> > ~/.ssh/bajeti_pull_known_hosts`, then compare its fingerprint (`ssh-keygen -lf`) with the one shown on the app Pi (`ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub`) before trusting it.
+4. Create the backup folder on the SSD by hand (an ordinary folder; nothing is formatted): `mkdir <SSD_MOUNT>/bajeti-backups`.
+5. Copy `deploy/backup/pull-from-app.sh` to `~/bajeti-backup/` and make it executable. Create `~/.config/bajeti/pull.env` (mode 600) with `APP_SSH_TARGET=<USER>@<PI_APP_HOST>`, `DEST_DIR=<SSD_MOUNT>/bajeti-backups` and, if you made a second check, `PULL_PING_URL=...`.
+6. Test: `set -a; . ~/.config/bajeti/pull.env; set +a; ~/bajeti-backup/pull-from-app.sh --dry-run`, then without `--dry-run`.
+7. Install the unit and timer from `deploy/backup/bajeti-backup-pull.*` the same way as step 4 (replace `@USER@`, `@HOME@`, `@DEST_DIR@`), then `sudo systemctl enable --now bajeti-backup-pull.timer`.
+
+Proof the app Pi cannot touch the backups: from the app Pi, `ssh <USER>@<PI_BACKUP_HOST>` must fail; from the backup Pi with the pull key, `rsync somefile <USER>@<PI_APP_HOST>:/` must be refused by `rrsync -ro`; delete the newest file on the app Pi and confirm the copy on the backup Pi is still there after the next pull.
+
+## 11. Pull on the Mac
+
+Same idea one step further along: a key on the Mac, restricted on the backup Pi with `restrict,command="/usr/bin/rrsync -ro <SSD_MOUNT>/bajeti-backups"`. Pin the backup Pi's host key as in step 10.3, use `scripts/mac-backup-pull.sh` with `DEST_DIR` on the FileVault volume outside iCloud and any synced folder, and schedule it with `scripts/com.example.bajeti-backup-pull.plist.example` (placeholders only).
+
+## 12. Check last night's backup
+
+| Where | Command | Good looks like |
+|---|---|---|
+| App Pi | `~/projects/bajeti/deploy/backup/backup-verify.sh` | "restore test ok", newest backup under 26 h |
+| App Pi | `journalctl -u bajeti-backup.service -n 20 --no-pager` | "done", exit 0 |
+| App Pi | `ls -l ~/backups/outgoing | tail -3` | a `.age` file and `.sha256` from last night |
+| Backup Pi | `journalctl -u bajeti-backup-pull.service -n 20 --no-pager` | "done: 1 new" |
+| Mac | `ls -lt ~/BajetiBackups | head -4` | last night's `.age` file |
+| Any | `scripts/backup-restore-test.sh <file> <identity file>` | "restore test ok" |
+
+Without monitoring a missing night is silent. Set `BACKUP_PING_URL` (step 7) and `PULL_PING_URL`, so you are told when either machine stops.
