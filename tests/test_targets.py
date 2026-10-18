@@ -113,6 +113,13 @@ class TestTargets:
                               json={"long_term_amount": -5})
         assert response.status_code == 422
 
+    def test_money_has_at_most_two_decimals_and_is_shown_with_two(self, owner):
+        assert create_target(owner, short_term_amount="1.005").status_code == 422
+        data = create_target(owner, short_term_amount=1500, mid_term_amount="2.5").json()
+        assert data["short_term_amount"] == "1500.00"
+        assert data["mid_term_amount"] == "2.50"
+        assert data["long_term_amount"] is None
+
     def test_category_type_must_match_budget_type(self, owner):
         savings_category = make_category(owner["headers"], "savings")
         response = client.post(owner["url"], headers=owner["headers"], json={

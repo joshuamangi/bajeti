@@ -3,14 +3,23 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
+
+
+MONEY = dict(default=None, ge=0, max_digits=14, decimal_places=2)
 
 
 class TargetBase(BaseModel):
-    """The three horizons. Any of them may be unset (None); amounts cannot be negative."""
-    short_term_amount: Optional[Decimal] = Field(default=None, ge=0)
-    mid_term_amount: Optional[Decimal] = Field(default=None, ge=0)
-    long_term_amount: Optional[Decimal] = Field(default=None, ge=0)
+    """The three horizons. Any of them may be unset (None). Amounts are money: zero or more,
+    at most two decimal places."""
+    short_term_amount: Optional[Decimal] = Field(**MONEY)
+    mid_term_amount: Optional[Decimal] = Field(**MONEY)
+    long_term_amount: Optional[Decimal] = Field(**MONEY)
+
+    @field_serializer("short_term_amount", "mid_term_amount", "long_term_amount")
+    def _two_decimals(self, value: Optional[Decimal]):
+        # SQLite hands back 1500.0000000000; show money as 1500.00.
+        return None if value is None else format(value.quantize(Decimal("0.01")), "f")
 
 
 class TargetCreate(TargetBase):
