@@ -37,3 +37,9 @@ app/static/dist/
 # Cloudflared secrets (ignore cert + tunnel credentials, but not config.yml)
 cloudflared/cert.pem
 cloudflared/*.json
+
+# Pi audit reports contain network details
+pi-audit-report.txt
+
+# Pi inventory lists open weaknesses; keep local until Priority 1 items are fixed
+docs/pi-inventory.md
