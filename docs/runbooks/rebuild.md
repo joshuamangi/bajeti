@@ -44,6 +44,19 @@ Result: **green**. Row counts matched the backup for all 7 tables (598 expenses,
 
 Manual interventions needed: none, except creating the throwaway `.env` and the loopback port override for the rehearsal.
 
-## Not covered by Rehearsal A (checked at the cutover instead)
+## Rehearsal C (Mac, a Debian 13 container with systemd): 2026-10-20
+
+Replaces the "staging on the backup Pi" rehearsal, which the plan cannot support: the backup Pi was not rebuilt, has no Docker, 2 GB of RAM and is another app's host. Instead the real Ansible roles were applied twice to a throwaway container, with no Pi touched.
+
+Roles run: `base`, `ssh_hardening`, `unattended_upgrades`, `fail2ban`, `backups` (including the pinned, checksum-verified `age` download), `monitoring`, `github_runner`.
+
+| Run | Result |
+|---|---|
+| 1 | 22 changes, 0 failures. Two real bugs found and fixed first: `systemd-timesyncd` is not installed on a minimal system, and `/etc/systemd/journald.conf.d` does not exist (the same risk was fixed for `/etc/docker`). |
+| 2 | 25 of 26 tasks unchanged. The one change is `systemd-timesyncd`, whose unit has `ConditionVirtualization=!container`, so it can never stay running in a container. On a Pi it stays active. |
+
+Not exercised in a container, so checked at the cutover: `firewall` (no kernel firewall in the container), `docker`, `bajeti_app`, the units that need the real `bajeti_app` stack.
+
+## Not covered by the rehearsals (checked at the cutover instead)
 
 The tunnel container starting with the pinned image and without `cert.pem`; the app behind the real hostname; Docker 29 on the new OS; the Pi's own build time and memory use.
