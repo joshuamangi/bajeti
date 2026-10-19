@@ -39,3 +39,8 @@ Not verified: a second run reporting zero changes (nothing was applied for real)
 Decisions (owner, 2026-10-19): Ansible Vault for secrets. The backup Pi's firewall is left alone (`firewall_manage_backup: false`) because another project manages it. fail2ban runs on the app Pi only. Runner stays as it is until S08.
 Dropped from the rebuild on purpose: file sharing, the port-80 web server, the old tunnel tool, k3s, avahi, Bluetooth and the other leftovers from the audit. Investigate items answered by the owner (only the tunnel client is used).
 Open questions for the owner: who owns the other project's Ansible for the backup Pi's firewall (to avoid two codebases fighting over one file); whether the backup Pi's SSH should be narrowed from the whole LAN later; the date of the S05 window.
+
+## S05 (P1d), 2026-10-20, status: waiting-on-you (interim note, not the final entry)
+
+Done so far: PR #128 (open, CI green): safe `make rebuild`, `scripts/smoke.sh`, `docs/runbooks/rebuild.md`, `scripts/drift-check.sh` with a monthly launchd example, Ansible fixes found by Rehearsal C. Rehearsal A (Mac, Docker) green; Rehearsal C (Debian 13 systemd container, roles applied twice) green except one container-only change (timesyncd). Rehearsal B (staging on separate hardware) is not possible and is replaced by the cutover gates and the image rollback.
+Waiting on the owner: the cutover window, planned for the morning of 2026-10-21 (about 4 hours); merging PR #128; installing the monthly drift-check job. Start by re-reading `docs/runbooks/pi-os-upgrade.md` (steps P1 to P7, W1 to W13, rollback R) and rebuild a fresh secrets bundle just before W1.
