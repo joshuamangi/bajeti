@@ -19,6 +19,12 @@
 #   BACKUP_PING_URL       optional dead-man's-switch URL (for example a healthchecks.io check);
 #                         it is pinged on success and at <URL>/fail on failure. The URL is never logged.
 #   BACKUP_MIN_FREE_MB    refuse to run with less free space than this (default 200)
+#   AGE_RECIPIENT         optional age public key ("age1..."). When set, each backup is also encrypted
+#                         to $OUTGOING_DIR as <name>.age with a .sha256 file, and ONLY that encrypted
+#                         file leaves the Pi (S3, BACKUP_COPY_COMMAND, the pull by the backup Pi). The
+#                         private key is never on the Pi.
+#   AGE_BIN               path to the age binary (default: age on PATH, else $HOME/.local/bin/age)
+#   OUTGOING_DIR          encrypted copies for the backup Pi to pull (default $HOME/backups/outgoing)
 #
 #   backup.sh [--dry-run]
 set -Eeuo pipefail
@@ -29,6 +35,9 @@ BACKUP_DIR="${BACKUP_DIR:-$HOME/backups/db_backups}"
 KEEP="${BACKUP_KEEP:-365}"
 S3_BUCKET="${S3_BUCKET:-}"
 MIN_FREE_MB="${BACKUP_MIN_FREE_MB:-200}"
+AGE_RECIPIENT="${AGE_RECIPIENT:-}"
+AGE_BIN="${AGE_BIN:-$(command -v age 2>/dev/null || echo "$HOME/.local/bin/age")}"
+OUTGOING_DIR="${OUTGOING_DIR:-$HOME/backups/outgoing}"
 DRY_RUN=0
 [ "${1:-}" = "--dry-run" ] && DRY_RUN=1
 
@@ -43,10 +52,12 @@ ping_url() { # ping_url [suffix]; failures to ping never change the exit code
 }
 
 partial=""
+enc_partial=""
 lockdir=""
 cleanup() {
   rc=$? # must be the first statement: it is the script's real exit code
   [ -z "$partial" ] || rm -f "$partial"
+  [ -z "$enc_partial" ] || rm -f "$enc_partial"
   [ -z "$lockdir" ] || rmdir "$lockdir" 2>/dev/null || true
   if [ "$rc" -ne 0 ]; then
     log "BACKUP FAILED (exit $rc)" >&2
@@ -63,6 +74,10 @@ command -v python3 >/dev/null 2>&1 || die "python3 is required"
 [ -f "$DB_PATH" ] || die "database not found: $DB_PATH"
 case "$DB_PATH$BACKUP_DIR" in *$'\n'*) die "paths may not contain newlines" ;; esac
 [[ "$KEEP" =~ ^[0-9]+$ ]] && [ "$KEEP" -ge 1 ] || die "BACKUP_KEEP must be a positive number"
+if [ -n "$AGE_RECIPIENT" ]; then
+  case "$AGE_RECIPIENT" in age1*) ;; *) die "AGE_RECIPIENT must be a public key starting with age1 (never a private key)" ;; esac
+  [ -x "$AGE_BIN" ] || die "AGE_RECIPIENT is set but age was not found ($AGE_BIN)"
+fi
 
 mkdir -p "$BACKUP_DIR"
 chmod 700 "$BACKUP_DIR" 2>/dev/null || log "note: could not set permissions on $BACKUP_DIR"
@@ -130,17 +145,46 @@ find "$BACKUP_DIR" -maxdepth 1 -type f -name 'db_backup_*.db' | sort -r | tail -
     rm -f -- "$old"
   done
 
+# --- encrypt what leaves the Pi -----------------------------------------------------------
+# upload is the file that goes off the Pi: the encrypted copy when AGE_RECIPIENT is set.
+upload="$final"
+upload_name="$name"
+if [ -n "$AGE_RECIPIENT" ]; then
+  mkdir -p "$OUTGOING_DIR"
+  chmod 700 "$OUTGOING_DIR" 2>/dev/null || log "note: could not set permissions on $OUTGOING_DIR"
+  upload_name="$name.age"
+  upload="$OUTGOING_DIR/$upload_name"
+  enc_partial="$OUTGOING_DIR/.$upload_name.partial"
+  log "encrypting to $upload"
+  "$AGE_BIN" -r "$AGE_RECIPIENT" -o "$enc_partial" "$final" || die "age encryption failed"
+  [ -s "$enc_partial" ] || die "encrypted file is empty"
+  mv "$enc_partial" "$upload"
+  enc_partial=""
+  if command -v sha256sum >/dev/null 2>&1; then sha=(sha256sum)
+  elif command -v shasum >/dev/null 2>&1; then sha=(shasum -a 256) # macOS, for local tests
+  else die "sha256sum is required when AGE_RECIPIENT is set"; fi
+  (cd "$OUTGOING_DIR" && "${sha[@]}" -- "$upload_name" >"$upload_name.sha256.partial" && mv "$upload_name.sha256.partial" "$upload_name.sha256") \
+    || die "could not write the checksum file"
+  log "encrypted ok ($(wc -c <"$upload" | tr -d ' ') bytes)"
+  # Prune encrypted copies the same way (newest KEEP), with their checksum files.
+  find "$OUTGOING_DIR" -maxdepth 1 -type f -name 'db_backup_*.db.age' | sort -r | tail -n +"$((KEEP + 1))" |
+    while IFS= read -r old; do
+      log "removing old encrypted backup $old"
+      rm -f -- "$old" "$old.sha256"
+    done
+fi
+
 # --- off-device copy (S3) -----------------------------------------------------------------
 if [ -n "$S3_BUCKET" ]; then
   command -v aws >/dev/null 2>&1 || die "S3_BUCKET is set but the aws CLI is missing"
   rest="${S3_BUCKET#s3://}"
   bucket="${rest%%/*}"
   prefix="${rest#"$bucket"}"; prefix="${prefix#/}"; prefix="${prefix%/}"
-  key="${prefix:+$prefix/}$name"
+  key="${prefix:+$prefix/}$upload_name"
   log "uploading to s3://$bucket/$key"
   aws s3 cp --only-show-errors --cli-connect-timeout 20 --cli-read-timeout 120 \
-    "$final" "s3://$bucket/$key" || die "S3 upload failed"
-  local_size="$(wc -c <"$final" | tr -d ' ')"
+    "$upload" "s3://$bucket/$key" || die "S3 upload failed"
+  local_size="$(wc -c <"$upload" | tr -d ' ')"
   remote_size="$(aws s3api head-object --bucket "$bucket" --key "$key" \
     --query ContentLength --output text)" || die "could not read the uploaded object back"
   [ "$remote_size" = "$local_size" ] || die "S3 size mismatch: local $local_size, remote $remote_size"
@@ -152,7 +196,7 @@ fi
 # --- optional second copy -----------------------------------------------------------------
 if [ -n "${BACKUP_COPY_COMMAND:-}" ]; then
   log "running BACKUP_COPY_COMMAND"
-  sh -c "$BACKUP_COPY_COMMAND" bajeti-backup "$final" || die "BACKUP_COPY_COMMAND failed"
+  sh -c "$BACKUP_COPY_COMMAND" bajeti-backup "$upload" || die "BACKUP_COPY_COMMAND failed"
 fi
 
 ping_url ""
