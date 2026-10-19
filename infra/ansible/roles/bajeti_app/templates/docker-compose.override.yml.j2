@@ -1,0 +1,15 @@
+# Managed by Ansible. Compose merges this on top of docker-compose.yml automatically.
+services:
+  bajeti_app:
+    ports: !override
+      - "127.0.0.1:8000:8000"
+    mem_limit: {{ bajeti_app_mem_limit }}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+  cloudflared:
+    image: cloudflare/cloudflared:{{ cloudflared_version }}
+    mem_limit: {{ bajeti_app_cloudflared_mem_limit }}

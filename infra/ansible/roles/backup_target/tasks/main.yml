@@ -1,29 +1,72 @@
 ---
-- name: Pull script
-  ansible.builtin.copy:
-    src: "{{ playbook_dir }}/../../deploy/backup/pull-from-app.sh"
-    dest: "/home/{{ backup_user }}/bajeti-backup/pull-from-app.sh"
-    owner: "{{ backup_user }}"
-    mode: "0755"
-
-- name: Pull settings (secret values come from the vault)
-  ansible.builtin.copy:
-    dest: "/home/{{ backup_user }}/.config/bajeti/pull.env"
-    owner: "{{ backup_user }}"
-    mode: "0600"
-    content: |
-      APP_SSH_TARGET={{ app_pi_user }}@{{ app_pi_host }}
-      DEST_DIR={{ backup_dir }}
-      PULL_PING_URL={{ pull_ping_url | default('') }}
-  no_log: true
-
-- name: Pull unit and timer
-  ansible.builtin.template:
-    src: "{{ item }}"
-    dest: "/etc/systemd/system/{{ item | basename }}"
-    mode: "0644"
+- name: Folders for the pull
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0700"
   loop:
-    - "{{ playbook_dir }}/../../deploy/backup/bajeti-backup-pull.service"
-    - "{{ playbook_dir }}/../../deploy/backup/bajeti-backup-pull.timer"
-  notify: reload systemd
-# TODO(S04): @USER@/@HOME@/@DEST_DIR@ substitution, handler, enable the timer.
+    - "{{ backup_target_home }}/bajeti-backup"
+    - "{{ backup_target_home }}/.config/bajeti"
+
+- name: Pull script from the repository
+  ansible.builtin.copy:
+    src: "{{ repo_root }}/deploy/backup/pull-from-app.sh"
+    dest: "{{ backup_target_home }}/bajeti-backup/pull-from-app.sh"
+    mode: "0755"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+
+- name: Pull key (created once, never replaced)
+  ansible.builtin.command:
+    cmd: ssh-keygen -q -t ed25519 -N "" -C bajeti-pull -f {{ backup_target_home }}/.ssh/bajeti_pull
+    creates: "{{ backup_target_home }}/.ssh/bajeti_pull"
+  become: true
+  become_user: "{{ admin_user }}"
+
+- name: Pinned host key of the app Pi must exist (compare its fingerprint by hand first)
+  ansible.builtin.stat:
+    path: "{{ backup_target_home }}/.ssh/bajeti_pull_known_hosts"
+  register: backup_target_pinned
+
+- name: Say so if the host key is not pinned yet
+  ansible.builtin.debug:
+    msg: >-
+      bajeti_pull_known_hosts is missing. Pin the app Pi's host key and compare the fingerprint
+      (docs/runbooks/backup-install.md, section 10.3). The pull will refuse to run until then.
+  when: not backup_target_pinned.stat.exists
+
+- name: Pull settings
+  ansible.builtin.copy:
+    dest: "{{ backup_target_home }}/.config/bajeti/pull.env"
+    mode: "0600"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    content: |
+      APP_SSH_TARGET={{ admin_user }}@{{ app_host_ip }}
+      DEST_DIR={{ backup_dir }}
+      {% if pull_ping_url | default('') %}
+      PULL_PING_URL={{ pull_ping_url }}
+      {% endif %}
+
+- name: Pull units and timer (placeholders filled in from the repo files)
+  ansible.builtin.copy:
+    content: |
+      {{ lookup('ansible.builtin.file', repo_root ~ '/deploy/backup/' ~ item)
+         | replace('@USER@', admin_user) | replace('@HOME@', backup_target_home)
+         | replace('@DEST_DIR@', backup_dir) }}
+    dest: "/etc/systemd/system/{{ item }}"
+    mode: "0644"
+    owner: root
+    group: root
+  loop: [bajeti-backup-pull.service, bajeti-backup-pull.timer]
+  notify: Reload systemd
+
+- name: Pull timer enabled
+  ansible.builtin.systemd_service:
+    name: bajeti-backup-pull.timer
+    enabled: true
+    state: started
+    daemon_reload: true
+  ignore_errors: "{{ ansible_check_mode }}"

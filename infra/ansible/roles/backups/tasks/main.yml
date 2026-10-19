@@ -1,14 +1,76 @@
 ---
-- name: Outgoing folder (ciphertext only)
-  ansible.builtin.file:
-    path: "/home/{{ app_pi_user }}/backups/outgoing"
-    state: directory
-    owner: "{{ app_pi_user }}"
-    mode: "0700"
+- name: Refuse placeholder backup settings
+  ansible.builtin.assert:
+    that:
+      - "'<' not in age_version"
+      - "'<' not in age_sha256"
+      - "'<' not in age_recipient"
+    fail_msg: Set age_version, age_sha256 and age_recipient in inventory/group_vars/all/main.yml.
+    quiet: true
 
-- name: Pull key may only read the outgoing folder
+- name: Folders for the backups
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0700"
+  loop:
+    - "{{ backups_home }}/backups"
+    - "{{ backups_home }}/backups/db_backups"
+    - "{{ backups_home }}/backups/outgoing"
+    - "{{ backups_home }}/.config/bajeti"
+    - "{{ backups_home }}/.local/bin"
+
+- name: Age release (pinned, checksum verified)
+  ansible.builtin.get_url:
+    url: >-
+      https://github.com/FiloSottile/age/releases/download/{{ age_version }}/age-{{ age_version }}-linux-{{
+      backups_age_arch_map[ansible_facts['architecture']] }}.tar.gz
+    dest: "/var/tmp/age-{{ age_version }}.tar.gz"
+    checksum: "sha256:{{ age_sha256 }}"
+    mode: "0644"
+
+- name: Age binary in the admin user's home (no system-wide install)
+  ansible.builtin.unarchive:
+    src: "/var/tmp/age-{{ age_version }}.tar.gz"
+    dest: "{{ backups_home }}/.local/bin"
+    remote_src: true
+    extra_opts: [--strip-components=1, age/age]
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    creates: "{{ backups_home }}/.local/bin/age"
+
+- name: Backup settings (no secrets except the optional ping URL)
+  ansible.builtin.template:
+    src: backup.env.j2
+    dest: "{{ backups_home }}/.config/bajeti/backup.env"
+    mode: "0600"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+
+- name: The backup Pi's pull key may only read the outgoing folder
   ansible.posix.authorized_key:
-    user: "{{ app_pi_user }}"
-    key: "{{ pull_public_key }}"
-    key_options: 'restrict,command="/usr/bin/rrsync -ro /home/{{ app_pi_user }}/backups/outgoing"'
-# TODO(S04): backup.env with AGE_RECIPIENT/AGE_BIN, systemd backup units, pinned age binary.
+    user: "{{ admin_user }}"
+    key: "{{ backup_pull_public_key }}"
+    key_options: 'restrict,command="/usr/bin/rrsync -ro {{ backups_home }}/backups/outgoing"'
+
+- name: Backup units and timer (placeholders filled in from the repo files)
+  ansible.builtin.copy:
+    content: |
+      {{ lookup('ansible.builtin.file', repo_root ~ '/deploy/backup/' ~ item)
+         | replace('@USER@', admin_user) | replace('@HOME@', backups_home) }}
+    dest: "/etc/systemd/system/{{ item }}"
+    mode: "0644"
+    owner: root
+    group: root
+  loop: [bajeti-backup.service, bajeti-backup-failure.service, bajeti-backup.timer]
+  notify: Reload systemd
+
+- name: Backup timer enabled
+  ansible.builtin.systemd_service:
+    name: bajeti-backup.timer
+    enabled: true
+    state: started
+    daemon_reload: true
+  ignore_errors: "{{ ansible_check_mode }}"

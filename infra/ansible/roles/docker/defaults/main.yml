@@ -1,0 +1,5 @@
+---
+docker_arch_map: {aarch64: arm64, x86_64: amd64}
+docker_users: ["{{ admin_user }}"]
+docker_log_max_size: 10m
+docker_log_max_file: "3"

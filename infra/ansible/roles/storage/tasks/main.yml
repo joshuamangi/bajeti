@@ -1,10 +1,13 @@
 ---
-# Creates one folder on the existing SSD mount. Does not format, partition or touch anything else.
-- name: Backups folder exists on the existing mount
+# Creates one folder on the existing SSD mount. It never formats or partitions anything.
+- name: Refuse to create the folder unless the SSD is mounted
+  ansible.builtin.assert:
+    that: ansible_facts['mounts'] | selectattr('mount', 'equalto', backup_mount) | list | length > 0
+    fail_msg: "{{ backup_mount }} is not mounted; refusing to write backups into the root filesystem."
+    quiet: true
+
+# exFAT fixes owner and mode at mount time, so none are set here. Age encryption is the protection.
+- name: Backups folder on the existing mount  # noqa: risky-file-permissions
   ansible.builtin.file:
     path: "{{ backup_dir }}"
     state: directory
-    owner: "{{ backup_user }}"
-    group: "{{ backup_user }}"
-    mode: "0700"  # exFAT ignores modes; the real protection is age encryption
-  when: backup_dir is defined

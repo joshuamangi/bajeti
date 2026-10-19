@@ -1,0 +1,3 @@
+---
+# The SSD is exFAT: owner, group and mode come from the mount options, so none are set here.
+storage_note: exFAT

@@ -1,0 +1,5 @@
+---
+bajeti_app_repo_url: https://github.com/joshuamangi/bajeti.git
+bajeti_app_dir: "/home/{{ admin_user }}/projects/bajeti"
+bajeti_app_mem_limit: 768m
+bajeti_app_cloudflared_mem_limit: 128m

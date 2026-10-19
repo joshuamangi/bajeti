@@ -1,0 +1,4 @@
+---
+backups_home: "/home/{{ admin_user }}"
+backups_age_arch_map: {aarch64: arm64, x86_64: amd64}
+backups_keep: 365
