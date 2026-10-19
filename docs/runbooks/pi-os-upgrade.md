@@ -138,12 +138,14 @@ Imaging 60 to 90 minutes, flashing 15, first boot and Ansible 30 to 45, restore 
 | 3 | Unattended-upgrades ran (`/var/log/unattended-upgrades`). Disk use under control (`df -h`, journald size). |
 | 7 | Seven nights of backups on every tier. Restore one on the Mac. Only then delete `~/pi-app-old-card.img.gz` and the secrets bundle, and note the date in `docs/backup-restore-log.md`. |
 
-## 8. Unknowns you must confirm
+## 8. Unknowns, answered by the owner on 2026-10-19
 
-1. Does the app Pi use the network cable or Wi-Fi? (If Wi-Fi, set it in Imager.)
-2. Is the Mac card reader fast? (Imaging time depends on it.)
-3. Do you still need anything from the leftover folders in the home directory (`~/setup`, `~/Containers`, `~/shared`, the old k3s files)? The k3s service is inactive and is left out. They are saved in the old-card image, not carried over.
-4. Which services are really used: file sharing, the web server on port 80, the old tunnel tool? (These are left out of the rebuild unless you say otherwise.)
-5. Do the power-failure scripts need anything beyond their folder and settings (they email you)?
-6. The runner setup: keep it as it is until S08 hardens it, or harden during the rebuild?
-7. A date and time for the window.
+1. Network: the app Pi uses the network cable. No Wi-Fi settings needed in Imager.
+2. The Mac's card reader is not slow.
+3. Nothing is needed from the leftover folders (`~/setup`, `~/Containers`, `~/shared`, the old k3s files). They stay only in the old-card image. k3s is dropped.
+4. Only the tunnel client is used. File sharing, the web server on port 80, the old tunnel tool and the rest are left out of the rebuild.
+5. The power-failure scripts need nothing beyond their folder and settings, but they must be backed up. They are in the secrets bundle (step P3); a permanent copy belongs in the Ansible `backups` role (S04).
+6. The runner stays as it is until S08.
+7. Window: the owner asked for it to start now; it cannot start until the Ansible playbook from S04 exists and the rehearsal steps pass (see the handoff notes).
+
+Open: `cert.pem` in the tunnel folder is owned by root, so the bundle (built as the normal user) does not contain it. Running an existing tunnel needs only the credentials JSON and `config.yml`, which are included. Confirm during the rehearsal that the tunnel starts without `cert.pem`, or add it with `sudo tar`.
