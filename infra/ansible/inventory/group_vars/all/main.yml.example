@@ -10,10 +10,10 @@ backup_host_ip: "<PI_BACKUP_HOST>"
 lan_cidr: "<LAN_CIDR>"
 
 # Pinned versions: the playbook refuses to install anything that is still a placeholder.
-docker_package_version: "<PIN_FROM_DOCKER_APT_REPO>"
-cloudflared_version: "<PIN_CLOUDFLARED_TAG>"
-age_version: "<PIN_AGE_VERSION>"
-age_sha256: "<SHA256_FROM_THE_RELEASE_PAGE>"
+docker_package_version: "5:29.6.0-1~debian.13~trixie"  # same version as the app Pi runs today
+cloudflared_version: "2026.10.1"
+age_version: "v1.3.2"
+age_sha256: "6b8dc4333c53a5a57c9e5834e3a48f92605d7154014cd07269ff3327db5d37f4"  # linux-arm64 tarball
 
 # App Pi backup settings (public values only; secrets go in vault.yml).
 backup_s3_bucket: "s3://<BUCKET>"

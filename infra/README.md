@@ -22,7 +22,7 @@ cp inventory/group_vars/all/vault.yml.example inventory/group_vars/all/vault.yml
 ansible-vault encrypt inventory/group_vars/all/vault.yml
 ```
 
-Pins you must fill in: `docker_package_version` (list with `apt-cache madison docker-ce` on a Pi with Docker's repository), `cloudflared_version`, `age_version` and `age_sha256` (from the release page). The playbook stops if any is still a placeholder.
+Pins (suggested values are in the example file, checked on 2026-10-19): `docker_package_version` is the version the app Pi runs today, present in Docker's repository for the new release (`apt-cache madison docker-ce` lists others); `cloudflared_version`; `age_version` and `age_sha256` (the linux-arm64 tarball digest from the release page). The playbook stops if any is still a placeholder.
 
 ## Check mode first
 
