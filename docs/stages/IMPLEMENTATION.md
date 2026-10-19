@@ -36,7 +36,7 @@ The rules that apply to every stage (public repo, placeholders for hosts, no com
 | S01 | [Pi inventory and necessity audit (both Pis)](S01-pi-audit.md) | claude+human | none | done |
 | S02 | [Backups: backup Pi SSD, Mac pull, offsite](S02-backups-two-pis.md) | design-gate | S01 | done |
 | S03 | [Pi OS end-of-life decision and upgrade runbook](S03-pi-os-upgrade.md) | design-gate | S01, S02 | done |
-| S04 | [Ansible infrastructure as code for both Pis](S04-ansible-iac.md) | claude+human | S01, S02, S03 | todo |
+| S04 | [Ansible infrastructure as code for both Pis](S04-ansible-iac.md) | claude+human | S01, S02, S03 | in-progress |
 | S05 | [Rebuild rehearsal and cutover](S05-rebuild-rehearsal-cutover.md) | claude+human | S02, S03, S04 | todo |
 | S06 | [Pi security audit and hardening plan](S06-hardening-plan.md) | claude | S05 | todo |
 | S07 | [Harden Docker Compose and the Dockerfile](S07-harden-docker.md) | claude | S06 | todo |
