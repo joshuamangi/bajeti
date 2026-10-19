@@ -1,4 +1,4 @@
 ---
-base_packages: [ca-certificates, curl, rsync, python3, python3-apt, gnupg, logrotate]
+base_packages: [ca-certificates, curl, rsync, python3, python3-apt, gnupg, logrotate, systemd-timesyncd]
 base_journald_system_max_use: 200M
 base_journald_runtime_max_use: 50M

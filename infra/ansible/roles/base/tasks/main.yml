@@ -16,6 +16,14 @@
     enabled: true
     state: started
 
+- name: Journald drop-in folder
+  ansible.builtin.file:
+    path: /etc/systemd/journald.conf.d
+    state: directory
+    mode: "0755"
+    owner: root
+    group: root
+
 - name: Journald size limits (fewer SD-card writes)
   ansible.builtin.template:
     src: journald.conf.j2

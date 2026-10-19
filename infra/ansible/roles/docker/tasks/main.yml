@@ -33,6 +33,14 @@
     cache_valid_time: 3600
   notify: Restart docker
 
+- name: Docker config folder
+  ansible.builtin.file:
+    path: /etc/docker
+    state: directory
+    mode: "0755"
+    owner: root
+    group: root
+
 - name: Log rotation (fewer SD-card writes)
   ansible.builtin.template:
     src: daemon.json.j2
