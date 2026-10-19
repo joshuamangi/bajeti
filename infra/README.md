@@ -5,8 +5,8 @@ Nothing here has been applied to a Pi. **Always start with `--check --diff` and 
 
 | Group | Roles |
 |---|---|
-| both | `base`, `ssh_hardening`, `firewall`, `fail2ban`, `unattended_upgrades` |
-| `app` | `docker`, `bajeti_app`, `backups`, `monitoring`, `github_runner` |
+| both | `base`, `ssh_hardening`, `firewall`, `unattended_upgrades` |
+| `app` | `fail2ban`, `docker`, `bajeti_app`, `backups`, `monitoring`, `github_runner` |
 | `backup` | `storage`, `backup_target` |
 
 Secrets: **Ansible Vault** (built in, free, nothing else to install). The vault password lives in the password manager. Real values stay out of git: `inventory/production.ini`, `inventory/group_vars/all/main.yml`, `inventory/group_vars/all/vault.yml` are git-ignored; only `*.example` files are committed.
@@ -62,6 +62,8 @@ Each role replaces one file or installs one package; the diff in check mode show
 - Its firewall file says it is managed by another project's Ansible and allows SSH from the whole LAN. This repository therefore leaves it alone (`firewall_manage_backup: false`). Turn it on only if you want this repository to own that file, and read the diff first.
 - The SSD is exFAT: owner, group and mode come from the mount options, so the storage role only makes sure the folder exists.
 - Services that a package installs are skipped in check mode (`ignore_errors` on those tasks only when `--check` is on).
+
+- fail2ban is on the app Pi only: the backup Pi accepts SSH from the LAN with keys only, so it adds little there.
 
 ## Not included on purpose
 

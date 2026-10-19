@@ -28,7 +28,6 @@
     - base
     - ssh_hardening
     - firewall
-    - fail2ban
     - unattended_upgrades
 
 - name: App Pi
@@ -37,6 +36,7 @@
   vars:
     repo_root: "{{ playbook_dir }}/../../.."
   roles:
+    - fail2ban
     - docker
     - bajeti_app
     - backups
