@@ -34,6 +34,18 @@ code="$(curl -sS -L -o /dev/null -w '%{http_code}' "$BASE_URL/")" || fail "canno
 [ "$code" = 200 ] || fail "GET / returned $code"
 pass "site answers (200)"
 
+# 1b. every /static file the pages reference loads (catches a missing frontend build)
+missing=0
+for page in / /login; do
+  html="$(curl -sS -L "$BASE_URL$page" || true)"
+  for asset in $(printf '%s' "$html" | grep -oE '(src|href)="/static/[^"?#]+' | sed -E 's/^(src|href)="//' | sort -u); do
+    c="$(curl -sS -o /dev/null -w '%{http_code}' "$BASE_URL$asset" || echo 000)"
+    [ "$c" = 200 ] || { echo "  missing asset: $asset ($c)" >&2; missing=$((missing + 1)); }
+  done
+done
+[ "$missing" -eq 0 ] || fail "$missing static file(s) referenced by the pages do not load"
+pass "static files referenced by the pages load"
+
 # 2. row counts equal the backup
 python3 - "$DB" "$BACKUP" <<'PY' || fail "row counts differ from the backup"
 import sqlite3, sys
