@@ -39,4 +39,6 @@ cloudflared/cert.pem
 cloudflared/*.json
 
 # Ansible inventory has real hosts
-infra/ansible/inventory.ini
+infra/ansible/inventory/production.ini
+infra/ansible/group_vars/all/main.yml
+infra/ansible/group_vars/all/vault.yml

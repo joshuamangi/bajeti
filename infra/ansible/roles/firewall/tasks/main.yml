@@ -1,0 +1,47 @@
+---
+- name: Refuse risky firewall changes without lockout_safe
+  ansible.builtin.assert:
+    that: ansible_check_mode or (lockout_safe | default(false) | bool)
+    fail_msg: >-
+      A wrong firewall rule can lock you out. Keep a second SSH session open, then run again
+      with -e lockout_safe=true.
+    quiet: true
+
+- name: App Pi, ufw packages
+  ansible.builtin.apt:
+    name: ufw
+    state: present
+  when: "'app' in group_names"
+
+- name: App Pi, allow SSH only from the listed addresses
+  community.general.ufw:
+    rule: allow
+    port: "22"
+    proto: tcp
+    from_ip: "{{ item }}"
+  loop: "{{ firewall_ssh_sources_app }}"
+  when: "'app' in group_names"
+
+- name: App Pi, default deny incoming and enable ufw
+  community.general.ufw:
+    state: enabled
+    default: deny
+    direction: incoming
+  when: "'app' in group_names"
+
+- name: Backup Pi, nftables ruleset (default drop)
+  ansible.builtin.template:
+    src: nftables.conf.j2
+    dest: /etc/nftables.conf
+    mode: "0644"
+    owner: root
+    group: root
+    validate: /usr/sbin/nft -c -f %s
+  when: "'backup' in group_names"
+  notify: Reload nftables
+
+- name: Backup Pi, nftables enabled at boot
+  ansible.builtin.systemd_service:
+    name: nftables
+    enabled: true
+  when: "'backup' in group_names"

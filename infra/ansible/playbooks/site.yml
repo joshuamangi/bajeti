@@ -1,0 +1,53 @@
+---
+# Run from infra/ansible. Always start with:  ansible-playbook playbooks/site.yml --check --diff --limit <group>
+# Changes to SSH and the firewall need  -e lockout_safe=true  and a second open SSH session.
+- name: Common setup for both Pis
+  hosts: all
+  become: true
+  vars:
+    repo_root: "{{ playbook_dir }}/../../.."
+  pre_tasks:
+    - name: Pre-flight, refuse to run with placeholder settings
+      ansible.builtin.assert:
+        that:
+          - admin_user is defined
+          - "'<' not in admin_user"
+          - "'<' not in mac_address_ip"
+        fail_msg: Copy group_vars/all/main.yml.example to main.yml and fill it in.
+        quiet: true
+    - name: Pre-flight, the connecting user has an authorized key
+      ansible.builtin.stat:
+        path: "/home/{{ admin_user }}/.ssh/authorized_keys"
+      register: preflight_keys
+    - name: Pre-flight, stop if key login could not be confirmed
+      ansible.builtin.assert:
+        that: preflight_keys.stat.exists and preflight_keys.stat.size > 0
+        fail_msg: No authorized_keys for the admin user; password-only login would be locked out.
+        quiet: true
+  roles:
+    - base
+    - ssh_hardening
+    - firewall
+    - fail2ban
+    - unattended_upgrades
+
+- name: App Pi
+  hosts: app
+  become: true
+  vars:
+    repo_root: "{{ playbook_dir }}/../../.."
+  roles:
+    - docker
+    - bajeti_app
+    - backups
+    - monitoring
+    - github_runner
+
+- name: Backup Pi
+  hosts: backup
+  become: true
+  vars:
+    repo_root: "{{ playbook_dir }}/../../.."
+  roles:
+    - storage
+    - backup_target

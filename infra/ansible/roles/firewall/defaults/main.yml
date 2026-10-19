@@ -1,0 +1,6 @@
+---
+# Addresses allowed to reach SSH. The app Pi accepts the Mac and the backup Pi's pull;
+# the backup Pi accepts the Mac only (the app Pi must hold no way in).
+firewall_ssh_sources_app: ["{{ mac_address_ip }}", "{{ backup_host_ip }}"]
+firewall_ssh_sources_backup: ["{{ mac_address_ip }}"]
+firewall_extra_tcp_ports_backup: []

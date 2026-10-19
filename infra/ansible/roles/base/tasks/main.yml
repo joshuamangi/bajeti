@@ -1,0 +1,26 @@
+---
+- name: Base packages
+  ansible.builtin.apt:
+    name: "{{ base_packages }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Timezone
+  community.general.timezone:
+    name: "{{ timezone }}"
+
+- name: Time sync is enabled (the Pi has no clock battery)
+  ansible.builtin.systemd_service:
+    name: systemd-timesyncd
+    enabled: true
+    state: started
+
+- name: Journald size limits (fewer SD-card writes)
+  ansible.builtin.template:
+    src: journald.conf.j2
+    dest: /etc/systemd/journald.conf.d/10-bajeti.conf
+    mode: "0644"
+    owner: root
+    group: root
+  notify: Restart journald

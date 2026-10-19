@@ -1,0 +1,6 @@
+---
+# Copy to group_vars/all/vault.yml, fill in, then: ansible-vault encrypt group_vars/all/vault.yml
+# The vault password lives in the password manager. Never commit the real file.
+# Dead-man's-switch URLs are secrets (optional; leave empty to skip).
+backup_ping_url: ""
+pull_ping_url: ""

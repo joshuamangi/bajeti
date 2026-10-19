@@ -1,0 +1,25 @@
+---
+# Copy to group_vars/all/main.yml (git-ignored) and replace every <PLACEHOLDER>.
+admin_user: "<USER>"
+timezone: Africa/Nairobi
+
+# Who may reach SSH, by address. Used by the firewall roles and fail2ban.
+mac_address_ip: "<MAC>"
+app_host_ip: "<PI_APP_HOST>"
+backup_host_ip: "<PI_BACKUP_HOST>"
+lan_cidr: "<LAN_CIDR>"
+
+# Pinned versions: the playbook refuses to install anything that is still a placeholder.
+docker_package_version: "<PIN_FROM_DOCKER_APT_REPO>"
+cloudflared_version: "<PIN_CLOUDFLARED_TAG>"
+age_version: "<PIN_AGE_VERSION>"
+age_sha256: "<SHA256_FROM_THE_RELEASE_PAGE>"
+
+# App Pi backup settings (public values only; secrets go in vault.yml).
+backup_s3_bucket: "s3://<BUCKET>"
+age_recipient: "age1<PUBLIC_KEY>"
+backup_pull_public_key: "ssh-ed25519 <PUBLIC_KEY_OF_THE_PULL_KEY> bajeti-pull"
+
+# Backup Pi.
+backup_mount: /mnt/ssd
+backup_dir: /mnt/ssd/bajeti-backups

@@ -1,0 +1,2 @@
+---
+backup_target_home: "/home/{{ admin_user }}"
