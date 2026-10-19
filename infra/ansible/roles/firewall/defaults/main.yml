@@ -4,3 +4,6 @@
 firewall_ssh_sources_app: ["{{ mac_address_ip }}", "{{ backup_host_ip }}"]
 firewall_ssh_sources_backup: ["{{ mac_address_ip }}"]
 firewall_extra_tcp_ports_backup: []
+# The backup Pi's current ruleset says it is managed by another project's Ansible. Off unless you decide
+# this repository should own it (then review the diff, it narrows SSH to the listed addresses).
+firewall_manage_backup: false

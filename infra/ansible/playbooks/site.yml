@@ -13,7 +13,7 @@
           - admin_user is defined
           - "'<' not in admin_user"
           - "'<' not in mac_address_ip"
-        fail_msg: Copy group_vars/all/main.yml.example to main.yml and fill it in.
+        fail_msg: Copy inventory/group_vars/all/main.yml.example to main.yml and fill it in.
         quiet: true
     - name: Pre-flight, the connecting user has an authorized key
       ansible.builtin.stat:

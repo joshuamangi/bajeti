@@ -9,7 +9,7 @@ Nothing here has been applied to a Pi. **Always start with `--check --diff` and 
 | `app` | `docker`, `bajeti_app`, `backups`, `monitoring`, `github_runner` |
 | `backup` | `storage`, `backup_target` |
 
-Secrets: **Ansible Vault** (built in, free, nothing else to install). The vault password lives in the password manager. Real values stay out of git: `inventory/production.ini`, `group_vars/all/main.yml`, `group_vars/all/vault.yml` are git-ignored; only `*.example` files are committed.
+Secrets: **Ansible Vault** (built in, free, nothing else to install). The vault password lives in the password manager. Real values stay out of git: `inventory/production.ini`, `inventory/group_vars/all/main.yml`, `inventory/group_vars/all/vault.yml` are git-ignored; only `*.example` files are committed.
 
 ## Set up (once, on the Mac)
 
@@ -17,9 +17,9 @@ Secrets: **Ansible Vault** (built in, free, nothing else to install). The vault 
 cd infra/ansible
 ansible-galaxy collection install -r requirements.yml
 cp inventory/example.ini inventory/production.ini            # fill in the real hosts
-cp group_vars/all/main.yml.example group_vars/all/main.yml   # fill in; the pinned versions are mandatory
-cp group_vars/all/vault.yml.example group_vars/all/vault.yml
-ansible-vault encrypt group_vars/all/vault.yml
+cp inventory/group_vars/all/main.yml.example inventory/group_vars/all/main.yml   # fill in; the pinned versions are mandatory
+cp inventory/group_vars/all/vault.yml.example inventory/group_vars/all/vault.yml
+ansible-vault encrypt inventory/group_vars/all/vault.yml
 ```
 
 Pins you must fill in: `docker_package_version` (list with `apt-cache madison docker-ce` on a Pi with Docker's repository), `cloudflared_version`, `age_version` and `age_sha256` (from the release page). The playbook stops if any is still a placeholder.
@@ -56,6 +56,12 @@ Create `roles/<name>/{tasks,defaults,handlers,templates}`, prefix every variable
 ## Rollback
 
 Each role replaces one file or installs one package; the diff in check mode shows which. To undo a file, restore the previous version from the diff and run again. For a whole rebuild the rollback is the old-card image in `docs/runbooks/pi-os-upgrade.md` (step R).
+
+## Findings from the first check-mode run against the backup Pi
+
+- Its firewall file says it is managed by another project's Ansible and allows SSH from the whole LAN. This repository therefore leaves it alone (`firewall_manage_backup: false`). Turn it on only if you want this repository to own that file, and read the diff first.
+- The SSD is exFAT: owner, group and mode come from the mount options, so the storage role only makes sure the folder exists.
+- Services that a package installs are skipped in check mode (`ignore_errors` on those tasks only when `--check` is on).
 
 ## Not included on purpose
 

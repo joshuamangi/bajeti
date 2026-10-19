@@ -6,10 +6,8 @@
     fail_msg: "{{ backup_mount }} is not mounted; refusing to write backups into the root filesystem."
     quiet: true
 
-- name: Backups folder on the existing mount (exFAT ignores the mode; age encryption is the protection)
+# exFAT fixes owner and mode at mount time, so none are set here. Age encryption is the protection.
+- name: Backups folder on the existing mount  # noqa: risky-file-permissions
   ansible.builtin.file:
     path: "{{ backup_dir }}"
     state: directory
-    owner: "{{ storage_backup_user }}"
-    group: "{{ storage_backup_user }}"
-    mode: "0770"

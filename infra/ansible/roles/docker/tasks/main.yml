@@ -2,7 +2,7 @@
 - name: Refuse to install an unpinned Docker
   ansible.builtin.assert:
     that: "'<' not in docker_package_version"
-    fail_msg: Set docker_package_version in group_vars/all/main.yml (see infra/README.md).
+    fail_msg: Set docker_package_version in inventory/group_vars/all/main.yml (see infra/README.md).
     quiet: true
 
 - name: Docker apt key
@@ -54,3 +54,4 @@
     name: docker
     enabled: true
     state: started
+  ignore_errors: "{{ ansible_check_mode }}"

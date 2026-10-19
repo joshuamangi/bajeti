@@ -52,7 +52,7 @@
 
 - name: Pull units and timer (placeholders filled in from the repo files)
   ansible.builtin.copy:
-    content: >-
+    content: |
       {{ lookup('ansible.builtin.file', repo_root ~ '/deploy/backup/' ~ item)
          | replace('@USER@', admin_user) | replace('@HOME@', backup_target_home)
          | replace('@DEST_DIR@', backup_dir) }}
@@ -69,3 +69,4 @@
     enabled: true
     state: started
     daemon_reload: true
+  ignore_errors: "{{ ansible_check_mode }}"

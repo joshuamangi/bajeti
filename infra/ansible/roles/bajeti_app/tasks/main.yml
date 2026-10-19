@@ -2,7 +2,7 @@
 - name: Refuse an unpinned tunnel image
   ansible.builtin.assert:
     that: "'<' not in cloudflared_version"
-    fail_msg: Set cloudflared_version in group_vars/all/main.yml.
+    fail_msg: Set cloudflared_version in inventory/group_vars/all/main.yml.
     quiet: true
 
 - name: Project folder
