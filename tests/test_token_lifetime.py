@@ -3,7 +3,7 @@ import time
 from datetime import timedelta
 
 import pytest
-from jose import jwt
+import jwt
 
 from app.config import settings
 from app.utils import cookies
