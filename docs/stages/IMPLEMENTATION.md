@@ -42,7 +42,7 @@ The rules that apply to every stage (public repo, placeholders for hosts, no com
 | S07 | [Harden Docker Compose and the Dockerfile](S07-harden-docker.md) | claude | S06 | todo |
 | S08 | [Harden CI/CD and deploy](S08-harden-ci-cd.md) | claude+human | S07 | todo |
 | S09 | [Backup automation, alerting and restore tests](S09-backup-automation.md) | claude+human | S02, S04 | todo |
-| S10 | [App security fixes with tests](S10-app-security-fixes.md) | claude | S00 | todo |
+| S10 | [App security fixes with tests](S10-app-security-fixes.md) | claude | S00 | in-progress |
 | S11 | [E0 Targets (#101, #103 to #106)](S11-targets-e0.md) | claude | S10 | todo |
 | S12 | [E1 Pi cleanup and performance (#110)](S12-pi-cleanup-performance.md) | claude+human | S05, S11 | todo |
 | S13 | [E2 Analytics page (#111)](S13-analytics-e2.md) | design-gate | S12 | todo |
