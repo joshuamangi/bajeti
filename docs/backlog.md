@@ -43,3 +43,20 @@ cd infra/ansible && ansible-playbook -i inventory/production.ini playbooks/site.
 Put a calendar reminder on the 1st of each month. Read the diff: a change means something was done by hand on a Pi that Ansible does not describe, so add it to Ansible or undo it.
 
 Later, in S08 or S09: adjust the script to take `--ask-become-pass` when run in a terminal, and decide whether to keep the plist for the backup Pi only (its sudo is passwordless). Do not add a sudo rule to the Ansible user just to make the job unattended.
+
+## Pi and app hardening (from S06, decision 2026-10-20)
+
+The full plan is `docs/hardening-plan.md`. The owner chose to work on the Bajeti app first, so every item waits here. Pick them up after the app epics (S11 onwards), or sooner if something changes the threat model (for example more users or a new collaborator).
+
+Most valuable first, if the time comes:
+
+- Close open registration (`REGISTRATION_OPEN` setting, default off) and rate-limit login. Public hostname, nothing limits either today (A1, A2).
+- Tunnel credentials file to mode 600 on the Pi (A6, 10 minutes, on the Pi).
+- Cookie `Secure` and `SameSite`, stop logging bearer tokens, hide `/docs` and `/openapi.json` (A3, A4).
+- Make `docker-compose.yml` match the Pi: cloudflared tag and healthcheck (A5).
+- Pull-based deploy so the runner leaves the Pi (B1, S08). This is the biggest remaining risk: the runner is in the `docker` group.
+- Dependabot version updates, and why the Oct 19 run failed (A7).
+- Checks that need sudo on the Pi: `ufw status verbose`, `sshd -T`, unattended-upgrades logs, ssh key comments (A8 to A10).
+- Smaller image, tunnel container hardening, read-only root, audit log, Cloudflare Access (A12, A13, B6, B7, B2).
+
+Stages that carry these: S07 (Docker), S08 (CI/CD), S10 (app code).
