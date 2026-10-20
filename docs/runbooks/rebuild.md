@@ -57,6 +57,37 @@ Roles run: `base`, `ssh_hardening`, `unattended_upgrades`, `fail2ban`, `backups`
 
 Not exercised in a container, so checked at the cutover: `firewall` (no kernel firewall in the container), `docker`, `bajeti_app`, the units that need the real `bajeti_app` stack.
 
-## Not covered by the rehearsals (checked at the cutover instead)
+## The real cutover on the Pi: 2026-10-20
 
-The tunnel container starting with the pinned image and without `cert.pem`; the app behind the real hostname; Docker 29 on the new OS; the Pi's own build time and memory use.
+The app Pi was rebuilt from a fresh Raspberry Pi OS Lite 64-bit (Debian 13) on the same SD card, with the old card saved as an image first. Times are local (EAT), read from log and file timestamps, so they are approximate except where a tool reported them.
+
+| Step | Time | Measured |
+|---|---|---|
+| App stopped (W1) | 13:40 | |
+| Final backup, checked on the app Pi, the backup Pi, the Mac and S3 (W2, W3) | 13:40 to 13:41 | backup 10 s; same SHA-256 on three tiers, S3 by size; restore test 0 s |
+| Shutdown, card to the Mac (W4) | 13:46 | |
+| Image of the old card (W5) | 13:50 to 14:39 | `dd` 2,911 s at 44 MB/s for 127.9 GB; 8.35 GB compressed; `gzip -t` clean |
+| Flash, first boot, first SSH (W6, W7) | 14:39 to 15:01 | about 22 min including the image check; flash and boot not timed separately |
+| Ansible, secrets restore, second Ansible run (W8, W9) | about 15:05 to 15:46 | about 40 min, including the fixed address and one stop at the secrets guard |
+| Image build on the Pi | 15:47 to about 15:51 | under 4 min |
+| Database restore, start, public check (W10, W11) | 15:51 to 15:52 | integrity `ok`, all 7 row counts equal the backup; app healthy in 25 s; tunnel registered 4 connections |
+
+**Downtime: about 2 h 12 min** (13:40 to 15:52), against the 3 to 3.5 h estimate. Afterwards: a backup fix and a 2-minute reboot for the memory cgroup (16:07 to about 16:22), then the runner re-registered. The old card image was not needed. Its checksum is recorded in `docs/stages/HANDOFF.md`.
+
+Checked at the cutover: the tunnel starts with the pinned image under Docker 29.6.0; the app answers on the real hostname and the login works; the app uses about 65 to 90 MiB and the tunnel about 17 to 40 MiB (limits 768 MiB and 128 MiB, applied after the cgroup fix). Not tested: starting the tunnel **without** `cert.pem` (it was in the secrets bundle).
+
+## Manual steps that remained
+
+| Step | Why it is manual | Status |
+|---|---|---|
+| Flash the card (Imager) | Needs the card in the Mac | Manual by design |
+| First SSH host-key trust, then the Mac's `known_hosts` and the backup Pi's pin | Fingerprints must be compared by a person | Manual by design |
+| Sudo password for the Ansible run | The fresh OS has no passwordless sudo; this is a hardening gain | Manual by design (`--ask-become-pass`) |
+| Fixed address of the Pi | The router reservation did not carry over to the new install (it came up on another address) | **Now in Ansible** (`base`, `base_static_address`); applies at the next reboot |
+| Run Ansible, restore the secrets bundle, run Ansible again | The app role refuses to continue without `.env` | Manual order, by design |
+| Restore the database | Needs the private age key | Manual by design |
+| `awscli` was missing, so the S3 copy failed | Gap in the roles | **Fixed** (#129) |
+| Memory cgroup missing, so container limits were ignored | Gap in the roles | **Fixed** (#129); needs a reboot and `docker compose up -d --force-recreate` once, because the limit is stored when a container is created |
+| Download and register the GitHub runner | Registration needs a one-hour token | Manual by design; downloading the program could be automated in S08 |
+
+Other finding: the backup Pi's USB SSD lost its connection during the window (a cable problem, unrelated to the rebuild). Its `fstab` entry has `nofail`, so it does not remount by itself after a re-plug; mount it by hand with `systemctl start mnt-ssd.mount` and the other app's bind mount after it.
