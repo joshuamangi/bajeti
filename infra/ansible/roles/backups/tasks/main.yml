@@ -22,6 +22,11 @@
     - "{{ backups_home }}/.config/bajeti"
     - "{{ backups_home }}/.local/bin"
 
+- name: AWS CLI for the S3 copy (Debian package; backup.sh needs it)
+  ansible.builtin.apt:
+    name: awscli
+    state: present
+
 - name: Age release (pinned, checksum verified)
   ansible.builtin.get_url:
     url: >-
