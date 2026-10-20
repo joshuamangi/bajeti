@@ -25,6 +25,10 @@ async def register(first_name: str, last_name: str, email: str, password: str, s
     return resp
 
 
+async def logout_everywhere(token: str):
+    return await post("/auth/logout-all", headers={"Authorization": f"Bearer {token}"})
+
+
 async def get_current_user(token: str):
     resp = await get("/auth/users/me", headers={"Authorization": f"Bearer {token}"})
     return resp

@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 
 from app.routers import requests_router
 from core.security_headers import SecurityHeadersMiddleware
+from core.session import renew_session_cookie
 from data.db.db import engine, Base
 from routers import allocations, auth, budgets, categories, expenses, transfers, users
 from app import requests
@@ -51,6 +52,10 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 # Gzip for production
 if IS_PRODUCTION:
     app.add_middleware(GZipMiddleware, minimum_size=500)
+
+
+# Fresh session cookie while the user is active (web pages only)
+app.middleware("http")(renew_session_cookie)
 
 
 # Security headers on every response

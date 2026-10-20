@@ -55,3 +55,9 @@ Password reset answers "Incorrect email or security answer" for an unknown email
 ## Security answers
 
 Stored as a bcrypt hash of the stripped, case-folded answer (migration `b7c1d2e3f4a5`). It cannot be shown again: the profile page leaves the field blank and a new value replaces the old one. The migration cannot be reversed; take a backup before running it on production.
+
+## Sessions
+
+An access token lasts `ACCESS_TOKEN_EXPIRE_MINUTES` (set it to 60 in the GitHub secret) and the cookie lives exactly as long. While the user browses the web pages, a fresh token is issued once the current one is past half its life (`core/session.py`). The original login time (`auth_time`) is kept in every renewed token, and renewal stops 14 days after it, so one login is forced every 14 days.
+
+Every token carries the user's `token_version`. A password reset and the profile page's "Log out everywhere" button (API: `POST /api/auth/logout-all`) raise it, which makes all earlier tokens invalid and stops renewal of them. Tokens issued before this existed have no version and count as 0, so the deploy does not log anyone out. Migration `c4d9e1a2b3f6` adds the column and can be reversed.

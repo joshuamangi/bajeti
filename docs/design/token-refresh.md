@@ -1,6 +1,6 @@
 # Token lifetime and refresh: design for approval
 
-Status: proposal (S10, item 5). Nothing here is implemented. It needs the owner's decision before any code.
+Status: approved by the owner on 2026-10-20 (60 minutes, 14-day cap, `token_version`) and implemented in S10. The sections below are the design as proposed.
 
 ## How sessions work today
 

@@ -73,6 +73,7 @@ class UserProfileService:
 
         # Hash & update the password using AuthService
         user.hashed_password = AuthService.hash_password(request.new_password)
+        user.token_version = (user.token_version or 0) + 1  # log out other sessions
         user.updated_at = datetime.utcnow()
 
         db.commit()

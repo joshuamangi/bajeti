@@ -42,6 +42,10 @@ def get_current_user(
         raise credentials_exception
 
     user = UserService.get_user_by_email(db, email)
+    # Tokens issued before token_version existed carry no "ver" and count as version 0.
+    if user and payload.get("ver", 0) != user.token_version:
+        logger.warning("Token version is out of date: user_id=%s", user_id)
+        raise credentials_exception
     if not user or user.id != user_id:
         logger.error(
             "User from token not found or ID mismatch: token_user_id=%s db_user_id=%s",

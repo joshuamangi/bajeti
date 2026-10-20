@@ -42,6 +42,13 @@ async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends
     return token
 
 
+@router.post("/logout-all", status_code=status.HTTP_204_NO_CONTENT)
+async def logout_everywhere(current_user: User = Depends(get_current_user),
+                            db: Session = Depends(get_db)):
+    """Invalidate every token of this user, including the one used for this call."""
+    AuthService.revoke_all_tokens(db, current_user)
+
+
 @router.get("/users/me", response_model=UserOut)
 async def read_users_me(current_user: User = Depends(get_current_user)):
     """Return current user"""

@@ -6,7 +6,8 @@ from core.rate_limit import client_ip
 from core.registration import require_registration_open
 from app.utils.templates import render_with_user
 from app.utils.tokens import verify_token
-from app.services.auth_service import login as auth_login, register as auth_register
+from app.services.auth_service import (
+    login as auth_login, logout_everywhere as auth_logout_everywhere, register as auth_register)
 from app.utils.cookies import clear_auth_cookies, set_auth_cookies
 from app.utils.redirects import redirect_with_toast
 
@@ -116,3 +117,14 @@ async def reset_password(request: Request,
     return await render_with_user("forgot_password.html", request, {
         "error": "Not implemented"
     })
+
+
+async def logout_all(request: Request):
+    """Invalidate every session of this user, then clear this browser's cookies."""
+    token = request.cookies.get("access_token")
+    if token:
+        await auth_logout_everywhere(token)
+    response = RedirectResponse(
+        url="/login", status_code=status.HTTP_303_SEE_OTHER)
+    clear_auth_cookies(response)
+    return response

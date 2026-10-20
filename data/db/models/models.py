@@ -17,6 +17,9 @@ class User(Base):
                         onupdate=datetime.utcnow)
     security_answer = Column(String(255), nullable=True)  # bcrypt hash, never plain text
 
+    # Raised to invalidate every token issued earlier (password reset, log out everywhere).
+    token_version = Column(Integer, nullable=False, default=0, server_default="0")
+
     @property
     def has_security_answer(self) -> bool:
         return bool(self.security_answer)

@@ -1,5 +1,6 @@
 # services/auth_service.py
 import logging
+import time
 from datetime import timedelta
 from typing import Optional
 
@@ -99,10 +100,18 @@ class AuthService:
 
         expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = TokenService.create_access_token(
-            data={"sub": user.email, "user_id": user.id},
+            data={"sub": user.email, "user_id": user.id,
+                  "auth_time": int(time.time()), "ver": user.token_version},
             expires_delta=expires
         )
         return {"access_token": access_token, "token_type": "bearer"}
+
+    # ---------- Log out everywhere ----------
+    @staticmethod
+    def revoke_all_tokens(db: Session, user) -> None:
+        """Make every token issued so far invalid."""
+        user.token_version = (user.token_version or 0) + 1
+        db.commit()
 
     # ---------- Token Validation ----------
     @staticmethod
