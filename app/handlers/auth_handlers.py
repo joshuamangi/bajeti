@@ -2,6 +2,7 @@
 import logging
 from fastapi import Request, Form, status
 from fastapi.responses import HTMLResponse, RedirectResponse
+from core.rate_limit import client_ip
 from app.utils.templates import render_with_user
 from app.utils.tokens import verify_token
 from app.services.auth_service import login as auth_login, register as auth_register
@@ -14,10 +15,12 @@ HTMLResponse = HTMLResponse  # expose for router reference
 
 async def handle_authenticated_login(username: str, password: str, request: Request):
     """Handles the login for an authenticated user - same behaviour as before"""
-    response = await auth_login(username, password)
+    response = await auth_login(username, password, client_ip=client_ip(request))
     if response.status_code != status.HTTP_200_OK:
+        too_many = response.status_code == status.HTTP_429_TOO_MANY_REQUESTS
         return await render_with_user("login.html", request, {
-            "error": "Invalid credentials",
+            "error": ("Too many attempts. Please wait a few minutes and try again."
+                      if too_many else "Invalid credentials"),
             "username": username,
         })
     token_data = response.json()

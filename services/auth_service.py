@@ -19,6 +19,9 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 class AuthService:
+    # Checked when there is no real hash, so unknown emails cost the same time as known ones.
+    DUMMY_ANSWER_HASH = pwd_context.hash("not-a-real-answer")
+
     @staticmethod
     def hash_password(password: str) -> str:
         return pwd_context.hash(password)

@@ -14,6 +14,7 @@ from app.services.auth_service import get_current_user as svc_get_current_user
 from app.services.category_service import get_categories_by_type, get_categories_with_stats as svc_get_categories
 from app.services.user_service import reset_password as svc_reset_password
 from app.services.auth_service import login as svc_login
+from core.rate_limit import client_ip
 from app.utils.cookies import set_active_budget_cookie, set_auth_cookies
 from app.utils.redirects import redirect_with_toast
 from fastapi import HTTPException
@@ -232,22 +233,24 @@ async def reset_password(request: Request,
                          new_password: str = Form(...)):
     try:
         from app.services.user_service import reset_password as svc_reset
-        response = await svc_reset(email, security_answer, new_password)
+        response = await svc_reset(email, security_answer, new_password,
+                                   client_ip=client_ip(request))
     except Exception:
         # keep original message
         return await render_with_user("forgot_password.html", request, {
             "error": "Unable to reach server. Please try again later."
         })
 
-    if response.status_code == status.HTTP_404_NOT_FOUND:
-        return await render_with_user("forgot_password.html", request, {"error": "User not found."})
+    if response.status_code == status.HTTP_429_TOO_MANY_REQUESTS:
+        return await render_with_user("forgot_password.html", request, {
+            "error": "Too many attempts. Please wait a few minutes and try again."})
     if response.status_code == status.HTTP_400_BAD_REQUEST:
         return await render_with_user("forgot_password.html", request, {"error": response.json().get("detail", "Invalid request.")})
     if response.status_code >= 500:
         return await render_with_user("forgot_password.html", request, {"error": "Server error. Try again later."})
     if response.status_code == status.HTTP_200_OK:
         # login the user with new password
-        login_resp = await svc_login(email, new_password)
+        login_resp = await svc_login(email, new_password, client_ip=client_ip(request))
         if login_resp.status_code == status.HTTP_200_OK:
             token_data = login_resp.json()
             access_token = token_data["access_token"]

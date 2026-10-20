@@ -1,6 +1,6 @@
 # api/auth.py (or data/api/auth.py as in your layout)
 import logging
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
@@ -8,6 +8,7 @@ from data.db.db import get_db
 from data.db.models.models import User
 from schema.user import UserCreate, UserOut, Token
 from services.auth_service import AuthService
+from core import rate_limit
 from core.security import get_current_user
 
 logger = logging.getLogger("app.auth")
@@ -23,11 +24,20 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/token", response_model=Token)
-async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     """
     Login to get access token. Returns same payload and error message as original.
     """
-    return AuthService.login(db, form_data.username, form_data.password)
+    ip = rate_limit.client_ip(request)
+    rate_limit.check_login(ip, form_data.username)
+    try:
+        token = AuthService.login(db, form_data.username, form_data.password)
+    except HTTPException as exc:
+        if exc.status_code == status.HTTP_401_UNAUTHORIZED:
+            rate_limit.login_failed(ip, form_data.username)
+        raise
+    rate_limit.login_succeeded(ip, form_data.username)
+    return token
 
 
 @router.get("/users/me", response_model=UserOut)

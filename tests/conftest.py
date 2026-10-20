@@ -49,3 +49,11 @@ def setup_database():
 @pytest.fixture()
 def client():
     return TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def reset_rate_limits():
+    """Each test starts with empty login and reset counters."""
+    from core import rate_limit
+    rate_limit.reset_all()
+    yield

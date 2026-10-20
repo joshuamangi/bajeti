@@ -1,5 +1,5 @@
 # app/services/auth_service.py
-from app.services.http_client import post, get
+from app.services.http_client import forward_client_ip, post, get
 from typing import Optional
 from fastapi import status
 import logging
@@ -7,9 +7,10 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-async def login(username: str, password: str):
+async def login(username: str, password: str, client_ip: Optional[str] = None):
     # posts to /auth/token as original
-    resp = await post("/auth/token", data={"username": username, "password": password})
+    resp = await post("/auth/token", data={"username": username, "password": password},
+                      headers=forward_client_ip(client_ip))
     return resp
 
 
