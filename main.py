@@ -22,10 +22,18 @@ async def lifespan(app: FastAPI):
     # Shutdown (optional future cleanup)
 
 
+def api_docs_urls(is_production: bool) -> dict:
+    """The interactive docs and the schema map out the whole API, so production does not serve them."""
+    if is_production:
+        return {"docs_url": None, "redoc_url": None, "openapi_url": None}
+    return {}
+
+
 app = FastAPI(
     title="Bajeti",
     debug=not IS_PRODUCTION,
-    lifespan=lifespan
+    lifespan=lifespan,
+    **api_docs_urls(IS_PRODUCTION)
 )
 
 
