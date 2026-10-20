@@ -57,8 +57,8 @@ Edit Profile - Bajeti
           type="password"
           id="security_answer"
           name="security_answer"
-          placeholder="Enter Security Answer"
-          value="{{ user.security_answer or '' }}"
+          placeholder="{{ 'Leave blank to keep your current answer' if user.has_security_answer else 'Enter Security Answer' }}"
+          autocomplete="off"
         />
         <i class="fa fa-eye p-eye-toggle" id="toggleSecurityAnswer"></i>
       </div>

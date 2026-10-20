@@ -15,7 +15,11 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow,
                         onupdate=datetime.utcnow)
-    security_answer = Column(String(255), nullable=True)
+    security_answer = Column(String(255), nullable=True)  # bcrypt hash, never plain text
+
+    @property
+    def has_security_answer(self) -> bool:
+        return bool(self.security_answer)
 
     categories = relationship("Category", back_populates="owner")
     expenses = relationship("Expense", back_populates="owner")

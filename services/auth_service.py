@@ -27,6 +27,22 @@ class AuthService:
     def verify_password(plain_password: str, hashed_password: str) -> bool:
         return pwd_context.verify(plain_password, hashed_password)
 
+    @staticmethod
+    def normalize_answer(answer: str) -> str:
+        return answer.strip().casefold()
+
+    @staticmethod
+    def hash_security_answer(answer: str) -> str:
+        return pwd_context.hash(AuthService.normalize_answer(answer))
+
+    @staticmethod
+    def verify_security_answer(answer: str, hashed_answer: str) -> bool:
+        try:
+            return pwd_context.verify(AuthService.normalize_answer(answer), hashed_answer)
+        except ValueError:
+            # Not a hash yet (the deploy starts the app before the migration runs).
+            return False
+
     # ---------- Authentication ----------
     @staticmethod
     def authenticate_user(db: Session, email: str, plain_password: str):
@@ -56,8 +72,11 @@ class AuthService:
             )
 
         hashed = AuthService.hash_password(user.password)
+        hashed_answer = (AuthService.hash_security_answer(user.security_answer)
+                         if user.security_answer else None)
         new_user = UserService.create_user(
-            db=db, user=user, hashed_password=hashed)
+            db=db, user=user, hashed_password=hashed,
+            hashed_security_answer=hashed_answer)
         return new_user
 
     # ---------- Login ----------

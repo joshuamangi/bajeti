@@ -44,7 +44,8 @@ class UserProfileService:
 
         # Security answer update
         if updates.security_answer:
-            user.security_answer = updates.security_answer
+            user.security_answer = AuthService.hash_security_answer(
+                updates.security_answer)
 
         user.updated_at = datetime.utcnow()
 
@@ -72,7 +73,7 @@ class UserProfileService:
             )
 
         # Validate security answer
-        if user.security_answer.lower().strip() != request.security_answer.lower().strip():
+        if not AuthService.verify_security_answer(request.security_answer, user.security_answer):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Incorrect answer to security question"

@@ -40,7 +40,8 @@ async def profile_update(request: Request,
                          first_name: str = Form(...),
                          last_name: str = Form(...),
                          email: str = Form(...),
-                         security_answer: str = Form(...)):
+                         security_answer: str = Form("")):
+    # A blank answer keeps the current one (it is stored hashed and cannot be shown).
     token = get_current_user(request)  # may raise redirect HTTPException
 
     from app.services.user_service import update_profile
