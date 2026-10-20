@@ -3,6 +3,7 @@ import logging
 from fastapi import Request, Form, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from core.rate_limit import client_ip
+from core.registration import require_registration_open
 from app.utils.templates import render_with_user
 from app.utils.tokens import verify_token
 from app.services.auth_service import login as auth_login, register as auth_register
@@ -40,6 +41,7 @@ async def welcome(request: Request):
 
 
 async def register_page(request: Request):
+    require_registration_open()
     return await render_with_user("register.html", request)
 
 
@@ -50,6 +52,7 @@ async def register_user(request: Request,
                         password: str = Form(...),
                         confirm_password: str = Form(...),
                         security_answer: str = Form(...)):
+    require_registration_open()
 
     if password != confirm_password:
         return await render_with_user("register.html", request, {

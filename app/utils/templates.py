@@ -2,13 +2,15 @@
 from fastapi.templating import Jinja2Templates
 from typing import Optional, Dict
 from fastapi import Request
-from app.config import ENVIRONMENT
+from app.config import ENVIRONMENT, settings
 import logging
 
 logger = logging.getLogger(__name__)
 
 templates = Jinja2Templates(directory="app/templates")
 templates.env.globals["ENVIRONMENT"] = ENVIRONMENT
+# A function, so the page follows the setting at request time.
+templates.env.globals["registration_open"] = lambda: settings.REGISTRATION_OPEN
 
 
 def commafy(value, decimals=0):

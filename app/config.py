@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     API_BASE_URL: str
     API_SERVER: str
     ENVIRONMENT: str = "development"
+    # Closed by default: the site is public, so strangers must not be able to create accounts.
+    # Set REGISTRATION_OPEN=true only while you add a household member.
+    REGISTRATION_OPEN: bool = False
 
     @model_validator(mode="after")
     def check_secret_key(self):

@@ -9,13 +9,15 @@ from data.db.models.models import User
 from schema.user import UserCreate, UserOut, Token
 from services.auth_service import AuthService
 from core import rate_limit
+from core.registration import require_registration_open
 from core.security import get_current_user
 
 logger = logging.getLogger("app.auth")
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
-@router.post("/", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=UserOut, status_code=status.HTTP_201_CREATED,
+             dependencies=[Depends(require_registration_open)])
 async def register(user: UserCreate, db: Session = Depends(get_db)):
     """
     Register a new user. Behavior and messages preserved.

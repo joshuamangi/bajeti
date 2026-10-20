@@ -57,3 +57,11 @@ def reset_rate_limits():
     from core import rate_limit
     rate_limit.reset_all()
     yield
+
+
+@pytest.fixture(autouse=True)
+def registration_open_for_tests(monkeypatch):
+    """Production defaults to closed registration; most tests need to create users."""
+    from app.config import settings
+    monkeypatch.setattr(settings, "REGISTRATION_OPEN", True)
+    yield
