@@ -5,6 +5,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from app.utils.templates import render_with_user
 from app.utils.tokens import verify_token
 from app.services.auth_service import login as auth_login, register as auth_register
+from app.utils.cookies import clear_auth_cookies, set_auth_cookies
 from app.utils.redirects import redirect_with_toast
 
 logger = logging.getLogger(__name__)
@@ -24,10 +25,7 @@ async def handle_authenticated_login(username: str, password: str, request: Requ
 
     rsp = RedirectResponse(
         url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
-    rsp.set_cookie(key="access_token", value=access_token,
-                   httponly=True, max_age=86400)
-    rsp.set_cookie(key="show_menu", value="1",
-                   httponly=False, max_age=86400)
+    set_auth_cookies(rsp, access_token)
     return rsp
 
 
@@ -88,8 +86,7 @@ async def login_user(request: Request,
 def logout():
     response = RedirectResponse(
         url="/login", status_code=status.HTTP_303_SEE_OTHER)
-    response.delete_cookie("access_token")
-    response.delete_cookie("show_menu")
+    clear_auth_cookies(response)
     return response
 
 

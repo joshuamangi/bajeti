@@ -14,6 +14,7 @@ from app.services.auth_service import get_current_user as svc_get_current_user
 from app.services.category_service import get_categories_by_type, get_categories_with_stats as svc_get_categories
 from app.services.user_service import reset_password as svc_reset_password
 from app.services.auth_service import login as svc_login
+from app.utils.cookies import set_active_budget_cookie, set_auth_cookies
 from app.utils.redirects import redirect_with_toast
 from fastapi import HTTPException
 
@@ -215,12 +216,7 @@ async def dashboard(
     existing_cookie = request.cookies.get("active_budget_id")
 
     if str(resolved_budget_id) != existing_cookie:
-        template_response.set_cookie(
-            key="active_budget_id",
-            value=str(resolved_budget_id),
-            httponly=True,
-            samesite="lax"
-        )
+        set_active_budget_cookie(template_response, resolved_budget_id)
 
     return template_response
 
@@ -256,10 +252,7 @@ async def reset_password(request: Request,
             access_token = token_data["access_token"]
             rsp = RedirectResponse(
                 url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
-            rsp.set_cookie(key="access_token", value=access_token,
-                           httponly=True, max_age=86400)
-            rsp.set_cookie(key="show_menu", value="1",
-                           httponly=False, max_age=86400)
+            set_auth_cookies(rsp, access_token)
             return rsp
 
     return await render_with_user("forgot_password.html", request, {
