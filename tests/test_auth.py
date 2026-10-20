@@ -164,7 +164,7 @@ def test_get_current_user_token_signed_with_other_key():
     even when its claims name a real user."""
     from datetime import datetime, timedelta
     import secrets
-    from jose import jwt
+    import jwt
 
     from app.config import settings
 

@@ -8,7 +8,7 @@ psycopg2-binary==2.9.9  # or your preferred PostgreSQL driver
 alembic==1.16.5
 
 # Authentication & Security
-python-jose==3.5.0
+PyJWT==2.15.1
 passlib==1.7.4
 bcrypt==4.0.1
 python-multipart==0.0.31
@@ -23,4 +23,4 @@ pydantic==2.11.9
 pydantic-settings==2.10.1
 
 # Testing (Development only - optional)
-pytest==8.4.2
+pytest==9.0.3

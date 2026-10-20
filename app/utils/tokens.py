@@ -1,5 +1,5 @@
 # app/utils/tokens.py
-from jose import jwt, JWTError
+import jwt
 from fastapi import HTTPException, status
 from fastapi import Request
 from app.config import settings
@@ -16,7 +16,7 @@ def verify_token(token: str):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload
-    except JWTError as e:
+    except jwt.PyJWTError as e:
         logger.debug("Token verification failed: %s", e)
         return None
 
