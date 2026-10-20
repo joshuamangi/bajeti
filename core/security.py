@@ -32,8 +32,7 @@ def get_current_user(
 
     payload = AuthService.validate_token(token)
     if not payload:
-        logger.error(
-            "JWT decoding failed or token invalid for token=%s", token)
+        logger.error("JWT decoding failed or token invalid")
         raise credentials_exception
 
     email = payload.get("sub")
