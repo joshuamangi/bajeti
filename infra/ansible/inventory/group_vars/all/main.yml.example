@@ -23,3 +23,8 @@ backup_pull_public_key: "ssh-ed25519 <PUBLIC_KEY_OF_THE_PULL_KEY> bajeti-pull"
 # Backup Pi.
 backup_mount: /mnt/ssd
 backup_dir: /mnt/ssd/bajeti-backups
+
+# App Pi fixed address (set on the Pi, because the router reservation did not survive a fresh install).
+base_static_address: "<PI_APP_HOST>/24"
+base_static_gateway: "<GATEWAY>"
+base_static_dns: "<DNS>"

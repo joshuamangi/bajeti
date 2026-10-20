@@ -2,3 +2,10 @@
 base_packages: [ca-certificates, curl, rsync, python3, python3-apt, gnupg, logrotate, systemd-timesyncd]
 base_journald_system_max_use: 200M
 base_journald_runtime_max_use: 50M
+
+# Fixed address set on the Pi itself (the router reservation did not carry over to a fresh install).
+# Leave base_static_address empty to skip. Example: 192.168.1.10/24 (set the real values in the inventory).
+base_static_address: ""
+base_static_gateway: ""
+base_static_dns: ""
+base_static_connection: "Wired connection 1"
