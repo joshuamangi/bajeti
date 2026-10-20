@@ -23,4 +23,4 @@ pydantic==2.11.9
 pydantic-settings==2.10.1
 
 # Testing (Development only - optional)
-pytest==8.4.2
+pytest==9.0.3
