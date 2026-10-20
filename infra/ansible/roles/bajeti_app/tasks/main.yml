@@ -1,0 +1,52 @@
+---
+- name: Refuse an unpinned tunnel image
+  ansible.builtin.assert:
+    that: "'<' not in cloudflared_version"
+    fail_msg: Set cloudflared_version in inventory/group_vars/all/main.yml.
+    quiet: true
+
+- name: Project folder
+  ansible.builtin.file:
+    path: "{{ bajeti_app_dir | dirname }}"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0755"
+
+- name: Code from the public repository (the deploy workflow keeps it current afterwards)
+  ansible.builtin.git:
+    repo: "{{ bajeti_app_repo_url }}"
+    dest: "{{ bajeti_app_dir }}"
+    version: main
+    update: false
+  become: true
+  become_user: "{{ admin_user }}"
+
+- name: Compose override, loopback only and a pinned tunnel image
+  ansible.builtin.template:
+    src: docker-compose.override.yml.j2
+    dest: "{{ bajeti_app_dir }}/docker-compose.override.yml"
+    mode: "0644"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+
+- name: Secrets that come from the encrypted bundle, not from Ansible
+  ansible.builtin.stat:
+    path: "{{ bajeti_app_dir }}/{{ item }}"
+  loop: [.env, cloudflared/config.yml]
+  register: bajeti_secrets
+
+- name: Stop here if the secrets have not been restored yet
+  ansible.builtin.fail:
+    msg: "{{ item.item }} is missing. Restore the secrets bundle first (docs/runbooks/pi-os-upgrade.md, W9)."
+  loop: "{{ bajeti_secrets.results }}"
+  when: not item.stat.exists and not ansible_check_mode
+  loop_control:
+    label: "{{ item.item }}"
+
+- name: Start the stack (only with --tags start)
+  ansible.builtin.command:
+    cmd: docker compose up -d --build
+    chdir: "{{ bajeti_app_dir }}"
+  changed_when: true
+  tags: [never, start]

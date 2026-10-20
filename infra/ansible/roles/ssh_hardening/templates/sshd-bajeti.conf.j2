@@ -1,0 +1,7 @@
+# Managed by Ansible
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PermitRootLogin no
+MaxAuthTries {{ ssh_hardening_max_auth_tries }}
+X11Forwarding no
+AllowUsers {{ ssh_hardening_allow_users | join(' ') }}

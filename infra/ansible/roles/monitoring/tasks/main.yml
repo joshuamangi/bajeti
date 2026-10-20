@@ -1,0 +1,43 @@
+---
+- name: Health check script (logs critical lines to the journal, no external service)
+  ansible.builtin.template:
+    src: bajeti-health-check.sh.j2
+    dest: /usr/local/sbin/bajeti-health-check
+    mode: "0755"
+    owner: root
+    group: root
+
+- name: Health check unit and timer
+  ansible.builtin.copy:
+    dest: "/etc/systemd/system/{{ item.name }}"
+    mode: "0644"
+    owner: root
+    group: root
+    content: "{{ item.body }}"
+  loop:
+    - name: bajeti-health-check.service
+      body: |
+        [Unit]
+        Description=Bajeti Pi health check
+        [Service]
+        Type=oneshot
+        ExecStart=/usr/local/sbin/bajeti-health-check
+    - name: bajeti-health-check.timer
+      body: |
+        [Unit]
+        Description=Bajeti Pi health check every 15 minutes
+        [Timer]
+        OnCalendar=*:0/15
+        [Install]
+        WantedBy=timers.target
+  loop_control:
+    label: "{{ item.name }}"
+  notify: Reload systemd
+
+- name: Health check timer enabled
+  ansible.builtin.systemd_service:
+    name: bajeti-health-check.timer
+    enabled: true
+    state: started
+    daemon_reload: true
+  ignore_errors: "{{ ansible_check_mode }}"

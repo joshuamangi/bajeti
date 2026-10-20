@@ -1,0 +1,23 @@
+# Runs on the BACKUP Pi. Install with docs/runbooks/backup-install.md, "Pull on the backup Pi".
+# Replace @USER@ and @HOME@ when copying to /etc/systemd/system, and @DEST_DIR@ with the SSD folder.
+[Unit]
+Description=Pull Bajeti backups from the app Pi
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=@USER@
+Group=@USER@
+# APP_SSH_TARGET, DEST_DIR and optional PULL_PING_URL (mode 600). Required, unlike the app Pi's file.
+EnvironmentFile=@HOME@/.config/bajeti/pull.env
+ExecStart=@HOME@/bajeti-backup/pull-from-app.sh
+TimeoutStartSec=15min
+MemoryMax=256M
+TasksMax=64
+Nice=10
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=@DEST_DIR@

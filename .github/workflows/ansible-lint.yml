@@ -1,0 +1,31 @@
+name: Lint infra
+
+on:
+  pull_request:
+    paths:
+      - "infra/**"
+      - ".github/workflows/ansible-lint.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    # GitHub-hosted runner, never the Pi.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install linters (versions match the ones tested locally)
+        run: pip install ansible-core==2.15.13 ansible-lint==6.22.2 yamllint==1.37.1
+      - name: Install collections
+        run: ansible-galaxy collection install -r infra/ansible/requirements.yml
+      - name: yamllint
+        run: yamllint -c infra/.yamllint infra
+      - name: ansible-lint
+        run: cd infra/ansible && ansible-lint -c ../.ansible-lint playbooks/site.yml
+      - name: Syntax check
+        run: cd infra/ansible && ansible-playbook -i inventory/example.ini playbooks/site.yml --syntax-check

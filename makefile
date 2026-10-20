@@ -34,8 +34,16 @@ else
 	@docker compose up -d
 endif
 
-# Full rebuild and restart
-rebuild: down clean build up
+# Safe rebuild of the app layer: build, start, migrate, wait until it answers.
+# Never prunes anything and never touches the database file or any volume.
+rebuild:
+	@docker compose build
+	@docker compose up -d
+	@docker compose exec -T bajeti_app alembic upgrade head
+	@for i in $$(seq 1 30); do \
+	  if curl -fsS -o /dev/null http://127.0.0.1:8000/; then echo "healthy"; exit 0; fi; \
+	  sleep 2; \
+	done; echo "NOT healthy after 60 s"; docker compose logs --tail=30 bajeti_app; exit 1
 
 # Stop all containers and remove unused resources
 prune:

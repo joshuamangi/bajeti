@@ -1,0 +1,21 @@
+---
+- name: Install fail2ban
+  ansible.builtin.apt:
+    name: fail2ban
+    state: present
+
+- name: SSH jail (reads the journal, no auth.log on the new OS)
+  ansible.builtin.template:
+    src: jail-sshd.local.j2
+    dest: /etc/fail2ban/jail.d/10-bajeti-sshd.local
+    mode: "0644"
+    owner: root
+    group: root
+  notify: Restart fail2ban
+
+- name: Fail2ban enabled
+  ansible.builtin.systemd_service:
+    name: fail2ban
+    enabled: true
+    state: started
+  ignore_errors: "{{ ansible_check_mode }}"
