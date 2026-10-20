@@ -46,10 +46,12 @@ Login - Bajeti
     </form>
 
     <div class="p-auth-links">
+      {% if registration_open() %}
       <p>
         Don't have an account?
         <a class="p-links" href="/register">Register</a>
       </p>
+      {% endif %}
       <p>
         Change Password?
         <a class="p-links" href="/forgot_password">Reset Password</a>

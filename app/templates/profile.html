@@ -57,8 +57,8 @@ Edit Profile - Bajeti
           type="password"
           id="security_answer"
           name="security_answer"
-          placeholder="Enter Security Answer"
-          value="{{ user.security_answer or '' }}"
+          placeholder="{{ 'Leave blank to keep your current answer' if user.has_security_answer else 'Enter Security Answer' }}"
+          autocomplete="off"
         />
         <i class="fa fa-eye p-eye-toggle" id="toggleSecurityAnswer"></i>
       </div>
@@ -79,6 +79,12 @@ Edit Profile - Bajeti
         <a href="/forgot_password" class="p-forgot-btn">
           <i class="fa fa-key"></i> Change Password
         </a>
+        <p class="p-password-text">
+          Signed in on another device you no longer use? This signs you out everywhere, including here.
+        </p>
+        <button type="submit" formaction="/logout-all" formmethod="post" formnovalidate class="p-forgot-btn">
+          <i class="fa fa-right-from-bracket"></i> Log out everywhere
+        </button>
       </div>
 
       <div class="p-auth-links">

@@ -1,17 +1,20 @@
 # app/services/user_service.py
-from app.services.http_client import post, put
+from typing import Optional
+
+from app.services.http_client import forward_client_ip, post, put
 from fastapi import status
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-async def reset_password(email: str, security_answer: str, new_password: str):
+async def reset_password(email: str, security_answer: str, new_password: str,
+                         client_ip: Optional[str] = None):
     resp = await post("/users/password/reset", json={
         "email": email,
         "security_answer": security_answer,
         "new_password": new_password
-    })
+    }, headers=forward_client_ip(client_ip))
     return resp
 
 

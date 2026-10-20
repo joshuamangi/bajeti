@@ -156,8 +156,12 @@ class AllocationService:
         }
 
     @staticmethod
-    def edit_allocation(db: Session,
+    def edit_allocation(db: Session, user_id: int,
                         budget_id: int, allocation: AllocationCreate):
+        if not BudgetService.get_budget_by_id(db=db, budget_id=budget_id, user_id=user_id):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Budget not Found")
+
         existing_allocation = db.query(Allocation).filter(
             Allocation.budget_id == budget_id,
             Allocation.category_id == allocation.category_id
@@ -173,9 +177,13 @@ class AllocationService:
         return existing_allocation
 
     @staticmethod
-    def delete_allocation(db: Session,
+    def delete_allocation(db: Session, user_id: int,
                           budget_id: int,
                           allocation_id: int):
+        if not BudgetService.get_budget_by_id(db=db, budget_id=budget_id, user_id=user_id):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Budget not Found")
+
         existing_allocation = db.query(Allocation).filter(
             Allocation.budget_id == budget_id,
             Allocation.id == allocation_id

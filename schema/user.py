@@ -35,7 +35,7 @@ class UserOut(UserBase):
     id: int
     created_at: datetime
     updated_at: datetime
-    security_answer: Optional[str] = None
+    has_security_answer: bool = False
 
 
 class UserUpdate(BaseModel):

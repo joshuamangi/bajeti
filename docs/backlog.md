@@ -60,3 +60,14 @@ Most valuable first, if the time comes:
 - Smaller image, tunnel container hardening, read-only root, audit log, Cloudflare Access (A12, A13, B6, B7, B2).
 
 Stages that carry these: S07 (Docker), S08 (CI/CD), S10 (app code).
+
+## Log cleanup (from S10, 2026-10-20)
+
+`core/security.py` logs `Current user resolved: id=... email=...` at INFO on every authenticated request, which puts the owner's email in the journal and `docker logs` and drowns real events. Move it to DEBUG or log the user id only. While there, check other INFO lines that carry personal data, and decide on one log format (time, level, request id) so the logs can be searched later (see the monitoring item).
+
+## Smaller items left by S10
+
+- Run `alembic upgrade head` before the new container takes traffic. Today the deploy starts the container, waits 10 seconds and then migrates, so any deploy that adds a column returns 500 on login for about 15 seconds. Fix in S08 (CI/CD).
+- Replace the inline `onclick=` handlers and `style=` attributes in the templates, then remove `'unsafe-inline'` from the CSP in `core/security_headers.py`.
+- `docker-compose.yml` still pins cloudflared 2025.9.1 while the Pi runs 2026.10.1 through the Ansible override (hardening plan A5).
+- Registration still answers 409 for an existing email. With registration closed this only matters while `REGISTRATION_OPEN` is on.

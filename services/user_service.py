@@ -27,14 +27,15 @@ class UserService:
         return db.query(User).filter(User.email == email).first()
 
     @staticmethod
-    def create_user(db: Session, user: UserCreate, hashed_password: str) -> User:
+    def create_user(db: Session, user: UserCreate, hashed_password: str,
+                    hashed_security_answer: Optional[str] = None) -> User:
         """Create a new User record and return it."""
         new_user = User(
             first_name=user.first_name,
             last_name=user.last_name,
             email=user.email,
             hashed_password=hashed_password,
-            security_answer=user.security_answer,
+            security_answer=hashed_security_answer,
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow()
         )

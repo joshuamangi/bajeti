@@ -1,5 +1,6 @@
 # services/auth_service.py
 import logging
+import time
 from datetime import timedelta
 from typing import Optional
 
@@ -19,6 +20,9 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 class AuthService:
+    # Checked when there is no real hash, so unknown emails cost the same time as known ones.
+    DUMMY_ANSWER_HASH = pwd_context.hash("not-a-real-answer")
+
     @staticmethod
     def hash_password(password: str) -> str:
         return pwd_context.hash(password)
@@ -26,6 +30,22 @@ class AuthService:
     @staticmethod
     def verify_password(plain_password: str, hashed_password: str) -> bool:
         return pwd_context.verify(plain_password, hashed_password)
+
+    @staticmethod
+    def normalize_answer(answer: str) -> str:
+        return answer.strip().casefold()
+
+    @staticmethod
+    def hash_security_answer(answer: str) -> str:
+        return pwd_context.hash(AuthService.normalize_answer(answer))
+
+    @staticmethod
+    def verify_security_answer(answer: str, hashed_answer: str) -> bool:
+        try:
+            return pwd_context.verify(AuthService.normalize_answer(answer), hashed_answer)
+        except ValueError:
+            # Not a hash yet (the deploy starts the app before the migration runs).
+            return False
 
     # ---------- Authentication ----------
     @staticmethod
@@ -56,8 +76,11 @@ class AuthService:
             )
 
         hashed = AuthService.hash_password(user.password)
+        hashed_answer = (AuthService.hash_security_answer(user.security_answer)
+                         if user.security_answer else None)
         new_user = UserService.create_user(
-            db=db, user=user, hashed_password=hashed)
+            db=db, user=user, hashed_password=hashed,
+            hashed_security_answer=hashed_answer)
         return new_user
 
     # ---------- Login ----------
@@ -77,10 +100,18 @@ class AuthService:
 
         expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = TokenService.create_access_token(
-            data={"sub": user.email, "user_id": user.id},
+            data={"sub": user.email, "user_id": user.id,
+                  "auth_time": int(time.time()), "ver": user.token_version},
             expires_delta=expires
         )
         return {"access_token": access_token, "token_type": "bearer"}
+
+    # ---------- Log out everywhere ----------
+    @staticmethod
+    def revoke_all_tokens(db: Session, user) -> None:
+        """Make every token issued so far invalid."""
+        user.token_version = (user.token_version or 0) + 1
+        db.commit()
 
     # ---------- Token Validation ----------
     @staticmethod
