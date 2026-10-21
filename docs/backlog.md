@@ -71,3 +71,15 @@ Stages that carry these: S07 (Docker), S08 (CI/CD), S10 (app code).
 - Replace the inline `onclick=` handlers and `style=` attributes in the templates, then remove `'unsafe-inline'` from the CSP in `core/security_headers.py`.
 - `docker-compose.yml` still pins cloudflared 2025.9.1 while the Pi runs 2026.10.1 through the Ansible override (hardening plan A5).
 - Registration still answers 409 for an existing email. With registration closed this only matters while `REGISTRATION_OPEN` is on.
+
+## Monitoring and alerts (from S10, 2026-10-20)
+
+Today the Pi health check (every 15 minutes) and the backup timer only write to the journal, so nobody is told when something fails, and Docker logs keep only 3 x 10 MB per container. Recommended order, all free and light:
+
+1. Alerts that reach the owner, no new software on the Pi: Cloudflare tunnel-health notifications, an external uptime check on the public URL with email alerts, the planned healthchecks.io pings for backups, and a third ping from the Pi health check carrying disk, temperature and memory. Free-plan limits not verified.
+2. After the log cleanup: one request-log line per request (method, route, status, duration, user id, no email or token) and a small weekly summary script (5xx, 401 and 429 counts, slowest routes, startup and migration errors).
+3. Optional, only if 1 and 2 are not enough: Netdata on loopback behind an ssh tunnel. Skip Prometheus, Grafana, Loki, and anything that needs the Docker socket.
+
+## Dependabot configuration (hardening plan A7)
+
+Add `.github/dependabot.yml` for pip, npm, docker and github-actions (weekly, small PR limit) once the monitoring items are done. Open alerts when this was written: pytest (fix 9.0.3, dev only) and picomatch (build tooling). Never close a Dependabot PR without merging unless the alert is dismissed with a reason: PR #121 was closed unmerged and left the python-multipart alerts open for three days.
