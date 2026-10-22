@@ -13,10 +13,9 @@ ENV ?= prod
 down:
 	@docker compose down
 
-# Remove any leftover containers (ignore errors)
+# Remove any leftover containers (ignore errors). Never prunes volumes or images.
 clean:
 	@docker rm -f cloudflared bajeti_app 2>/dev/null || true
-	@docker volume prune -f
 
 # Build containers for the selected environment
 build:
@@ -45,10 +44,6 @@ rebuild:
 	  sleep 2; \
 	done; echo "NOT healthy after 60 s"; docker compose logs --tail=30 bajeti_app; exit 1
 
-# Stop all containers and remove unused resources
-prune:
-	@docker system prune -af --volumes
-
 # ---------------------------------------
 # 🧑‍💻 Development Commands
 # ---------------------------------------
@@ -60,10 +55,6 @@ dev: test
 # Stop dev environment
 stop-dev:
 	@docker compose -f docker-compose.dev.yml down
-
-# Clean dev containers and images
-prune-dev:
-	@docker system prune -af
 
 ENV ?= prod
 
