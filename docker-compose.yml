@@ -17,7 +17,11 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
     mem_limit: 768m
+    cpus: 2.0
     pids_limit: 256
     logging:
       driver: json-file
@@ -35,10 +39,10 @@ services:
 
   # Cloudflare tunnel
   cloudflared:
-    # Pinned to the release that was running (same digest as :latest on 2025-10-17).
-    # To upgrade: pick a newer release tag, change it here in a PR, then run
+    # Pinned to the release the Pi runs (same as cloudflared_version in the Ansible variables).
+    # To upgrade: pick a newer release tag, change it here and in Ansible in a PR, then run
     # `docker compose up -d cloudflared` on the Pi and check the tunnel.
-    image: cloudflare/cloudflared:2025.9.1
+    image: cloudflare/cloudflared:2026.10.1
     container_name: cloudflared
     restart: unless-stopped
     user: "0"  # run as root so it can read certs
@@ -47,6 +51,14 @@ services:
       - ./cloudflared:/root/.cloudflared
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    mem_limit: 128m
+    cpus: 1.0
+    pids_limit: 128
     logging:
       driver: json-file
       options:

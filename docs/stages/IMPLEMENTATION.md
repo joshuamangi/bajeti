@@ -39,7 +39,7 @@ The rules that apply to every stage (public repo, placeholders for hosts, no com
 | S04 | [Ansible infrastructure as code for both Pis](S04-ansible-iac.md) | claude+human | S01, S02, S03 | done |
 | S05 | [Rebuild rehearsal and cutover](S05-rebuild-rehearsal-cutover.md) | claude+human | S02, S03, S04 | done |
 | S06 | [Pi security audit and hardening plan](S06-hardening-plan.md) | claude | S05 | done |
-| S07 | [Harden Docker Compose and the Dockerfile](S07-harden-docker.md) | claude | S06 | todo |
+| S07 | [Harden Docker Compose and the Dockerfile](S07-harden-docker.md) | claude | S06 | waiting-on-you |
 | S08 | [Harden CI/CD and deploy](S08-harden-ci-cd.md) | claude+human | S07 | todo |
 | S09 | [Backup automation, alerting and restore tests](S09-backup-automation.md) | claude+human | S02, S04 | todo |
 | S10 | [App security fixes with tests](S10-app-security-fixes.md) | claude | S00 | done |
