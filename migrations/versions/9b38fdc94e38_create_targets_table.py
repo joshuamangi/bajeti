@@ -1,7 +1,7 @@
 """create targets table
 
 Revision ID: 9b38fdc94e38
-Revises: 877adbb8bce2
+Revises: c4d9e1a2b3f6
 Create Date: 2026-03-05 23:43:05.126388
 
 """
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = '9b38fdc94e38'
-down_revision: Union[str, Sequence[str], None] = '877adbb8bce2'
+down_revision: Union[str, Sequence[str], None] = 'c4d9e1a2b3f6'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
