@@ -27,7 +27,8 @@
   roles:
     - base
     - ssh_hardening
-    - firewall
+    - role: firewall
+      tags: [firewall]
     - unattended_upgrades
 
 - name: App Pi
