@@ -565,6 +565,136 @@
             </div>
           {% endif %}
         </div>
+
+        <!-- Targets Section - below Allocations -->
+        <div style="margin-top: 0.8em;">
+          <div class="p-category-progress-transfer-divider">
+            <h4 style="font-size: 0.9em; color: var(--text); margin: 0 0 0.3em 0;">Targets</h4>
+          </div>
+          <div>
+            <form action="/dashboard/targets" method="POST">
+              <input type="hidden" name="budget_id" value="{{ budget_allocations.budget.id }}">
+              <div style="display: grid; grid-template-columns: 1fr 28px; gap: 0.5em; align-items: center;">
+                <select style="width: 100%; height: 28px; padding: 0 0.6em; box-sizing: border-box;font-family: var(--ff);
+                  font-size: 0.8rem; color: var(--text); background: var(--bg-light); border: 1px solid var(--border-muted);
+                  border-radius: 4px; outline: none; cursor: pointer; appearance: none;"
+                name="category_id"
+                required>
+                  <option value="" style="color: var(--text-muted);">Select Category</option>
+                  {% for ba in (budget_allocations.allocations | default([])) | sort(attribute='category_name') %}
+                    <option value="{{ ba.category_id }}" style="color: var(--text);">{{ ba.category_name }}</option>
+                  {% endfor %}
+                </select>
+
+                <button style="width: 28px; height: 28px; padding: 0; background: var(--primary); color: var(--bg);
+                  border: none; border-radius: 4px; font-size: 0.8rem; cursor: pointer; display: flex;
+                  align-items: center; justify-content: center; transition: opacity 0.15s ease;"
+                type="submit" title="Save Target">
+                  <i class="fa fa-add"></i>
+                </button>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5em; align-items: center; margin-top: 0.5em;">
+                <input style="width: 100%; height: 28px; padding: 0 0.6em; box-sizing: border-box; font-family: var(--ff);
+                  font-size: 0.8rem; color: var(--text); background: var(--bg-light); border: 1px solid var(--border-muted);
+                  border-radius: 4px; outline: none;" type="number" step="0.01" min="0" name="short_term_amount" placeholder="Short term">
+                <input style="width: 100%; height: 28px; padding: 0 0.6em; box-sizing: border-box; font-family: var(--ff);
+                  font-size: 0.8rem; color: var(--text); background: var(--bg-light); border: 1px solid var(--border-muted);
+                  border-radius: 4px; outline: none;" type="number" step="0.01" min="0" name="mid_term_amount" placeholder="Mid term">
+                <input style="width: 100%; height: 28px; padding: 0 0.6em; box-sizing: border-box; font-family: var(--ff);
+                  font-size: 0.8rem; color: var(--text); background: var(--bg-light); border: 1px solid var(--border-muted);
+                  border-radius: 4px; outline: none;" type="number" step="0.01" min="0" name="long_term_amount" placeholder="Long term">
+              </div>
+            </form>
+          </div>
+
+          <!-- Totals of all targets in this budget (0 when none are set) -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5em; text-align: center; margin-top: 0.6em;
+            padding: 0.4em; background: var(--bg-dark); border-radius: 0.4em;">
+            <div>
+              <p style="font-size: 0.8em; color: var(--text-muted);">Short term</p>
+              <p class="sensitive" style="font-size: 0.9em; font-weight: 600;" data-value="{{ (target_totals.short_term if target_totals else 0) | commafy(0) }}">{{ (target_totals.short_term if target_totals else 0) | commafy(0) }}</p>
+            </div>
+            <div>
+              <p style="font-size: 0.8em; color: var(--text-muted);">Mid term</p>
+              <p class="sensitive" style="font-size: 0.9em; font-weight: 600;" data-value="{{ (target_totals.mid_term if target_totals else 0) | commafy(0) }}">{{ (target_totals.mid_term if target_totals else 0) | commafy(0) }}</p>
+            </div>
+            <div>
+              <p style="font-size: 0.8em; color: var(--text-muted);">Long term</p>
+              <p class="sensitive" style="font-size: 0.9em; font-weight: 600;" data-value="{{ (target_totals.long_term if target_totals else 0) | commafy(0) }}">{{ (target_totals.long_term if target_totals else 0) | commafy(0) }}</p>
+            </div>
+          </div>
+
+          <div style="padding: 0.2em 0em 0em 0.4em; margin-top: 0.6em;">
+            {% set targeted = categories_with_stats | selectattr('target') | sort(attribute='name') | list %}
+            {% if targeted %}
+              <div style="padding: 0.4em; max-height: 200px; overflow-y: auto; border: 1px solid var(--border-muted); border-radius: 6px;">
+                <ul class="p-category-progress-ul" style="margin-top: 0; padding: 0;">
+                  {% for cat in targeted %}
+                    <li class="p-category-progress-li" style="display: grid; grid-template-columns: 1fr auto;
+                      gap: 0.4em; align-items: center; padding: 0.8em 0.6em; border-bottom: 1px solid var(--bg-light); margin: 0;">
+                      <!-- Category Name -->
+                      <div style="font-weight: 500;overflow: hidden;text-overflow: ellipsis;white-space: nowrap;">
+                        {{ cat.name }}
+                      </div>
+
+                      <!-- Actions -->
+                      <div style="display: flex;gap: 0.5em;justify-content: flex-end;flex-shrink: 0;">
+                        <button class="p-icon-btn-warning"
+                                onclick="generateModal('pEditTargetModal{{ cat.id }}','pEditTargetClose{{ cat.id }}','')">
+                          <i class="fa fa-pencil"></i>
+                        </button>
+                        <form method="POST"
+                              action="/dashboard/targets/{{ budget_details.id }}/{{ cat.target.id }}/delete"
+                              onsubmit="return confirmSubmit(this,'Delete target?')"
+                              style="margin: 0;">
+                          <button class="p-icon-btn-danger" type="submit">
+                            <i class="fa fa-trash"></i>
+                          </button>
+                        </form>
+                      </div>
+
+                      <!-- Progress per term -->
+                      {% set terms = [('Short term', cat.target.short_term), ('Mid term', cat.target.mid_term), ('Long term', cat.target.long_term)] %}
+                      {% set has_terms = terms | selectattr('1') | list %}
+                      {% for label, term in terms %}
+                        {% if term %}
+                          {% set term_percent = term.percent %}
+                          <div style="grid-column: 1 / -1;">
+                            <div style="display: flex; justify-content: space-between; gap: 0.4em; margin-bottom: 0.2em;">
+                              <span>{{ label }}</span>
+                              <span class="sensitive" data-value="{{ term.amount | commafy(0) }}">{{ term.amount | commafy(0) }}</span>
+                            </div>
+                            <div style="margin-bottom: 0.2em;" class="p-progress-bar">
+                              <div class="p-progress-fill p-ok-fill"
+                                   style="width: {{ term_percent if term_percent <= 100 else 100 }}%;">
+                              </div>
+                            </div>
+                            <span class="p-category-status ok">
+                              {% if term_percent >= 100 %}
+                                Target reached
+                              {% else %}
+                                {{ term_percent | round(1) }}% &middot; <span class="sensitive" data-value="{{ term.remaining | commafy(0) }}">{{ term.remaining | commafy(0) }}</span> to go
+                              {% endif %}
+                            </span>
+                          </div>
+                        {% endif %}
+                      {% endfor %}
+                      {% if not has_terms %}
+                        <div style="grid-column: 1 / -1; color: #6b7280;">No amounts set. Press edit to add short, mid or long term targets.</div>
+                      {% endif %}
+                    </li>
+                  {% endfor %}
+                </ul>
+              </div>
+            {% else %}
+              <div class="p-category-progress-no-content" style="padding: 1.5em; text-align: center;">
+                <strong class="p-no-expense" style="color: #6b7280;">
+                  No targets set. Choose a category above and enter short, mid or long term amounts.
+                </strong>
+              </div>
+            {% endif %}
+          </div>
+        </div>
         </div>
       </div>
     </div>
@@ -993,6 +1123,29 @@
         <label>Allocation Amount</label>
         <input type="number" name="allocated_amount" value="{{ allocation_allocated_amount }}" required>
         <button type="submit" class="p-modal-btn" id="pcloseEditAllocationBtn{{ allocation_category_id }}">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endfor %}
+
+<!-- Edit Target modals -->
+{% for cat in categories_with_stats if cat.target %}
+<div class="p-modal" id="pEditTargetModal{{ cat.id }}">
+  <div class="p-modal-content">
+    <form class="p-category-form" method="POST" action="/dashboard/targets/{{ budget_details.id }}/{{ cat.target.id }}/edit">
+      <a href="#" id="pEditTargetClose{{ cat.id }}" class="p-close"><i class="fa fa-close"></i></a>
+      <h2 class="p-modal-limit-name">Edit Target</h2>
+      <div class="p-modal-form-content">
+        <label>Category Name</label>
+        <input type="text" value="{{ cat.name }}" readonly>
+        <label>Short Term Amount</label>
+        <input type="number" step="0.01" min="0" name="short_term_amount" value="{{ cat.target.short_term.amount if cat.target.short_term else '' }}">
+        <label>Mid Term Amount</label>
+        <input type="number" step="0.01" min="0" name="mid_term_amount" value="{{ cat.target.mid_term.amount if cat.target.mid_term else '' }}">
+        <label>Long Term Amount</label>
+        <input type="number" step="0.01" min="0" name="long_term_amount" value="{{ cat.target.long_term.amount if cat.target.long_term else '' }}">
+        <button type="submit" class="p-modal-btn" id="pcloseEditTargetBtn{{ cat.id }}">Save</button>
       </div>
     </form>
   </div>

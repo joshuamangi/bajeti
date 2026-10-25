@@ -29,6 +29,10 @@
     width: 90%;
     max-width: 400px;
     height: min-content;
+    max-height: 90vh;
+    max-height: 90dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 1.5rem;
     position: relative;
     animation: slideUp .25s ease-out;

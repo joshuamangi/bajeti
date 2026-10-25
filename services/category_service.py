@@ -6,9 +6,10 @@ from fastapi import HTTPException, status
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from data.db.models.models import Allocation, Budget, Category, Expense, Transfer
+from data.db.models.models import Allocation, Budget, Category, Expense, Target, Transfer
 from schema.category import CategoryAllocationCreate, CategoryBase
 from services.budget_service import BudgetService
+from services.target_progress import target_progress
 
 logger = logging.getLogger(__name__)
 
@@ -93,6 +94,12 @@ class CategoryService:
 
         if not allocated_category_ids:
             return []
+
+        # Targets for this budget in ONE query (the budget is already checked as the user's)
+        target_map = {
+            t.category_id: t
+            for t in db.query(Target).filter(Target.budget_id == budget_id).all()
+        }
 
         categories = db.query(Category).filter(
             Category.user_id == user_id,
@@ -218,6 +225,12 @@ class CategoryService:
                 ],
                 "total_transfers_in": float(total_incoming),
                 "total_transfers_out": float(total_outgoing),
+                # Progress is measured on the category balance: allocation plus net transfers
+                # minus what was spent (savings withdrawals are already in the allocation).
+                "target": (
+                    target_progress(target_map[category.id], balance)
+                    if category.id in target_map else None
+                ),
             })
 
         return result

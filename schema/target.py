@@ -39,3 +39,22 @@ class TargetOut(TargetBase):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class TermProgress(BaseModel):
+    """Progress toward one horizon: the target, how far along (percent, may exceed 100) and what is left."""
+    amount: Decimal
+    percent: float
+    remaining: Decimal
+
+    @field_serializer("amount", "remaining")
+    def _two_decimals(self, value: Decimal):
+        return format(value.quantize(Decimal("0.01")), "f")
+
+
+class TargetProgress(BaseModel):
+    """A category's target with progress per horizon. A horizon without a target is None."""
+    id: int
+    short_term: Optional[TermProgress] = None
+    mid_term: Optional[TermProgress] = None
+    long_term: Optional[TermProgress] = None

@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from typing import List, Literal, Optional
 
 from schema.expense import ExpenseOut
+from schema.target import TargetProgress
 from schema.transfer import TransferOut, TransferStats
 
 
@@ -38,6 +39,7 @@ class CategoryStats(CategoryOut):
     transfers_out: List[TransferStats]
     total_transfers_in: float
     total_transfers_out: float
+    target: Optional[TargetProgress] = None
 
 
 class CategoryProgress(BaseModel):

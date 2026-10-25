@@ -17,6 +17,7 @@ from app.services.auth_service import login as svc_login
 from core.rate_limit import client_ip
 from app.utils.cookies import set_active_budget_cookie, set_auth_cookies
 from app.utils.redirects import redirect_with_toast
+from app.utils.target_totals import target_totals
 from fastapi import HTTPException
 
 logger = logging.getLogger(__name__)
@@ -202,6 +203,7 @@ async def dashboard(
         request,
         {
             "categories_with_stats": categories_with_stats,
+            "target_totals": target_totals(categories_with_stats),
             "budget_allocations": budget_allocations,
             "budget_details": active_budget,
             "all_budgets": all_budgets,
