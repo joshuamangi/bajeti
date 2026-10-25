@@ -89,8 +89,8 @@ def test_reset_password_user_not_found():
     }
 
     response = client.post("/api/users/password/reset", json=reset_data)
-    assert response.status_code == 404
-    assert "User not found" in response.json()["detail"]
+    assert response.status_code == 400
+    assert "Incorrect email or security answer" in response.json()["detail"]
 
 
 def test_reset_password_wrong_security_answer(create_user_with_security):
@@ -104,7 +104,7 @@ def test_reset_password_wrong_security_answer(create_user_with_security):
 
     response = client.post("/api/users/password/reset", json=reset_data)
     assert response.status_code == 400
-    assert "Incorrect answer" in response.json()["detail"]
+    assert "Incorrect email or security answer" in response.json()["detail"]
 
 
 def test_reset_password_no_security_answer(create_user):
@@ -118,7 +118,7 @@ def test_reset_password_no_security_answer(create_user):
 
     response = client.post("/api/users/password/reset", json=reset_data)
     assert response.status_code == 400
-    assert "Security answer not configured" in response.json()["detail"]
+    assert "Incorrect email or security answer" in response.json()["detail"]
 
 
 # Fixtures

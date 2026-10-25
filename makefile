@@ -13,10 +13,9 @@ ENV ?= prod
 down:
 	@docker compose down
 
-# Remove any leftover containers (ignore errors)
+# Remove any leftover containers (ignore errors). Never prunes volumes or images.
 clean:
 	@docker rm -f cloudflared bajeti_app 2>/dev/null || true
-	@docker volume prune -f
 
 # Build containers for the selected environment
 build:
@@ -34,12 +33,16 @@ else
 	@docker compose up -d
 endif
 
-# Full rebuild and restart
-rebuild: down clean build up
-
-# Stop all containers and remove unused resources
-prune:
-	@docker system prune -af --volumes
+# Safe rebuild of the app layer: build, start, migrate, wait until it answers.
+# Never prunes anything and never touches the database file or any volume.
+rebuild:
+	@docker compose build
+	@docker compose up -d
+	@docker compose exec -T bajeti_app alembic upgrade head
+	@for i in $$(seq 1 30); do \
+	  if curl -fsS -o /dev/null http://127.0.0.1:8000/; then echo "healthy"; exit 0; fi; \
+	  sleep 2; \
+	done; echo "NOT healthy after 60 s"; docker compose logs --tail=30 bajeti_app; exit 1
 
 # ---------------------------------------
 # 🧑‍💻 Development Commands
@@ -52,10 +55,6 @@ dev: test
 # Stop dev environment
 stop-dev:
 	@docker compose -f docker-compose.dev.yml down
-
-# Clean dev containers and images
-prune-dev:
-	@docker system prune -af
 
 ENV ?= prod
 

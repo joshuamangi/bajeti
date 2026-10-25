@@ -37,3 +37,11 @@ app/static/dist/
 # Cloudflared secrets (ignore cert + tunnel credentials, but not config.yml)
 cloudflared/cert.pem
 cloudflared/*.json
+
+# Pi audit reports contain network details
+pi-audit-report.txt
+
+# Ansible inventory has real hosts
+infra/ansible/inventory/production.ini
+infra/ansible/inventory/group_vars/all/main.yml
+infra/ansible/inventory/group_vars/all/vault.yml

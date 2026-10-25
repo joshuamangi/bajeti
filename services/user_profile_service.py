@@ -44,7 +44,8 @@ class UserProfileService:
 
         # Security answer update
         if updates.security_answer:
-            user.security_answer = updates.security_answer
+            user.security_answer = AuthService.hash_security_answer(
+                updates.security_answer)
 
         user.updated_at = datetime.utcnow()
 
@@ -59,27 +60,20 @@ class UserProfileService:
 
         user = UserService.get_user_by_email(db, request.email)
 
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
-            )
-
-        # Missing security answer check
-        if not getattr(user, "security_answer", None):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Security answer not configured for this account. Please contact support.",
-            )
-
-        # Validate security answer
-        if user.security_answer.lower().strip() != request.security_answer.lower().strip():
+        # Unknown email, no answer set and a wrong answer all give the same reply, and the
+        # same amount of work, so the response does not reveal which emails exist.
+        stored = getattr(user, "security_answer", None) if user else None
+        answer_ok = AuthService.verify_security_answer(
+            request.security_answer, stored or AuthService.DUMMY_ANSWER_HASH)
+        if not user or not stored or not answer_ok:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Incorrect answer to security question"
+                detail="Incorrect email or security answer"
             )
 
         # Hash & update the password using AuthService
         user.hashed_password = AuthService.hash_password(request.new_password)
+        user.token_version = (user.token_version or 0) + 1  # log out other sessions
         user.updated_at = datetime.utcnow()
 
         db.commit()

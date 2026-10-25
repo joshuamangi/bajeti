@@ -5,6 +5,8 @@ from pathlib import Path
 from contextlib import asynccontextmanager
 
 from app.routers import requests_router
+from core.security_headers import SecurityHeadersMiddleware
+from core.session import renew_session_cookie
 from data.db.db import engine, Base
 from routers import allocations, auth, budgets, categories, expenses, targets, transfers, users
 from app import requests
@@ -21,10 +23,18 @@ async def lifespan(app: FastAPI):
     # Shutdown (optional future cleanup)
 
 
+def api_docs_urls(is_production: bool) -> dict:
+    """The interactive docs and the schema map out the whole API, so production does not serve them."""
+    if is_production:
+        return {"docs_url": None, "redoc_url": None, "openapi_url": None}
+    return {}
+
+
 app = FastAPI(
     title="Bajeti",
     debug=not IS_PRODUCTION,
-    lifespan=lifespan
+    lifespan=lifespan,
+    **api_docs_urls(IS_PRODUCTION)
 )
 
 
@@ -42,6 +52,14 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 # Gzip for production
 if IS_PRODUCTION:
     app.add_middleware(GZipMiddleware, minimum_size=500)
+
+
+# Fresh session cookie while the user is active (web pages only)
+app.middleware("http")(renew_session_cookie)
+
+
+# Security headers on every response
+app.add_middleware(SecurityHeadersMiddleware)
 
 
 # Routers

@@ -7,7 +7,7 @@ from fastapi import APIRouter, Form, HTTPException, Request, Depends, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 import httpx
-from jose import JWTError, jwt
+import jwt
 from urllib.parse import urlencode
 from app.config import settings, ENVIRONMENT
 
@@ -51,7 +51,7 @@ def verify_token(token: str):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload
-    except JWTError as e:
+    except jwt.PyJWTError as e:
         logger.error("Token verification failed: %s", e)
         return None
 
@@ -81,7 +81,7 @@ async def get_user_from_cookie(request: Request):
         return None
     try:
         jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    except JWTError:
+    except jwt.PyJWTError:
         return None
 
     async with httpx.AsyncClient() as client:

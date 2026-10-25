@@ -35,3 +35,29 @@ Rotate at least once a year, and immediately if the key may have been seen by an
 ### Deploy ordering
 
 Rotate (steps 1 to 3) before merging a change that adds or tightens the startup check. Otherwise the new code refuses to start with the old key and the site is down until `.env` is fixed.
+
+## Registration switch (`REGISTRATION_OPEN`)
+
+Registration is closed by default: `POST /api/auth/`, `GET` and `POST /register` return 404 and the login page hides the link. To add someone:
+
+1. GitHub, Settings, Secrets and variables, Actions, Variables: create `REGISTRATION_OPEN` = `true`, then run the deploy (merge any PR or re-run the last deploy).
+2. Register the person.
+3. Set the variable back to `false` (or delete it) and deploy again.
+
+The deploy writes `REGISTRATION_OPEN` into `.env` from that variable and falls back to `false` when it is not set.
+
+## Login and reset limits
+
+Failed logins and password resets are counted in memory (`core/rate_limit.py`): 5 failures per 15 minutes per address and email for login, 5 per hour for reset, and 30 / 20 per address across emails. Over the limit the API answers 429 with `Retry-After`. Counters reset when the app restarts. The client address comes from `CF-Connecting-IP`, which is trustworthy only because the app port is bound to loopback and reached through the tunnel; the web pages forward it when they call the API.
+
+Password reset answers "Incorrect email or security answer" for an unknown email, a missing answer and a wrong answer alike.
+
+## Security answers
+
+Stored as a bcrypt hash of the stripped, case-folded answer (migration `b7c1d2e3f4a5`). It cannot be shown again: the profile page leaves the field blank and a new value replaces the old one. The migration cannot be reversed; take a backup before running it on production.
+
+## Sessions
+
+An access token lasts `ACCESS_TOKEN_EXPIRE_MINUTES` (set it to 60 in the GitHub secret) and the cookie lives exactly as long. While the user browses the web pages, a fresh token is issued once the current one is past half its life (`core/session.py`). The original login time (`auth_time`) is kept in every renewed token, and renewal stops 14 days after it, so one login is forced every 14 days.
+
+Every token carries the user's `token_version`. A password reset and the profile page's "Log out everywhere" button (API: `POST /api/auth/logout-all`) raise it, which makes all earlier tokens invalid and stops renewal of them. Tokens issued before this existed have no version and count as 0, so the deploy does not log anyone out. Migration `c4d9e1a2b3f6` adds the column and can be reversed.

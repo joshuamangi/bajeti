@@ -24,6 +24,7 @@ router.get(
     "/login", response_class=auth_handlers.HTMLResponse)(auth_handlers.login_page)
 router.post("/login")(auth_handlers.login_user)
 router.get("/logout")(auth_handlers.logout)
+router.post("/logout-all")(auth_handlers.logout_all)
 router.get("/forgot_password",
            response_class=auth_handlers.HTMLResponse)(auth_handlers.forgot_password)
 router.post("/forgot_password")(auth_handlers.reset_password)

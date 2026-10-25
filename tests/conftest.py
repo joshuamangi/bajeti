@@ -49,3 +49,19 @@ def setup_database():
 @pytest.fixture()
 def client():
     return TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def reset_rate_limits():
+    """Each test starts with empty login and reset counters."""
+    from core import rate_limit
+    rate_limit.reset_all()
+    yield
+
+
+@pytest.fixture(autouse=True)
+def registration_open_for_tests(monkeypatch):
+    """Production defaults to closed registration; most tests need to create users."""
+    from app.config import settings
+    monkeypatch.setattr(settings, "REGISTRATION_OPEN", True)
+    yield

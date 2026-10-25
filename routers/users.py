@@ -1,7 +1,8 @@
 import logging
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
+from core import rate_limit
 from core.security import get_current_user
 from data.db.db import get_db
 from data.db.models.models import User
@@ -27,7 +28,17 @@ async def update_user(
 
 @router.post("/password/reset")
 async def reset_password(
+    http_request: Request,
     request: PasswordResetRequest,
     db: Session = Depends(get_db)
 ):
-    return UserProfileService.reset_password(db, request)
+    ip = rate_limit.client_ip(http_request)
+    rate_limit.check_reset(ip, request.email)
+    try:
+        result = UserProfileService.reset_password(db, request)
+    except HTTPException as exc:
+        if exc.status_code == status.HTTP_400_BAD_REQUEST:
+            rate_limit.reset_failed(ip, request.email)
+        raise
+    rate_limit.reset_succeeded(ip, request.email)
+    return result

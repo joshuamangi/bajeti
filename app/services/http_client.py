@@ -9,6 +9,11 @@ logger = logging.getLogger(__name__)
 API_BASE_URL = settings.API_BASE_URL
 
 
+def forward_client_ip(client_ip: Optional[str]) -> Optional[dict]:
+    """Headers that tell the API the real client address (it would otherwise see this server)."""
+    return {"CF-Connecting-IP": client_ip} if client_ip else None
+
+
 async def post(path: str, json=None, data=None, headers: Optional[dict] = None, timeout: float = 10.0):
     url = f"{API_BASE_URL.rstrip('/')}/{path.lstrip('/')}"
     async with httpx.AsyncClient(timeout=timeout) as client:

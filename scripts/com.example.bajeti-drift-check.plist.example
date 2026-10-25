@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Monthly drift check on the Mac. Copy to ~/Library/LaunchAgents/, replace PATH_TO_REPO, then:
+       launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.example.bajeti-drift-check.plist
+     Undo: launchctl bootout gui/$(id -u)/com.example.bajeti-drift-check
+     Runs on the 1st of each month at 10:00; a run missed while the Mac slept happens on wake. -->
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.example.bajeti-drift-check</string>
+  <key>ProgramArguments</key>
+  <array><string>/bin/bash</string><string>PATH_TO_REPO/scripts/drift-check.sh</string></array>
+  <key>EnvironmentVariables</key>
+  <dict><key>PATH</key><string>/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string></dict>
+  <key>StartCalendarInterval</key>
+  <dict><key>Day</key><integer>1</integer><key>Hour</key><integer>10</integer><key>Minute</key><integer>0</integer></dict>
+</dict>
+</plist>

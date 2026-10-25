@@ -1,0 +1,21 @@
+---
+- name: Runner folder
+  ansible.builtin.file:
+    path: "{{ github_runner_dir }}"
+    state: directory
+    owner: "{{ github_runner_user }}"
+    group: "{{ github_runner_user }}"
+    mode: "0755"
+
+- name: Is a runner service installed?
+  ansible.builtin.find:
+    paths: /etc/systemd/system
+    patterns: "actions.runner.*.service"
+  register: runner_units
+
+- name: Registration is manual, so say so
+  ansible.builtin.debug:
+    msg: >-
+      No runner service found. Register it by hand with a fresh token from GitHub (Settings, Actions,
+      Runners); see infra/README.md. Tokens are never stored in Ansible or the repo.
+  when: runner_units.matched == 0

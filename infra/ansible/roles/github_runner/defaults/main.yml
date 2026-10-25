@@ -1,0 +1,4 @@
+---
+# TODO(S08): move to a dedicated unprivileged user. Until then the runner stays as it is.
+github_runner_user: "{{ admin_user }}"
+github_runner_dir: "/home/{{ admin_user }}/actions-runner"

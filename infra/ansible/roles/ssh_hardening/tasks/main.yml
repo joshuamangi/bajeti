@@ -1,0 +1,18 @@
+---
+- name: Refuse risky SSH changes without lockout_safe
+  ansible.builtin.assert:
+    that: ansible_check_mode or (lockout_safe | default(false) | bool)
+    fail_msg: >-
+      Changing SSH can lock you out. Keep a second SSH session open, confirm key login works,
+      then run again with -e lockout_safe=true.
+    quiet: true
+
+- name: Key-only SSH, no root login
+  ansible.builtin.template:
+    src: sshd-bajeti.conf.j2
+    dest: /etc/ssh/sshd_config.d/10-bajeti.conf
+    mode: "0644"
+    owner: root
+    group: root
+    validate: /usr/sbin/sshd -t -f %s
+  notify: Reload sshd

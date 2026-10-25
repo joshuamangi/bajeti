@@ -3,7 +3,7 @@ import logging
 from datetime import datetime, timedelta
 from typing import Optional, Dict
 
-from jose import jwt, JWTError
+import jwt
 
 from app.config import settings
 
@@ -32,6 +32,6 @@ class TokenService:
             logger.debug(
                 "TokenService.decode_token: payload keys=%s", list(payload.keys()))
             return payload
-        except JWTError as e:
+        except jwt.PyJWTError as e:
             logger.debug("TokenService.decode_token failed: %s", str(e))
             return None

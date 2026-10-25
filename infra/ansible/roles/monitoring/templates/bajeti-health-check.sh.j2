@@ -1,0 +1,11 @@
+#!/bin/sh
+# Managed by Ansible. Logs one critical line per problem: journalctl -t bajeti-health -p crit
+used="$(df -P / | awk 'NR==2 {gsub("%",""); print $5}')"
+[ "$used" -lt {{ monitoring_disk_percent }} ] || logger -p user.crit -t bajeti-health "root filesystem is ${used}% full"
+if command -v vcgencmd >/dev/null 2>&1; then
+  throttled="$(vcgencmd get_throttled | cut -d= -f2)"
+  [ "$throttled" = "0x0" ] || logger -p user.crit -t bajeti-health "throttling or under-voltage flags: $throttled"
+  temp="$(vcgencmd measure_temp | sed 's/[^0-9.]//g' | cut -d. -f1)"
+  [ "${temp:-0}" -lt {{ monitoring_temp_celsius }} ] || logger -p user.crit -t bajeti-health "temperature is ${temp} C"
+fi
+exit 0
