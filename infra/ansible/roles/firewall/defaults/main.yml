@@ -1,7 +1,8 @@
 ---
-# Addresses allowed to reach SSH. The app Pi accepts the Mac and the backup Pi's pull;
-# the backup Pi accepts the Mac only (the app Pi must hold no way in).
-firewall_ssh_sources_app: ["{{ mac_address_ip }}", "{{ backup_host_ip }}"]
+# Addresses allowed to reach SSH. By default the whole home network (lan_cidr, for example
+# 192.168.1.0/24), so a DHCP change on the Mac cannot lock you out; ssh is key-only and fail2ban
+# is on. To narrow it again, list single addresses here.
+firewall_ssh_sources_app: ["{{ lan_cidr }}", "{{ backup_host_ip }}"]
 firewall_ssh_sources_backup: ["{{ mac_address_ip }}"]
 firewall_extra_tcp_ports_backup: []
 # The backup Pi's current ruleset says it is managed by another project's Ansible. Off unless you decide
