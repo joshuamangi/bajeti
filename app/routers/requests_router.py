@@ -9,6 +9,7 @@ from app.handlers import (
     category_handlers,
     expense_handlers,
     page_handlers,
+    target_handlers,
     transfer_handlers
 )
 
@@ -65,6 +66,12 @@ router.post(
     "/dashboard/allocations/{budget_id}/edit")(allocation_handlers.edit_allocation)
 router.post(
     "/dashboard/allocations/{budget_id}/delete/{allocation_id}")(allocation_handlers.delete_allocation)
+# ---------- TARGETS ------------
+router.post("/dashboard/targets")(target_handlers.save_target)
+router.post(
+    "/dashboard/targets/{budget_id}/{target_id}/edit")(target_handlers.edit_target)
+router.post(
+    "/dashboard/targets/{budget_id}/{target_id}/delete")(target_handlers.delete_target)
 # ---------- STATIC PAGES ----------
 router.get(
     "/reports", response_class=page_handlers.HTMLResponse)(page_handlers.reports_page)

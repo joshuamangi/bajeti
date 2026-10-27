@@ -46,11 +46,10 @@ class Budget(Base):
                         onupdate=datetime.utcnow)
 
     owner = relationship("User", back_populates="budgets")
-    allocations = relationship(
-        "Allocation",
-        back_populates="budget",
-        cascade="all, delete-orphan"
-    )
+    allocations = relationship("Allocation", back_populates="budget",
+                               cascade="all, delete-orphan")
+    targets = relationship("Target", back_populates="budget",
+                           cascade="all, delete-orphan")
 
     __table_args__ = (
         UniqueConstraint("user_id", "name", name="uq_user_budget_name"),
@@ -75,28 +74,21 @@ class Category(Base):
     owner = relationship("User", back_populates="categories")
     expenses = relationship("Expense", back_populates="category")
 
-    outgoing_transfers = relationship(
-        "Transfer",
-        foreign_keys="Transfer.from_category_id",
-        back_populates="from_category"
-    )
-    incoming_transfers = relationship(
-        "Transfer",
-        foreign_keys="Transfer.to_category_id",
-        back_populates="to_category"
-    )
+    outgoing_transfers = relationship("Transfer", foreign_keys="Transfer.from_category_id",
+                                      back_populates="from_category")
+    incoming_transfers = relationship("Transfer", foreign_keys="Transfer.to_category_id",
+                                      back_populates="to_category")
     allocations = relationship(
         "Allocation", back_populates="category", cascade="all, delete-orphan")
 
+    targets = relationship(
+        "Target", back_populates="category", cascade="all, delete-orphan")
+
     __table_args__ = (
-        UniqueConstraint(
-            "user_id", "name", "type",
-            name="uq_user_category_name"
-        ),
-        CheckConstraint(
-            "type IN ('expense','savings')",
-            name="ck_categories_type"
-        ),
+        UniqueConstraint("user_id", "name", "type",
+                         name="uq_user_category_name"),
+        CheckConstraint("type IN ('expense','savings')",
+                        name="ck_categories_type"),
     )
 
 
@@ -118,10 +110,8 @@ class Expense(Base):
     owner = relationship("User", back_populates="expenses")
     category = relationship("Category", back_populates="expenses")
     __table_args__ = (
-        CheckConstraint(
-            "type IN ('spend','withdrawal')",
-            name="ck_expenses_type"
-        ),
+        CheckConstraint("type IN ('spend','withdrawal')",
+                        name="ck_expenses_type"),
     )
 
 
@@ -173,9 +163,34 @@ class Allocation(Base):
     category = relationship("Category", back_populates="allocations")
 
     __table_args__ = (
-        UniqueConstraint(
-            "budget_id",
-            "category_id",
-            name="uq_budget_category_allocation"
-        ),
+        UniqueConstraint("budget_id", "category_id",
+                         name="uq_budget_category_allocation"),
+    )
+
+
+class Target(Base):
+    __tablename__ = "targets"
+
+    id = Column(Integer, primary_key=True)
+
+    budget_id = Column(Integer, ForeignKey(
+        "budgets.id", ondelete="CASCADE"), nullable=False)
+
+    category_id = Column(Integer, ForeignKey("categories.id", ondelete="CASCADE"),
+                         nullable=False)
+
+    short_term_amount = Column(Numeric, nullable=True)
+    mid_term_amount = Column(Numeric, nullable=True)
+    long_term_amount = Column(Numeric, nullable=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow,
+                        onupdate=datetime.utcnow)
+
+    budget = relationship("Budget", back_populates="targets")
+    category = relationship("Category", back_populates="targets")
+
+    __table_args__ = (
+        UniqueConstraint("budget_id", "category_id",
+                         name="uq_budget_category_target"),
     )
