@@ -31,11 +31,11 @@ needs to be done by hand. To check where production is:
 docker compose exec bajeti_app alembic current
 
 Do NOT run `alembic stamp` to a newer revision. Stamping only rewrites the version number and skips the
-migration itself. Production was at 877adbb8bce2 (no `targets` table) before the targets feature, so
+migration itself. Production was at c4d9e1a2b3f6 (no `targets` table) before the targets feature, so
 the deploy that includes migrations 9b38fdc94e38 and 186f1cc1a7ca must run `upgrade head` to create the
 table and fill it. Stamp only when the database already has the schema change but the version number
 is missing.
 
 Rollback of the targets feature (removes the backfilled rows, then the table):
 
-docker compose exec bajeti_app alembic downgrade 877adbb8bce2
+docker compose exec bajeti_app alembic downgrade c4d9e1a2b3f6

@@ -5,12 +5,13 @@ Tick items off as the matching PR merges.
 
 ## E0: Finish targets (issues #101, #103, #104, #105, #106)
 
-- [ ] `schema/target.py` and `services/target_service.py`
-- [ ] Targets routes (get, post, put, delete) in `routers/targets.py`
-- [ ] Register targets router in `main.py`
-- [ ] Enforce budget ownership in target service
-- [ ] Real `downgrade()` for migration `9b38fdc94e38`
-- [ ] `tests/test_targets.py`
+- [x] `schema/target.py` and `services/target_service.py`
+- [x] Targets routes (get, post, put, delete) in `routers/targets.py`
+- [x] Register targets router in `main.py`
+- [x] Enforce budget ownership in target service
+- [x] Real `downgrade()` for migration `9b38fdc94e38`
+- [x] `tests/test_targets.py`
+- [x] Category stats with target progress (#105), dashboard Targets section with totals (#106)
 
 ## E1: Pi cleanup, security, performance (#110)
 
