@@ -1,12 +1,10 @@
 # app/requests_transfers.py (or append to your requests handlers group)
-from datetime import datetime
 import logging
 from fastapi import APIRouter, Request, Form, Depends, status
 import httpx
 from urllib.parse import urlencode
 from app.config import settings
 from app.utils.redirects import redirect_with_toast
-from app.utils.templates import render_with_user
 from app.utils.tokens import get_current_user
 from app.services.transfer_service import create_transfer, delete_transfer
 
@@ -41,12 +39,7 @@ async def add_transfer(request: Request,
         err = response.json().get("detail", "Transfer failed")
     except Exception:
         err = "Transfer failed"
-    return await render_with_user("dashboard.html", request, {
-        "error": err,
-        "token": token,
-        "categories_with_stats": [],
-        "now": month,
-    })
+    return redirect_with_toast("/dashboard", err, "error")
 
 
 async def undo_transfer(request: Request,
@@ -56,9 +49,4 @@ async def undo_transfer(request: Request,
     if resp.status_code == 204:
         return redirect_with_toast("/dashboard", "transfer deleted successfully!", "warning")
 
-    return await render_with_user("dashboard.html", request, {
-        "error": "transfer deletion failed",
-        "token": token,
-        "categories_with_stats": [],
-        "now": datetime.now().strftime("%Y-%m"),
-    })
+    return redirect_with_toast("/dashboard", "transfer deletion failed", "error")

@@ -1,12 +1,8 @@
-from datetime import datetime
 from fastapi import Depends, Form, Request, status
-from fastapi.responses import RedirectResponse
 
 from app.services.budget_service import add_budget, delete_budget, edit_budget, get_active_budget
 from app.utils.redirects import redirect_with_toast
-from app.utils.templates import render_with_user
 from app.utils.tokens import get_current_user
-from app.services.auth_service import get_current_user as svc_get_current_user
 
 
 async def create_budget(request: Request,
@@ -31,23 +27,10 @@ async def create_budget(request: Request,
         return redirect_with_toast(
             base_url="/dashboard",
             message="Budget already exists",
-            type_="success",
+            type_="error",
         )
 
-    user_response = await svc_get_current_user(token)
-    if user_response.status_code != status.HTTP_200_OK:
-        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
-    user = user_response.json()
-    return await render_with_user("dashboard.html", request, {
-        "error": "Budget creation failed",
-        "token": token,
-        "categories_with_stats": [],
-        "budget_allocations": [],
-        "budget_details": {},
-        "current_month": datetime.now().strftime('%B'),
-        "user": user,
-        "now": datetime.now().strftime("%Y-%m"),
-    })
+    return redirect_with_toast("/dashboard", "Budget creation failed", "error")
 
 
 async def update_budget(request: Request,
@@ -65,20 +48,7 @@ async def update_budget(request: Request,
             message="Budget updated successfully",
             type_="success",)
 
-    user_response = await svc_get_current_user(token)
-    if user_response.status_code != status.HTTP_200_OK:
-        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
-    user = user_response.json()
-    return await render_with_user("dashboard.html", request, {
-        "error": "Budget edit failed",
-        "token": token,
-        "categories_with_stats": [],
-        "budget_allocations": [],
-        "budget_details": {},
-        "current_month": datetime.now().strftime('%B'),
-        "user": user,
-        "now": datetime.now().strftime("%Y-%m"),
-    })
+    return redirect_with_toast("/dashboard", "Budget edit failed", "error")
 
 
 async def remove_budget(request: Request,
@@ -92,17 +62,4 @@ async def remove_budget(request: Request,
             message="Budget deleted successfully",
             type_="success",)
 
-    user_response = await svc_get_current_user(token)
-    if user_response.status_code != status.HTTP_200_OK:
-        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
-    user = user_response.json()
-    return await render_with_user("dashboard.html", request, {
-        "error": "Budget deletion failed",
-        "token": token,
-        "categories_with_stats": [],
-        "budget_allocations": [],
-        "budget_details": {},
-        "current_month": datetime.now().strftime('%B'),
-        "user": user,
-        "now": datetime.now().strftime("%Y-%m"),
-    })
+    return redirect_with_toast("/dashboard", "Budget deletion failed", "error")

@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% from "_ui.html" import money, empty_box, target_terms %}
+
+{% block title %}Budgets{% endblock %}
+
+{% block content %}
+{% set b = budget_details %}
+{% set v = home %}
+<div class="p-page">
+  <div class="p-page-head">
+    <h1>Budgets</h1>
+    <button type="button" class="p-btn-primary" data-act="budget-new"><i class="fa fa-plus" aria-hidden="true"></i> New budget</button>
+  </div>
+
+  {% if all_budgets %}
+  <div class="p-budget-cols">
+    {% for type, label in [('savings', 'Savings'), ('expense', 'Expense')] %}
+    {% set list = all_budgets | selectattr('type', 'equalto', type) | list %}
+    <div class="p-budget-col">
+      <div class="p-budget-title"><h3>{{ label }}</h3><span class="p-budget-total">Total: {{ money(list | sum(attribute='amount'), bare=True) }}</span></div>
+      {% if list %}
+      <ul class="p-budget-list">
+        {% for item in list %}
+        {% set active = b and item.id == b.id %}
+        <li class="p-budget-item {{ 'active' if active }}">
+          <label>
+            <input type="radio" name="pActiveBudget" value="{{ item.id }}" {{ 'checked' if active }} data-act="set-budget" data-id="{{ item.id }}">
+            <span>{{ item.name }}<span class="p-budget-item-sub">{{ money(item.amount, bare=True) }}{% if active %} · {{ v.categories | length }} categories · active{% endif %}</span></span>
+          </label>
+          <span class="p-row-actions">
+            <button type="button" class="p-icon-btn-info" data-act="budget-manage" data-id="{{ item.id }}" aria-label="Allocations and targets for {{ item.name }}" title="Allocations and targets"><i class="fa fa-sliders" aria-hidden="true"></i></button>
+            <button type="button" class="p-icon-btn-warning" data-act="budget-edit" data-id="{{ item.id }}" aria-label="Edit {{ item.name }}" title="Edit"><i class="fa fa-pencil" aria-hidden="true"></i></button>
+            <button type="button" class="p-icon-btn-danger" data-act="budget-del" data-id="{{ item.id }}" aria-label="Delete {{ item.name }}" title="Delete"><i class="fa fa-trash" aria-hidden="true"></i></button>
+          </span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="p-category-progress-no-content">No {{ label | lower }} budgets yet.</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  {% call empty_box('fa-wallet', 'No budgets yet', 'An expense budget covers a month of spending; a savings budget holds money you put aside.') %}
+  <button type="button" class="p-btn-primary" data-act="budget-new"><i class="fa fa-plus" aria-hidden="true"></i> Create a budget</button>
+  {% endcall %}
+  {% endif %}
+
+  {% if b %}
+  {% set total = [b.amount | float, v.categories | sum(attribute='allocated') | float] | max or 1 %}
+  <section class="p-card p-block">
+    <div class="p-section-head"><h2>{{ b.name }} allocations</h2></div>
+    <div class="p-alloc-bar" role="img" aria-label="Allocation of {{ b.name }} across {{ v.categories | length }} categories; see the list below">
+      {% for c in v.table %}<span class="p-alloc-seg c{{ (loop.index0 % 6) + 1 }}" style="width:{{ (c.allocated | float) / total * 100 }}%"></span>{% endfor %}
+      {% if v.unallocated > 0 %}<span class="p-alloc-seg c0" style="width:{{ (v.unallocated | float) / total * 100 }}%"></span>{% endif %}
+    </div>
+    <ul class="p-legend">
+      {% for c in v.table %}
+      <li><span><span class="p-swatch c{{ (loop.index0 % 6) + 1 }}" aria-hidden="true"></span>{{ c.name }}</span><span>{{ money(c.allocated, bare=True) }}</span></li>
+      {% endfor %}
+      <li><span><span class="p-swatch c0" aria-hidden="true"></span>Unallocated</span><span>{{ money(v.unallocated, bare=True) }}</span></li>
+    </ul>
+    <div class="p-sheet-actions">
+      <button type="button" class="p-btn-ghost" data-act="cat-new"><i class="fa fa-plus" aria-hidden="true"></i> Category</button>
+      <button type="button" class="p-btn-ghost" data-act="budget-manage" data-id="{{ b.id }}"><i class="fa fa-sliders" aria-hidden="true"></i> Manage</button>
+    </div>
+  </section>
+
+  <section class="p-card">
+    <div class="p-section-head"><h2>Transfers in {{ current_month }}</h2><button type="button" class="p-btn-ghost" data-act="transfer"><i class="fa fa-arrow-right-arrow-left" aria-hidden="true"></i> Move money</button></div>
+    {% set transfers = [] %}
+    {% for c in v.table %}{% for t in c.transfers_in %}{% set _ = transfers.append(t) %}{% endfor %}{% endfor %}
+    {% if transfers %}
+    <ul class="p-category-progress-ul">
+      {% for t in transfers %}
+      <li class="p-category-progress-li"><span><b>{{ t.from_category_name or 'Another budget' }} → {{ t.to_category_name }}</b>{% if t.description %}<small>{{ t.description }}</small>{% endif %}</span><span>{{ money(t.amount) }}</span></li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="p-category-progress-no-content">No transfers this month.</p>
+    {% endif %}
+  </section>
+
+  {% if v.targets %}
+  <section class="p-card">
+    <div class="p-section-head"><h2>Targets in {{ b.name }}</h2></div>
+    <div class="p-target-totals">
+      {% for key, label in [('short_term', 'Short'), ('mid_term', 'Mid'), ('long_term', 'Long')] %}
+      <div><span class="p-target-total-label">{{ label }} term</span><span class="p-target-total-value">{{ money(target_totals[key], bare=True) }}</span></div>
+      {% endfor %}
+    </div>
+    <ul class="p-target-list">
+      {% for c in v.targets %}
+      <li class="p-target-li">
+        <div class="p-target-head"><span class="p-category-name">{{ c.name }}</span><span class="p-small">{{ money(c.balance, bare=True) }} saved</span></div>
+        {{ target_terms(c.target) }}
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block data %}
+<script type="application/json" id="pData">{{ page_data | tojson }}</script>
+{% endblock %}

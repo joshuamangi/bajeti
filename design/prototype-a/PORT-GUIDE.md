@@ -173,7 +173,7 @@ Opened from the tab bar, a category row, or a table action.
 1. **Budget switcher** (only if there's more than one budget). Switching here changes the active budget **app-wide** and **keeps the typed amount and note**.
 2. **Amount first:** a large centred field with a small "KES" prefix, `inputmode="decimal"`, autofocused.
 3. **Category**, listing **only the active budget's categories, A–Z**:
-   - **Letter filter** (only when there are more than 8 categories): an "All" button spanning two columns plus **only the letters categories start with**, each 44px.
+   - **Letter filter** (when there are 2 or more categories): an "All" button spanning two columns plus **only the letters categories start with**, each 44px.
      - Tapping a letter filters the list; tapping it again, or "All", clears the filter.
      - If exactly one category matches, it is **picked automatically** and a line says "Picked Rent".
    - **Recently used:** the 4 categories with the most recent expense dates. Shown only when no letter is active and the sheet wasn't opened from a category. A category picked here is also shown as picked in the A–Z list.
@@ -437,7 +437,7 @@ These were settled while building the prototype; don't reopen them without askin
 - Home order: Active → payments and due bills → Categories → Recent.
 - The category chart is sorted **most used first** and shows the top 8, with "Show all".
 - Category rows, the chart and year totals use **whole numbers**; detail views keep 2 decimals.
-- The letter filter appears only with **more than 8** categories in the active budget, and shows only letters in use.
+- The letter filter appears whenever the active budget has **2 or more** categories (owner decision 2026-10-28; the prototype used more than 8), and shows only letters in use. "Recently used" still appears only past 8.
 - The **active budget** scopes everything except the payments inbox and the Budgets list.
 - Savings budgets count **withdrawals**; expense budgets count **spend**.
 - "Squeezed" means spent above allocation in **2 or more of 6** months. "Room to spare" means an average under **60%** with 4 or more active months. Amber means 90–99%; exactly 100% is neutral.

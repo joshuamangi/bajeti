@@ -1,0 +1,52 @@
+{# Shared UI pieces for the Prototype A screens. Every amount goes through money() so the eye toggle can mask it. #}
+
+{% macro money(value, bare=False, dec=None, cls='', sign=False) -%}
+{%- set text = value | money_text(dec, sign) -%}
+<span class="sensitive{% if cls %} {{ cls }}{% endif %}{% if value is not none and (value | float) < 0 %} p-negative{% endif %}" data-value="{{ text }}">{% if not bare %}<span class="p-cur">KES</span> {% endif %}{{ text }}</span>
+{%- endmacro %}
+
+{% macro status_text(c) -%}
+{%- if c.status == 'exceeded' -%}{{ money(-c.balance, bare=True, dec=0) }} over
+{%- elif c.savings -%}{{ money(c.balance, bare=True, dec=0) }} saved
+{%- elif c.status == 'zero' -%}Fully used
+{%- else -%}{{ money(c.balance, bare=True, dec=0) }} left
+{%- endif -%}
+{%- endmacro %}
+
+{% macro empty_box(icon, title, text) -%}
+<div class="p-empty"><i class="fa {{ icon }}" aria-hidden="true"></i><h3>{{ title }}</h3><p>{{ text }}</p>{{ caller() if caller }}</div>
+{%- endmacro %}
+
+{% macro budget_switcher(budgets, active_id) -%}
+{% if budgets %}
+<div class="p-budget-switch" role="radiogroup" aria-label="Active budget">
+  {% for b in budgets %}
+  <button type="button" role="radio" aria-checked="{{ 'true' if b.id == active_id else 'false' }}" class="p-switch-chip" data-act="set-budget" data-id="{{ b.id }}">
+    <span class="p-switch-radio" aria-hidden="true"></span>
+    <span class="p-switch-chip-text"><span>{{ b.name }}</span><span class="p-switch-chip-type">{{ 'Savings' if b.type == 'savings' else 'Expense' }}</span></span>
+  </button>
+  {% endfor %}
+</div>
+{% endif %}
+{%- endmacro %}
+
+{% macro progress(percent, status) -%}
+<span class="p-progress-bar" aria-hidden="true"><span class="p-progress-fill p-{{ status }}-fill" style="width:{{ [[percent, 0] | max, 100] | min }}%"></span></span>
+{%- endmacro %}
+
+{% macro target_terms(t) -%}
+{% for key, label in [('short_term', 'Short term'), ('mid_term', 'Mid term'), ('long_term', 'Long term')] %}
+{% set term = t[key] %}
+{% if term %}
+{% set pct = [[term.percent, 0] | max, 100] | min %}
+{% set done = term.percent >= 100 %}
+<div class="p-target-term">
+  <div class="p-target-term-head">
+    <span>{{ label }} · {{ money(term.amount | float, bare=True) }}</span>
+    <span class="{{ 'p-positive' if done }}">{% if done %}<i class="fa fa-circle-check" aria-hidden="true"></i> Target reached{% else %}{{ '%.1f' | format(term.percent) }}% · {{ money(term.remaining | float, bare=True) }} to go{% endif %}</span>
+  </div>
+  <div class="p-progress-bar" role="progressbar" aria-label="{{ label }}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ pct | round | int }}"><span class="p-progress-fill {{ 'p-ok-fill' if done else 'p-target-fill' }}" style="width:{{ pct }}%"></span></div>
+</div>
+{% endif %}
+{% endfor %}
+{%- endmacro %}

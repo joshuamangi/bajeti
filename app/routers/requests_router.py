@@ -35,6 +35,10 @@ router.get(
 router.post("/profile/update")(dashboard_handlers.profile_update)
 router.get("/dashboard",
            response_class=dashboard_handlers.HTMLResponse)(dashboard_handlers.dashboard)
+router.get("/budgets",
+           response_class=dashboard_handlers.HTMLResponse)(dashboard_handlers.budgets_page)
+router.get("/more",
+           response_class=dashboard_handlers.HTMLResponse)(dashboard_handlers.more_page)
 
 # ---------- CATEGORY CRUD ----------
 router.post("/dashboard/categories")(category_handlers.add_category)

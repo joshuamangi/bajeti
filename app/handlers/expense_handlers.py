@@ -3,10 +3,8 @@ import logging
 from fastapi import Request, Form
 from typing import Optional
 from app.utils.tokens import get_current_user
-from app.utils.templates import render_with_user
 from app.services.expense_service import create_expense, create_withdrawal, delete_withdrawal, update_expense, delete_expense as delete_expense_service, update_withdrawal
 from app.utils.redirects import redirect_with_toast
-from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -31,12 +29,7 @@ async def add_expense(request: Request,
     if resp.status_code == 201:
         return redirect_with_toast("/dashboard", "Expense created successfully!", "success")
 
-    return await render_with_user("dashboard.html", request, {
-        "error": "Expense creation failed",
-        "token": token,
-        "categories_with_stats": [],
-        "now": datetime.now().strftime("%Y-%m"),
-    })
+    return redirect_with_toast("/dashboard", "Expense creation failed", "error")
 
 
 async def edit_expense(request: Request,
@@ -60,12 +53,7 @@ async def edit_expense(request: Request,
     if resp.status_code == 200:
         return redirect_with_toast("/dashboard", "Expense updated successfully!", "info")
 
-    return await render_with_user("dashboard.html", request, {
-        "error": "Expense update failed",
-        "token": token,
-        "categories_with_stats": [],
-        "now": datetime.now().strftime("%Y-%m"),
-    })
+    return redirect_with_toast("/dashboard", "Expense update failed", "error")
 
 
 async def delete_expense(request: Request,
@@ -80,9 +68,4 @@ async def delete_expense(request: Request,
     if resp.status_code == 204:
         return redirect_with_toast("/dashboard", "Expense deleted successfully!", "warning")
 
-    return await render_with_user("dashboard.html", request, {
-        "error": "Expense deletion failed",
-        "token": token,
-        "categories_with_stats": [],
-        "now": datetime.now().strftime("%Y-%m"),
-    })
+    return redirect_with_toast("/dashboard", "Expense deletion failed", "error")

@@ -1,44 +1,74 @@
-.p-under-construction {
-    text-align: center;
-    padding: 2rem 1.5rem;
-    background: var(--bg);
-    color: var(--text);
-    border-radius: 1rem;
-    box-shadow: var(--shadow);
-    max-width: 420px;
-    margin: 5rem auto;
-}
+/* Analytics (Prototype A) */
+.p-month-nav{display:flex;align-items:center;justify-content:space-between;gap:.8em}
+.p-month-title{font:var(--h2);text-align:center;flex:1}
+.p-stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:.8em}
+.p-stat{display:flex;flex-direction:column;gap:.4em;padding:1.2em;background:var(--gradient);border-radius:var(--r);box-shadow:var(--shadow);min-width:0}
+.p-stat:first-child{grid-column:1 / -1}
+.p-stat-label{font:700 .6875rem/1.4 var(--ff);text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)}
+.p-stat-value{font:600 1.25rem/1.25 var(--ff);display:flex;align-items:center;gap:.4em;flex-wrap:wrap}
+.p-stat:first-child .p-stat-value{font-size:1.75rem}
+.p-trend-plot{position:relative;height:11em;display:flex;align-items:stretch;gap:.8em;margin:0 0 2em;border-bottom:1px solid var(--border)}
+.p-trend-col{position:relative;flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:.4em;min-width:var(--tap);border-radius:var(--r) var(--r) 0 0}
+.p-trend-bar{display:block;width:min(100%,3.2em);border-radius:var(--r) var(--r) 0 0;background:var(--border);transition:height .4s ease}
+.p-trend-col.is-active .p-trend-bar{background:var(--primary-ink)}
+.p-trend-val{font:700 .6875rem/1 var(--ff);color:var(--text);white-space:nowrap}
+.p-trend-label{position:absolute;bottom:-1.8em;font:600 .75rem/1 var(--ff);color:var(--text-muted)}
+.p-trend-col.is-active .p-trend-label{color:var(--text)}
+.p-trend-col.is-active .p-trend-label::after{content:" \25CF";color:var(--primary-ink)}
+.p-trend-budget{position:absolute;left:0;right:0;border-top:2px dashed var(--secondary);pointer-events:none;z-index:1}
+.p-trend-budget span{position:absolute;right:0;top:-1.6em;font:700 .6875rem/1.4 var(--ff);color:var(--secondary);background:var(--bg-light);padding:0 .4em;border-radius:var(--r)}
+.p-breakdown{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.4em}
+.p-breakdown-row{position:relative;display:flex;flex-direction:column;gap:.4em;width:100%;padding:.8em 2.4em .8em .8em;text-align:left;border-radius:var(--r);min-height:var(--tap)}
+.p-breakdown-row:active{background:var(--tint)}
+.p-breakdown-top,.p-breakdown-meta{display:flex;justify-content:space-between;gap:.8em}
+.p-breakdown-amt{color:var(--text);font-weight:700}
+.p-breakdown-meta{font:var(--small)}
+.p-breakdown-chev{position:absolute;right:.8em;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:.75rem}
+.p-crumbs{display:flex;align-items:center;gap:.8em;flex-wrap:wrap;font-weight:600}
+.p-crumbs a{min-height:var(--tap);display:inline-flex;align-items:center}
+.p-crumbs i{font-size:.625rem;color:var(--text-muted)}
+.p-crumbs [aria-current]{color:var(--text)}
 
-.p-under-construction .p-input-header {
-    color: var(--warning);
-    font-weight: 700;
-    margin-bottom: 1rem;
-}
+/* NEW COMPONENT: Analytics period switch (Month / 6 months / Year) */
+.p-period{display:grid;grid-template-columns:repeat(3,1fr)}
+.p-period a{display:grid;place-items:center;min-height:var(--tap);border-radius:var(--r);font-weight:500;color:var(--text-muted);text-decoration:none}
+.p-period a[aria-current="page"]{background:var(--bg-light);color:var(--text);box-shadow:var(--shadow)}
+/* NEW COMPONENT: squeezed-category insights */
+.p-insights{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.8em}
+.p-insight{display:flex;flex-direction:column;gap:.4em;padding:.8em 1.2em;border-radius:var(--r);background:var(--bg-dark);color:var(--text-muted);text-decoration:none}
+.p-insight-top{display:flex;justify-content:space-between;align-items:center;gap:.8em}
+.p-insight-tip{display:flex;align-items:center;gap:.4em;font:500 .8125rem/1.4 var(--ff);color:var(--primary-ink)}
+/* NEW COMPONENT: month-by-month heat table (a real table, so it reads as one) */
+.p-heat-wrap{overflow-x:auto;margin:0 -.4em}
+.p-heat{width:100%;border-collapse:separate;border-spacing:3px;table-layout:fixed;font-size:.75rem}
+.p-heat thead th{font:600 .6875rem/1.4 var(--ff);color:var(--text-muted);text-align:center;padding:0 0 .4em}
+.p-heat thead th:first-child{width:7.6em}
+.p-heat tbody th{text-align:left;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:.4em}
+.p-heat tbody th a{color:var(--text);text-decoration:none;display:block;min-height:2.8em;line-height:2.8em;overflow:hidden;text-overflow:ellipsis}
+.p-heat td{position:relative;height:2.8em;text-align:center;border-radius:var(--r);background:var(--bg-dark);color:var(--text)}
+.p-heat td.is-tight,.p-heat-sw.is-tight{background:color-mix(in srgb,var(--secondary) 22%,var(--bg-light))}
+.p-heat td.is-over,.p-heat-sw.is-over{background:color-mix(in srgb,var(--danger) 22%,var(--bg-light))}
+.p-heat td.is-over{font-weight:600}
+.p-heat td.is-empty{color:var(--text-muted);background:transparent;border:1px dashed var(--border-muted)}
+.p-heat-up{margin-left:.2em;color:var(--danger)}
+.p-topup,.p-topup-key{font:700 .75rem/1 var(--ff);color:var(--tertiary)}
+.p-topup{position:absolute;top:2px;right:4px}
+.p-heat-key{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:.4em 1.2em;font:var(--small)}
+.p-heat-key li{display:inline-flex;align-items:center;gap:.4em}
+.p-heat-key .fa-caret-up{color:var(--danger)}
+.p-heat-sw{width:1.2em;height:1.2em;border-radius:4px;display:inline-block}
+.p-two{display:grid;grid-template-columns:1fr;gap:1.2em}
+.p-two .p-group-title{margin-bottom:.8em}
+/* Year list reuses the slim category rows */
+.p-year-list{margin:0 -.8em}
+.p-year-list .p-catbar{color:var(--text);text-decoration:none}
+.p-year-amt{min-width:6.4em;text-align:right;font-weight:500}
+.p-year-fill{background:var(--primary-ink)}
+.p-year-sub{font:var(--small);color:var(--text-muted)}
+.p-trend-plot.is-compact{gap:.4em}
+.p-trend-plot.is-compact .p-trend-col{min-width:0}
+.p-trend-plot.is-compact .p-trend-val{display:none}
+.p-trend-plot.is-compact .p-trend-col.is-active .p-trend-val{display:block;white-space:nowrap}
+.p-trend-plot.is-compact .p-trend-label{font-size:.625rem}
+.p-trend-plot.is-compact .p-trend-budget span{right:auto;left:0}
 
-.p-under-construction .p-text-muted {
-    color: var(--text-muted);
-    font-size: 1rem;
-    margin-bottom: 2rem;
-    line-height: 1.6;
-}
-
-.p-btn-group {
-    display: flex;
-    justify-content: center;
-}
-
-.p-warning-btn {
-    background-color: var(--warning);
-    color: #fff;
-    font-weight: 600;
-    border-radius: 25px;
-    padding: .6rem 1.5rem;
-    text-decoration: none;
-    transition: all .2s ease;
-    box-shadow: 0 3px 6px oklch(0 0 0 / .25);
-}
-
-.p-warning-btn:hover {
-    background-color: oklch(0.65 .13 85 / .9);
-    transform: translateY(-1px);
-}

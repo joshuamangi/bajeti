@@ -1,100 +1,67 @@
 {% extends "base.html" %}
 
-{% block title %}
-Edit Profile - Bajeti
+{% block title %}Account{% endblock %}
+
+{% block header_left %}
+<a class="p-hbtn" href="/more" aria-label="Back"><i class="fa fa-arrow-left" aria-hidden="true"></i></a><span class="p-header-title">Account</span>
 {% endblock %}
 
 {% block content %}
+<div class="p-page">
+  <h1>Account</h1>
 
-<div id="pSnackBar">
-</div>
+  {% if error %}
+  <div class="p-alert-error" role="alert"><i class="fa fa-circle-exclamation" aria-hidden="true"></i><p>{{ error }}</p></div>
+  {% endif %}
 
-<section class="p-login">
-  <div class="p-register-container">
-    <h1 class="p-input-header">Edit Profile</h1>
+  <section class="p-card p-profile">
+    <span class="p-avatar" aria-hidden="true">{{ (user.first_name or ' ')[0] }}{{ (user.last_name or ' ')[0] }}</span>
+    <span class="p-list-main"><b>{{ user.first_name }} {{ user.last_name }}</b><span class="p-list-sub">{{ user.email }}</span></span>
+  </section>
 
-    {% if error %}
-    <div class="p-alert-error">
-      <span><i class="fa fa-exclamation-circle"></i></span>
-      <span>{{ error }}</span>
-    </div>
-    {% endif %}
-
-    <form method="POST" action="/profile/update" class="p-signin-details">
-      <label for="first_name">First Name</label>
-      <input
-        type="text"
-        id="first_name"
-        name="first_name"
-        placeholder="Enter First Name"
-        value="{{ user.first_name }}"
-        required
-      />
-
-      <label for="last_name">Last Name</label>
-      <input
-        type="text"
-        id="last_name"
-        name="last_name"
-        placeholder="Enter Last Name"
-        value="{{ user.last_name }}"
-        required
-      />
-
-      <label for="email">Email</label>
-      <input
-        type="email"
-        id="email"
-        name="email"
-        placeholder="Enter Email"
-        value="{{ user.email }}"
-        required
-      />
-
-      <label for="security_answer">What was your childhood best friend's name?</label>
-      <div class="p-password-field">
-        <input
-          type="password"
-          id="security_answer"
-          name="security_answer"
-          placeholder="{{ 'Leave blank to keep your current answer' if user.has_security_answer else 'Enter Security Answer' }}"
-          autocomplete="off"
-        />
-        <i class="fa fa-eye p-eye-toggle" id="toggleSecurityAnswer"></i>
+  <section>
+    <h2 class="p-group-title">Profile</h2>
+    <form method="POST" action="/profile/update" class="p-modal-form-content">
+      <div class="p-form-row">
+        <label class="p-field"><span>First name</span><input type="text" name="first_name" value="{{ user.first_name }}" required autocomplete="given-name"></label>
+        <label class="p-field"><span>Last name</span><input type="text" name="last_name" value="{{ user.last_name }}" required autocomplete="family-name"></label>
       </div>
-
-      <button type="submit" class="p-login-button">
-        <span class="p-btn-text">
-          <i class="fa fa-save"></i> Save Changes
-        </span>
-      </button>
-
-      <hr class="p-divider" />
-
-      <div class="p-password-section">
-        <h2 class="p-password-header">Password Settings</h2>
-        <p class="p-password-text">
-          Want to reset your password? Click below to start the process.
-        </p>
-        <a href="/forgot_password" class="p-forgot-btn">
-          <i class="fa fa-key"></i> Change Password
-        </a>
-        <p class="p-password-text">
-          Signed in on another device you no longer use? This signs you out everywhere, including here.
-        </p>
-        <button type="submit" formaction="/logout-all" formmethod="post" formnovalidate class="p-forgot-btn">
-          <i class="fa fa-right-from-bracket"></i> Log out everywhere
-        </button>
+      <label class="p-field"><span>Email</span><input type="email" name="email" value="{{ user.email }}" required autocomplete="email"></label>
+      <div class="p-field">
+        <span><label for="pSecAnswer">Security question: what was your childhood best friend's name?</label>
+          {% if user.has_security_answer %}<span class="p-tag p-tag-success">Set</span>{% else %}<span class="p-tag p-tag-warning">Missing</span>{% endif %}</span>
+        <div class="p-pass">
+          <input type="password" id="pSecAnswer" name="security_answer" autocomplete="off"
+                 placeholder="{{ 'Leave blank to keep your current answer' if user.has_security_answer else 'Enter your answer' }}">
+          <button type="button" data-act="toggle-pass" aria-label="Show answer" aria-pressed="false"><i class="fa fa-eye" aria-hidden="true"></i></button>
+        </div>
       </div>
-
-      <div class="p-auth-links">
-        <p>
-          <a href="/dashboard" style="color: var(--primary)">
-            <i class="fa fa-arrow-left"></i> Back to Dashboard
-          </a>
-        </p>
-      </div>
+      <button type="submit" class="p-modal-btn-primary"><i class="fa fa-check" aria-hidden="true"></i> Save changes</button>
     </form>
-  </div>
-</section>
+  </section>
+
+  <section>
+    <h2 class="p-group-title">Security</h2>
+    <ul class="p-list">
+      <li><a class="p-list-row" href="/forgot_password"><span class="p-list-icon"><i class="fa fa-key" aria-hidden="true"></i></span><span class="p-list-main"><b>Change password</b><span class="p-list-sub">Uses your security question</span></span><i class="fa fa-chevron-right p-chev" aria-hidden="true"></i></a></li>
+      <li>
+        <form method="POST" action="/logout-all" id="pLogoutAll">
+          <button type="submit" class="p-list-row" data-act="logout-all"><span class="p-list-icon"><i class="fa fa-right-from-bracket" aria-hidden="true"></i></span><span class="p-list-main"><b>Log out everywhere</b><span class="p-list-sub">Signs out all phones and browsers, including this one</span></span></button>
+        </form>
+      </li>
+    </ul>
+  </section>
+
+  <section>
+    <h2 class="p-group-title">Preferences</h2>
+    <ul class="p-list">
+      <li class="p-pref-row">
+        <span class="p-list-main"><b id="pThemeLbl">Dark theme</b><span class="p-list-sub">Light is the default</span></span>
+        <button type="button" role="switch" aria-checked="false" class="p-switch" data-act="theme" aria-labelledby="pThemeLbl"><span class="p-switch-track" aria-hidden="true"></span><span class="p-switch-text" aria-hidden="true">Off</span></button>
+      </li>
+    </ul>
+  </section>
+
+  <a class="p-btn-danger p-btn-block" href="/logout"><i class="fa fa-right-from-bracket" aria-hidden="true"></i> Log out</a>
+</div>
 {% endblock %}
