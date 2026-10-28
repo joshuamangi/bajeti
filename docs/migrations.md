@@ -47,8 +47,9 @@ Adds `allocation_snapshots`, records the current month from today's allocations,
 decision: analytics starts from the migration date). Tested on a scratch database with the production
 schema: upgrade, downgrade (expenses kept), upgrade again; one head.
 
-Status: not yet in production. After the deploy, check `alembic current` shows a7d3c2f19b40 and record
-the date here.
+Status: in production since 2026-10-28 (deploy of PR #145; the deploy log shows
+`Running upgrade 186f1cc1a7ca -> a7d3c2f19b40` and `alembic current` = a7d3c2f19b40). Not checked on the
+Pi by hand.
 
 Rollback (drops the snapshots and the two indexes; no other data is touched):
 
