@@ -291,7 +291,8 @@
       <div class="p-cat-sheet-meta"><span class="p-category-status ${c.status}">${c.percent.toFixed(1)}% ${c.savings ? 'withdrawn' : 'used'}${c.status === 'exceeded' ? ' · over' : ''}</span><span class="p-small">of ${money(c.available)}</span></div></div>
       <div class="p-progress-bar" role="progressbar" aria-label="${n} used" aria-valuenow="${Math.round(pct)}" aria-valuemin="0" aria-valuemax="100"><span class="p-progress-fill p-${c.status}-fill" style="width:${pct}%"></span></div>
       <div class="p-sheet-actions"><button type="button" class="p-modal-btn-tertiary" data-act="quick" data-id="${c.id}"><i class="fa fa-bolt" aria-hidden="true"></i> Quick Expense</button><button type="button" class="p-modal-btn-primary" data-act="add-exp" data-id="${c.id}"><i class="fa fa-plus" aria-hidden="true"></i> Add Expense</button></div>
-      <div class="p-category-progress-transfer-divider"><h4>Transfers</h4>${c.transfers.length ? `<ul class="p-category-progress-ul">${c.transfers.map(t => { const inn = t.direction === 'in'; return `<li class="p-category-progress-li"><span><b>${inn ? 'From' : 'To'} ${esc(t.other || 'another category')}</b>${t.description ? `<small>${esc(t.description)}</small>` : ''}</span><span class="${inn ? 'p-positive' : 'p-negative'}">${inn ? '+' : '−'}${money(t.amount, { bare: true })}</span></li>`; }).join('')}</ul>` : '<p class="p-category-progress-no-content">No transfer or top-up this month.</p>'}</div>
+      <div class="p-category-progress-transfer-divider"><h4>Transfers</h4>${c.transfers.length ? `<ul class="p-category-progress-ul">${c.transfers.map(t => { const inn = t.direction === 'in'; return `<li class="p-category-progress-li" data-transfer="${t.id}"><span><b>${inn ? 'From' : 'To'} ${esc(t.other || 'another category')}</b>${t.description ? `<small>${esc(t.description)}</small>` : ''}</span><span class="${inn ? 'p-positive' : 'p-negative'}">${inn ? '+' : '−'}${money(t.amount, { bare: true })}</span>
+        <span class="p-row-actions"><button type="button" class="p-icon-btn-danger" data-act="transfer-undo" data-id="${t.id}" aria-label="Undo transfer ${inn ? 'from' : 'to'} ${esc(t.other || 'another category')}" title="Undo transfer"><i class="fa fa-rotate-left" aria-hidden="true"></i></button></span></li>`; }).join('')}</ul>` : '<p class="p-category-progress-no-content">No transfer or top-up this month.</p>'}</div>
       <div class="p-category-progress-transfer-divider"><h4>Expenses <span class="p-count">${expenses.length}</span></h4>${expenses.length ? `<ul class="p-category-progress-ul">${expenses.map(e => `<li class="p-category-progress-li" data-exp="${e.id}"><span><b>${esc(e.description || 'Expense')}</b><small>${monthName(e.month)}${e.type === 'withdrawal' ? ' · withdrawal' : ''}</small></span><span>${money(e.amount)}</span>
         <span class="p-row-actions"><button type="button" class="p-icon-btn-warning" data-act="exp-edit" data-id="${e.id}" data-cat="${c.id}" aria-label="Edit ${esc(e.description || 'expense')}"><i class="fa fa-pencil" aria-hidden="true"></i></button>
         <button type="button" class="p-icon-btn-danger" data-act="exp-del" data-id="${e.id}" data-cat="${c.id}" aria-label="Delete ${esc(e.description || 'expense')}"><i class="fa fa-trash" aria-hidden="true"></i></button></span></li>`).join('')}</ul>` : '<p class="p-category-progress-no-content">No expenses this month. Use Quick Expense or Add Expense.</p>'}</div>
@@ -383,7 +384,7 @@
       const src = catById(from);
       if (amount > Number(src.balance)) { err.textContent = `Only ${S.hidden ? 'a smaller amount' : 'KES ' + moneyText(src.balance)} is available there.`; return; }
       closeSheet();
-      save('/dashboard/transfers', { from_category_id: src.id, to_category_id: to.id, amount: amount.toFixed(2), description: f.note.value.trim(), month: month() }, { success: `Moved ${money(amount)} to ${esc(to.name)}` });
+      moveMoney(src, to, amount, f.note.value.trim());
       return;
     }
     // From unallocated: raise the category's allocation.
@@ -496,6 +497,21 @@
     deferDelete({ url: `/dashboard/targets/${b.id}/${c.target.id}/delete`, rows: rowsFor(`[data-target="${c.target.id}"]`), message: `Removed targets for ${esc(c.name)}` });
   }
 
+  const transferIds = () => new Set(cats().flatMap(c => c.transfers.map(t => t.id)));
+  async function moveMoney(src, to, amount, note) {
+    const before = transferIds();
+    const r = await post('/dashboard/transfers', { from_category_id: src.id, to_category_id: to.id, amount: amount.toFixed(2), description: note, month: month() });
+    if (!r.ok) { if (r.message) toast(esc(r.message), { type: 'error' }); await refreshMain(); return; }
+    await refreshMain();
+    const added = [...transferIds()].filter(id => !before.has(id)).sort((a, b) => b - a)[0];
+    toast(`Moved ${money(amount)} to ${esc(to.name)}`, {
+      type: 'success', undo: added ? () => save(`/dashboard/transfers/${added}/undo`, {}, { success: 'Transfer undone' }) : undefined
+    });
+  }
+  function undoTransfer(id) {
+    deferDelete({ url: `/dashboard/transfers/${id}/undo`, rows: rowsFor(`[data-transfer="${id}"]`), message: 'Transfer undone' });
+  }
+
   async function setActiveBudget(id) {
     if (budget() && +id === budget().id) return;
     try { await fetch(`/dashboard?budget_id=${encodeURIComponent(id)}`, { credentials: 'same-origin' }); }
@@ -529,6 +545,7 @@
     'cat-del': el => deleteCategory(el.dataset.id),
     'cat-topup': el => openTransfer({ to: el.dataset.id }),
     transfer: () => openTransfer({}),
+    'transfer-undo': el => undoTransfer(el.dataset.id),
     'exp-edit': el => openExpenseEdit(el.dataset.cat, el.dataset.id),
     'exp-del': el => deleteExpense(el.dataset.cat, el.dataset.id),
     'set-budget': el => setActiveBudget(el.dataset.id),

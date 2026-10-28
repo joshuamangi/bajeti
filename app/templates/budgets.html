@@ -74,7 +74,8 @@
     {% if transfers %}
     <ul class="p-category-progress-ul">
       {% for t in transfers %}
-      <li class="p-category-progress-li"><span><b>{{ t.from_category_name or 'Another budget' }} → {{ t.to_category_name }}</b>{% if t.description %}<small>{{ t.description }}</small>{% endif %}</span><span>{{ money(t.amount) }}</span></li>
+      <li class="p-category-progress-li" data-transfer="{{ t.id }}"><span><b>{{ t.from_category_name or 'Another budget' }} → {{ t.to_category_name }}</b>{% if t.description %}<small>{{ t.description }}</small>{% endif %}</span><span>{{ money(t.amount) }}</span>
+        <span class="p-row-actions"><button type="button" class="p-icon-btn-danger" data-act="transfer-undo" data-id="{{ t.id }}" aria-label="Undo transfer from {{ t.from_category_name or 'another budget' }} to {{ t.to_category_name }}" title="Undo transfer"><i class="fa fa-rotate-left" aria-hidden="true"></i></button></span></li>
       {% endfor %}
     </ul>
     {% else %}

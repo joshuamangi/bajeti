@@ -94,9 +94,9 @@ def page_data(budget: dict, budgets: list, view: dict, month: str) -> dict:
     """JSON for the sheets the browser draws (add expense, category, transfer). Money is a
     string with two decimals so nothing is rounded on the way through float."""
     def transfers(c):
-        rows = [{"direction": "in", "other": t.get("from_category_name"), "amount": _money(t["amount"]),
+        rows = [{"id": t["id"], "direction": "in", "other": t.get("from_category_name"), "amount": _money(t["amount"]),
                  "description": t.get("description")} for t in c["transfers_in"]]
-        rows += [{"direction": "out", "other": t.get("to_category_name"), "amount": _money(t["amount"]),
+        rows += [{"id": t["id"], "direction": "out", "other": t.get("to_category_name"), "amount": _money(t["amount"]),
                   "description": t.get("description")} for t in c["transfers_out"]]
         return rows
 
