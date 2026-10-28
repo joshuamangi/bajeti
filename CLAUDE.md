@@ -62,3 +62,9 @@ Two layers in one repo. The web layer calls the API over HTTP.
 - Stage status lives in the table in `docs/stages/IMPLEMENTATION.md`; what each stage produced and left unverified goes in `docs/stages/HANDOFF.md`.
 - `docs/roadmap.md` and the issue checklists track epic-level progress only. Tick them when a stage completes an epic item.
 - Branch `feature/issue-N-short-name` -> PR (template in `.github/pull_request_template.md`) -> merge to `main` -> auto deploy.
+
+## UI redesign (Prototype A)
+
+- Spec: design/prototype-a/PORT-GUIDE.md and design/prototype-a/bajeti-prototype-a-evolve.html
+- The prototype is a reference, not code to paste. Keep Jinja + vanilla JS + esbuild; no frameworks.
+- Work one stage per branch. Plan first, then implement, then verify against the prototype at 375px and 1200px, light and dark.
