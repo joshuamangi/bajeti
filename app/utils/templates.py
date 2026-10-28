@@ -26,13 +26,18 @@ def commafy(value, decimals=0):
         return value
 
 
-def money_text(value, decimals=None, sign=False):
+def money_text(value, decimals=None, sign=False, short=False):
     """Thousands separators and 0 or 2 decimals (0 when the amount is whole), as in Prototype A.
-    Negative amounts use a real minus sign; sign=True adds "+" to positive ones."""
+    Negative amounts use a real minus sign; sign=True adds "+" to positive ones.
+    short=True gives chart labels such as 3.4k (whole thousands from 100k)."""
     try:
         amount = Decimal(str(value)).quantize(Decimal("0.01"))
     except (InvalidOperation, TypeError, ValueError):
         return value
+    if short and abs(amount) >= 1000:
+        thousands = abs(amount) / 1000
+        body = f"{thousands:.0f}k" if abs(amount) >= 100000 else f"{thousands:.1f}".removesuffix(".0") + "k"
+        return ("−" if amount < 0 else "") + body
     if decimals is None:
         decimals = 0 if amount == amount.to_integral_value() else 2
     body = f"{abs(amount):,.{decimals}f}"
@@ -57,6 +62,25 @@ def asset(path: str) -> str:
 
 
 templates.env.globals["asset"] = asset
+
+MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August",
+               "September", "October", "November", "December"]
+
+
+def month_name(month: str) -> str:
+    """"2026-10" -> "October"."""
+    return MONTH_NAMES[int(month[5:7]) - 1]
+
+
+def shift_month(month: str, n: int) -> str:
+    y, m = divmod(int(month[:4]) * 12 + int(month[5:7]) - 1 + n, 12)
+    return f"{y}-{m + 1:02d}"
+
+
+templates.env.filters["month_name"] = month_name
+templates.env.filters["month_label"] = lambda m: f"{month_name(m)} {m[:4]}"
+templates.env.filters["short_month"] = lambda m: month_name(m)[:3]
+templates.env.globals["shift_month"] = shift_month
 
 # register filter
 templates.env.filters["commafy"] = commafy

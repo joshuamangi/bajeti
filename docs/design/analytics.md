@@ -1,6 +1,6 @@
 # Analytics page: design
 
-Status: waiting for the owner's approval. No analytics code is written before that.
+Status: approved by the owner on 2026-10-29.
 
 The approved look and behaviour is Prototype A (`design/prototype-a/bajeti-prototype-a-evolve.html`, §5.7 of `PORT-GUIDE.md`). This note covers what the prototype does not: data, endpoints, queries and how the page is built.
 

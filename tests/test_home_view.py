@@ -106,3 +106,9 @@ class TestMoneyText:
 
     def test_not_a_number_is_returned_as_is(self):
         assert money_text("abc") == "abc"
+
+    def test_short_chart_labels(self):
+        assert money_text(3360, short=True) == "3.4k"
+        assert money_text(4000, short=True) == "4k"
+        assert money_text(125000, short=True) == "125k"
+        assert money_text(950, short=True) == "950"

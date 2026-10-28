@@ -1,8 +1,8 @@
 {# Shared UI pieces for the Prototype A screens. Every amount goes through money() so the eye toggle can mask it. #}
 
-{% macro money(value, bare=False, dec=None, cls='', sign=False) -%}
-{%- set text = value | money_text(dec, sign) -%}
-<span class="sensitive{% if cls %} {{ cls }}{% endif %}{% if value is not none and (value | float) < 0 %} p-negative{% endif %}" data-value="{{ text }}">{% if not bare %}<span class="p-cur">KES</span> {% endif %}{{ text }}</span>
+{% macro money(value, bare=False, dec=None, cls='', sign=False, short=False) -%}
+{%- set text = value | money_text(dec, sign, short) -%}
+<span class="sensitive{% if cls %} {{ cls }}{% endif %}{% if value is not none and (value | float) < 0 %} p-negative{% endif %}" data-value="{{ text }}">{% if not bare and not short %}<span class="p-cur">KES</span> {% endif %}{{ text }}</span>
 {%- endmacro %}
 
 {% macro status_text(c) -%}

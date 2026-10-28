@@ -39,3 +39,17 @@ is missing.
 Rollback of the targets feature (removes the backfilled rows, then the table):
 
 docker compose exec bajeti_app alembic downgrade 877adbb8bce2
+
+## Allocation snapshots (Analytics), a7d3c2f19b40
+
+Adds `allocation_snapshots`, records the current month from today's allocations, and adds two indexes
+(`ix_expenses_user_month_category`, `ix_transfers_user_month`). Earlier months get no snapshot (owner
+decision: analytics starts from the migration date). Tested on a scratch database with the production
+schema: upgrade, downgrade (expenses kept), upgrade again; one head.
+
+Status: not yet in production. After the deploy, check `alembic current` shows a7d3c2f19b40 and record
+the date here.
+
+Rollback (drops the snapshots and the two indexes; no other data is touched):
+
+docker compose exec bajeti_app alembic downgrade 186f1cc1a7ca

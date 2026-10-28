@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import CheckConstraint, Column, DateTime, ForeignKey, Integer, Numeric, String, UniqueConstraint
+from sqlalchemy import CheckConstraint, Column, DateTime, ForeignKey, Index, Integer, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import relationship
 from data.db.db import Base
 
@@ -112,6 +112,8 @@ class Expense(Base):
     __table_args__ = (
         CheckConstraint("type IN ('spend','withdrawal')",
                         name="ck_expenses_type"),
+        # Analytics groups spending by user, month and category.
+        Index("ix_expenses_user_month_category", "user_id", "month", "category_id"),
     )
 
 
@@ -140,6 +142,10 @@ class Transfer(Base):
                                  from_category_id], back_populates="outgoing_transfers")
     to_category = relationship("Category", foreign_keys=[
                                to_category_id], back_populates="incoming_transfers")
+
+    __table_args__ = (
+        Index("ix_transfers_user_month", "user_id", "month"),
+    )
 
 
 class Allocation(Base):
@@ -193,4 +199,23 @@ class Target(Base):
     __table_args__ = (
         UniqueConstraint("budget_id", "category_id",
                          name="uq_budget_category_target"),
+    )
+
+
+class AllocationSnapshot(Base):
+    """A category's allocation in one month, so analytics compares each month with what was
+    allocated then. Recorded from the live allocations while the month is current."""
+    __tablename__ = "allocation_snapshots"
+
+    id = Column(Integer, primary_key=True)
+    budget_id = Column(Integer, ForeignKey(
+        "budgets.id", ondelete="CASCADE"), nullable=False)
+    category_id = Column(Integer, ForeignKey(
+        "categories.id", ondelete="CASCADE"), nullable=False)
+    month = Column(String(7), nullable=False)
+    amount = Column(Numeric, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("budget_id", "category_id", "month",
+                         name="uq_allocation_snapshot_month"),
     )

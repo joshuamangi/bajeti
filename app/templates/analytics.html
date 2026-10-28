@@ -1,28 +1,302 @@
 {% extends "base.html" %}
+{% from "_ui.html" import money, empty_box, budget_switcher %}
 
-{% block title %}
-Under Construction - Bajeti
-{% endblock %}
+{% block title %}Analytics{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{{ asset('css/analytics.css') }}">{% endblock %}
+
+{% macro pct(value) -%}{{ '%.0f' | format(value or 0) }}%{%- endmacro %}
+
+{# Bars per month with an optional budget line; every chart also has a table. #}
+{% macro trend_chart(points, active, budget, href_prefix, href_suffix, caption, compact=False) -%}
+{% set values = points | map(attribute='spent') | map('float') | list %}
+{% set top = (([budget or 0] + values) | max) * 1.25 %}
+{% set top = top if top > 0 else 1 %}
+<div class="p-trend-plot{{ ' is-compact' if compact }}" role="group" aria-label="{{ caption }}">
+  {% if budget %}<div class="p-trend-budget" style="bottom:{{ budget / top * 100 }}%"><span>Budget {{ money(budget, short=True) }}</span></div>{% endif %}
+  {% for p in points %}
+  <a class="p-trend-col{{ ' is-active' if p.month == active }}" href="{{ href_prefix }}{{ p.month }}{{ href_suffix }}" {% if p.month == active %}aria-current="true"{% endif %}>
+    <span class="p-trend-val">{{ money(p.spent, short=True) }}</span>
+    <span class="p-trend-bar" style="height:{{ [(p.spent | float) / top * 100, 1] | max }}%"></span>
+    <span class="p-trend-label" aria-hidden="true">{{ p.month | short_month }}</span>
+    <span class="p-visually-hidden">{{ p.month | month_label }}{{ ', selected' if p.month == active }}</span>
+  </a>
+  {% endfor %}
+</div>
+<details class="p-a11y-table">
+  <summary>Show as table</summary>
+  <table class="p-table">
+    <caption class="p-visually-hidden">{{ caption }}</caption>
+    <thead><tr><th scope="col">Month</th><th scope="col" class="p-num">Spent</th><th scope="col" class="p-num">Budget</th><th scope="col" class="p-num">Left</th></tr></thead>
+    <tbody>
+      {% for p in points %}
+      {% set b = p.budgeted if p.budgeted is defined else p.allocated %}
+      <tr><th scope="row">{{ p.month | month_label }}</th><td class="p-num">{{ money(p.spent) }}</td>
+        <td class="p-num">{% if b is not none %}{{ money(b) }}{% else %}No data{% endif %}</td>
+        <td class="p-num">{% if b is not none %}{{ money((b | float) - (p.spent | float)) }}{% else %}–{% endif %}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</details>
+{%- endmacro %}
+
+{% macro period_nav(current) -%}
+<nav class="p-segmented p-period" aria-label="Analytics period">
+  <a href="/analytics/{{ this_month }}" {% if current == 'month' %}aria-current="page"{% endif %}>Month</a>
+  <a href="/analytics/trends" {% if current == 'trends' %}aria-current="page"{% endif %}>6 months</a>
+  <a href="/analytics/year/{{ this_month[:4] }}" {% if current == 'year' %}aria-current="page"{% endif %}>Year</a>
+</nav>
+{%- endmacro %}
 
 {% block content %}
-<section class="p-login">
-  <div class="p-register-container p-under-construction">
-    <h1 class="p-input-header">
-      <i class="fa fa-wrench"></i> Under Construction
-    </h1>
+{% set b = budget_details %}
+<div class="p-page p-analytics">
+  {% if all_budgets | length > 1 and view != 'category' %}
+  <div class="p-scope"><p class="p-scope-label">Showing</p>{{ budget_switcher(all_budgets, b.id if b else None) }}</div>
+  {% endif %}
 
-    <div class="p-signin-details p-center-text">
-      <p class="p-text-muted">
-        We're working hard to bring you something amazing.<br />
-        Please check back soon!
-      </p>
+  {% if not b %}
+  <h1>Analytics</h1>
+  {% call empty_box('fa-chart-simple', 'Nothing to analyse yet', 'Add a budget and a few expenses and your monthly picture appears here.') %}
+  <a class="p-btn-primary" href="/budgets"><i class="fa fa-plus" aria-hidden="true"></i> Create a budget</a>
+  {% endcall %}
 
-      <div class="p-btn-group">
-        <a href="/" class="p-login-button p-warning-btn">
-          <i class="fa fa-home"></i> Back to Home
-        </a>
-      </div>
-    </div>
+  {% elif not data %}
+  {% if view != 'category' %}{{ period_nav(view) }}{% endif %}
+  <div class="p-state-error" role="alert">
+    <i class="fa fa-circle-exclamation" aria-hidden="true"></i>
+    <h2>Couldn't load analytics</h2>
+    <p>The server didn't answer. Nothing was changed and your data is safe.</p>
+    <a class="p-btn-primary" href=""><i class="fa fa-rotate-right" aria-hidden="true"></i> Try again</a>
+    <p class="p-small">Error {{ error_code }}</p>
   </div>
-</section>
+
+  {% elif view == 'month' %}
+  {% set d = data %}
+  {% set sav = d.budget.type == 'savings' %}
+  {% set word = 'Withdrawn' if sav else 'Spent' %}
+  {{ period_nav('month') }}
+  <div class="p-month-nav">
+    {% if d.has_previous %}<a class="p-actions-btns p-actions-btns-primary" href="/analytics/{{ shift_month(d.month, -1) }}" aria-label="Previous month"><i class="fa fa-chevron-left" aria-hidden="true"></i></a>
+    {% else %}<button type="button" class="p-actions-btns p-actions-btns-primary" disabled aria-label="Previous month"><i class="fa fa-chevron-left" aria-hidden="true"></i></button>{% endif %}
+    <h1 class="p-month-title">{{ d.month | month_label }}</h1>
+    {% if d.month < this_month %}<a class="p-actions-btns p-actions-btns-primary" href="/analytics/{{ shift_month(d.month, 1) }}" aria-label="Next month"><i class="fa fa-chevron-right" aria-hidden="true"></i></a>
+    {% else %}<button type="button" class="p-actions-btns p-actions-btns-primary" disabled aria-label="Next month"><i class="fa fa-chevron-right" aria-hidden="true"></i></button>{% endif %}
+  </div>
+
+  {% if not d.categories %}
+  {% call empty_box('fa-layer-group', 'No categories yet', d.budget.name ~ ' has no categories yet. Add some and your monthly picture appears here.') %}
+  <a class="p-btn-primary" href="/budgets">Open Budgets</a>
+  {% endcall %}
+  {% else %}
+  <section class="p-stat-grid" aria-label="Month totals">
+    <div class="p-stat">
+      <span class="p-stat-label">{{ word }} · {{ d.budget.name }}</span>
+      <strong class="p-stat-value">{{ money(d.spent) }}</strong>
+      <span class="p-small">{% if sav %}Withdrawals from {{ d.budget.name }} this month.{% else %}Spending in {{ d.budget.name }} only. Other budgets and savings withdrawals are not counted.{% endif %}</span>
+    </div>
+    <div class="p-stat">
+      <span class="p-stat-label">Budgeted</span>
+      {% if d.budgeted is not none %}
+      {% set left = (d.budgeted | float) - (d.spent | float) %}
+      <strong class="p-stat-value">{{ money(d.budgeted, bare=True) }}</strong>
+      <span class="p-small">{{ pct(d.used_percent) }} used · {% if left >= 0 %}{{ money(left, bare=True) }} left{% else %}{{ money(-left, bare=True) }} over{% endif %}</span>
+      {% else %}
+      <strong class="p-stat-value">No data</strong>
+      <span class="p-small">No allocation was recorded for this month.</span>
+      {% endif %}
+    </div>
+    <div class="p-stat">
+      <span class="p-stat-label">vs {{ shift_month(d.month, -1) | month_name }}</span>
+      {% if d.previous %}
+      {% set diff = (d.spent | float) - (d.previous.spent | float) %}
+      {% set change = (diff / (d.previous.spent | float) * 100) | abs %}
+      <strong class="p-stat-value {{ 'p-up' if diff > 0 else 'p-down' }}"><i class="fa {{ 'fa-arrow-trend-up' if diff > 0 else 'fa-arrow-trend-down' }}" aria-hidden="true"></i> {{ pct(change) }} {{ 'more' if diff > 0 else 'less' }}</strong>
+      <span class="p-small">{{ money(diff | abs, bare=True) }} {{ 'more' if diff > 0 else 'less' }} than {{ money(d.previous.spent, bare=True) }}</span>
+      {% else %}
+      <strong class="p-stat-value">No data</strong>
+      <span class="p-small">Nothing recorded last month</span>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="p-card">
+    <div class="p-section-head"><h2>{{ 'Withdrawals' if sav else 'Spending' }} by month</h2><span class="p-small">Tap a month</span></div>
+    {{ trend_chart(d.last6, d.month, (d.budgeted | float) if d.budgeted is not none else 0, '/analytics/', '', d.budget.name ~ ': ' ~ ('withdrawals' if sav else 'spending') ~ ' by month compared with the budget') }}
+  </section>
+
+  <section class="p-card">
+    <div class="p-section-head"><h2>Budget vs actual</h2><span class="p-small">Tap for expenses</span></div>
+    {% set rows = d.categories | selectattr('spent', 'ne', '0.00') | list + d.categories | selectattr('spent', 'equalto', '0.00') | rejectattr('allocated', 'none') | list %}
+    {% if rows %}
+    <ul class="p-breakdown">
+      {% for r in rows %}
+      {% set ap = r.allocation_percent %}
+      <li><a class="p-breakdown-row" href="/analytics/{{ d.month }}/{{ r.id }}">
+        <span class="p-breakdown-top"><span class="p-category-name">{{ r.name }}</span><span class="p-breakdown-amt">{{ money(r.spent) }}</span></span>
+        <span class="p-progress-bar" aria-hidden="true"><span class="p-progress-fill {{ 'p-exceeded-fill' if r.over else ('p-zero-fill' if ap is not none and ap >= 100 else 'p-ok-fill') }}" style="width:{{ [ap or 0, 100] | min }}%"></span></span>
+        <span class="p-breakdown-meta"><span>{{ pct(r.share_percent) }} of {{ 'withdrawals' if sav else 'spending' }}</span>
+          <span>{% if r.allocated is not none %}{{ pct(ap) }} of {{ money(r.allocated, bare=True) }}{% if r.over %} · over{% endif %}{% else %}No allocation recorded{% endif %}</span></span>
+        <i class="fa fa-chevron-right p-breakdown-chev" aria-hidden="true"></i></a></li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="p-category-progress-no-content">No {{ 'withdrawals' if sav else 'spending' }} this month.</p>
+    {% endif %}
+  </section>
+
+  {% if d.changes %}
+  <section class="p-card">
+    <div class="p-section-head"><h2>Biggest changes vs {{ shift_month(d.month, -1) | month_name }}</h2></div>
+    <ul class="p-category-progress-ul">
+      {% for r in d.changes %}
+      {% set up = (r.delta | float) > 0 %}
+      <li class="p-category-progress-li"><span><b>{{ r.name }}</b><small>{{ money(r.previous, bare=True) }} → {{ money(r.spent, bare=True) }}</small></span>
+        <span class="{{ 'p-up' if up else 'p-down' }}"><i class="fa {{ 'fa-arrow-up' if up else 'fa-arrow-down' }}" aria-hidden="true"></i> {{ money((r.delta | float) | abs, bare=True) }} {{ 'more' if up else 'less' }}</span></li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+  {% endif %}
+
+  {% elif view == 'trends' %}
+  {% set d = data %}
+  {{ period_nav('trends') }}
+  <div><h1>Last 6 months</h1><p class="p-small p-muted">{{ d.months[0] | month_label }} to {{ d.months[-1] | month_label }} · {{ d.budget.name }}</p></div>
+  {% if not d.categories or not (d.categories | selectattr('months') | list) %}
+  {% call empty_box('fa-chart-simple', 'Not enough history yet', 'After a couple of months of expenses, this shows which categories keep running short.') %}{% endcall %}
+  {% else %}
+  <section class="p-card p-block" aria-labelledby="pSqH">
+    <div class="p-section-head"><h2 id="pSqH">Squeezed categories</h2></div>
+    {% if d.squeezed %}
+    <ul class="p-insights">
+      {% for r in d.squeezed[:4] %}
+      <li><a class="p-insight" href="/analytics/{{ this_month }}/{{ r.id }}">
+        <span class="p-insight-top"><span class="p-category-name">{{ r.name }}</span><span class="p-tag p-tag-danger"><i class="fa fa-caret-up" aria-hidden="true"></i> Over {{ r.over }} of {{ r.months }} months</span></span>
+        <span class="p-small">Averages {{ money(r.average, bare=True, dec=0) }} against {{ money(r.allocated, bare=True) }} ({{ pct(r.average_percent) }}){% if r.top_ups %} · topped up {{ r.top_ups }} time{{ 's' if r.top_ups > 1 }} with {{ money(r.topped_up, bare=True) }}{% else %} · never topped up{% endif %}{% if r.uncovered %} · ended over {{ r.uncovered }} time{{ 's' if r.uncovered > 1 }}{% endif %}</span>
+        <span class="p-insight-tip"><i class="fa fa-lightbulb" aria-hidden="true"></i> {% if r.suggested %}Consider allocating about {{ money(r.suggested, bare=True) }}{% else %}The average fits; the overruns are one-off months{% endif %}</span>
+      </a></li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="p-category-progress-no-content">No category went over its allocation more than once in these 6 months.</p>
+    {% endif %}
+    {% if d.room_to_spare %}
+    <p class="p-small"><b>Room to spare:</b> {% for r in d.room_to_spare[:3] %}{{ r.name }} uses {{ pct(r.average_percent) }} on average{% if (r.gave | float) > 0 %} and gave {{ money(r.gave, bare=True) }} to other categories{% endif %}{{ '; ' if not loop.last else '.' }}{% endfor %}</p>
+    {% endif %}
+  </section>
+
+  <section class="p-card p-block" aria-labelledby="pHeatH">
+    <div class="p-section-head"><h2 id="pHeatH">Month by month</h2></div>
+    <p class="p-small p-muted">% of the allocation used each month. Tap a name for its history. Months before allocations were recorded show the amount only.</p>
+    <div class="p-heat-wrap">
+      <table class="p-heat">
+        <caption class="p-visually-hidden">Percent of allocation used per category, {{ d.months[0] | month_label }} to {{ d.months[-1] | month_label }}</caption>
+        <thead><tr><th scope="col"><span class="p-visually-hidden">Category</span></th>{% for m in d.months %}<th scope="col">{{ m | short_month }}</th>{% endfor %}</tr></thead>
+        <tbody>
+          {% for r in d.order %}
+          <tr><th scope="row"><a href="/analytics/{{ this_month }}/{{ r.id }}">{{ r.name }}</a></th>
+            {% for x in r.cells %}
+            {% if not x.active %}
+            <td class="is-empty"><span aria-hidden="true">–</span><span class="p-visually-hidden">no activity</span></td>
+            {% elif x.percent is none %}
+            <td><span class="p-small">{{ money(x.spent, short=True) }}</span><span class="p-visually-hidden"> spent, no allocation recorded</span></td>
+            {% else %}
+            {% set n = x.transfers_in.count %}
+            <td class="{{ 'is-over' if x.over else ('is-tight' if x.tight) }}">{{ '%.0f' | format(x.percent) }}{% if x.over %}<i class="fa fa-caret-up p-heat-up" aria-hidden="true"></i>{% endif %}{% if n %}<span class="p-topup" aria-hidden="true">+</span>{% endif %}<span class="p-visually-hidden">% used, {{ ('over allocation, not covered' if x.uncovered else 'over allocation') if x.over else ('nearly used' if x.tight else 'within allocation') }}{% if n %}, topped up {{ n }} time{{ 's' if n > 1 }}{% endif %}</span></td>
+            {% endif %}
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <ul class="p-heat-key" aria-label="Key">
+      <li><span class="p-heat-sw is-over" aria-hidden="true"></span>Over (<i class="fa fa-caret-up" aria-hidden="true"></i>)</li>
+      <li><span class="p-heat-sw is-tight" aria-hidden="true"></span>90–99%</li>
+      <li><span class="p-topup-key" aria-hidden="true">+</span>Topped up</li>
+      <li><span aria-hidden="true">–</span> No activity</li>
+    </ul>
+  </section>
+
+  <section class="p-card p-block" aria-labelledby="pTrH">
+    <div class="p-section-head"><h2 id="pTrH">Transfers</h2></div>
+    <div class="p-two">
+      <div><h3 class="p-group-title">Topped up most</h3>
+        {% if d.topped_up_most %}<ul class="p-category-progress-ul">{% for r in d.topped_up_most[:5] %}<li class="p-category-progress-li"><span><b>{{ r.name }}</b><small>{{ r.top_ups }} top-up{{ 's' if r.top_ups > 1 }} in {{ r.months }} months</small></span><span>{{ money(r.topped_up, bare=True) }}</span></li>{% endfor %}</ul>
+        {% else %}<p class="p-category-progress-no-content">No top-ups.</p>{% endif %}</div>
+      <div><h3 class="p-group-title">Money moved from</h3>
+        {% if d.gave_most %}<ul class="p-category-progress-ul">{% for r in d.gave_most[:5] %}<li class="p-category-progress-li"><span><b>{{ r.name }}</b><small>{{ r.gave_count }} time{{ 's' if r.gave_count > 1 }}</small></span><span>{{ money(r.gave, bare=True) }}</span></li>{% endfor %}</ul>
+        {% else %}<p class="p-category-progress-no-content">None.</p>{% endif %}</div>
+    </div>
+  </section>
+  {% endif %}
+
+  {% elif view == 'year' %}
+  {% set d = data %}
+  {% set sav = d.budget.type == 'savings' %}
+  {{ period_nav('year') }}
+  <div class="p-month-nav">
+    {% if d.has_previous %}<a class="p-actions-btns p-actions-btns-primary" href="/analytics/year/{{ d.year - 1 }}" aria-label="Previous year"><i class="fa fa-chevron-left" aria-hidden="true"></i></a>
+    {% else %}<button type="button" class="p-actions-btns p-actions-btns-primary" disabled aria-label="Previous year"><i class="fa fa-chevron-left" aria-hidden="true"></i></button>{% endif %}
+    <h1 class="p-month-title">{{ d.year }}{{ ' so far' if d.year == d.current_year }}</h1>
+    {% if d.year < d.current_year %}<a class="p-actions-btns p-actions-btns-primary" href="/analytics/year/{{ d.year + 1 }}" aria-label="Next year"><i class="fa fa-chevron-right" aria-hidden="true"></i></a>
+    {% else %}<button type="button" class="p-actions-btns p-actions-btns-primary" disabled aria-label="Next year"><i class="fa fa-chevron-right" aria-hidden="true"></i></button>{% endif %}
+  </div>
+  {% if d.categories %}
+  <section class="p-stat-grid" aria-label="Year totals">
+    <div class="p-stat"><span class="p-stat-label">{{ 'Withdrawn' if sav else 'Spent' }} · {{ d.months[0].month | short_month }}–{{ d.months[-1].month | short_month }}</span><strong class="p-stat-value">{{ money(d.total, dec=0) }}</strong><span class="p-small">{{ d.budget.name }}, {{ d.months | length }} months</span></div>
+    <div class="p-stat"><span class="p-stat-label">Monthly average</span><strong class="p-stat-value">{{ money(d.monthly_average, bare=True, dec=0) }}</strong><span class="p-small">Budget {{ money(d.budgeted, bare=True) }}</span></div>
+    <div class="p-stat"><span class="p-stat-label">Busiest month</span><strong class="p-stat-value">{{ d.busiest.month | month_name }}</strong><span class="p-small">{{ money(d.busiest.spent, bare=True) }}</span></div>
+  </section>
+  <section class="p-card p-block" aria-labelledby="pYrH">
+    <div class="p-section-head"><h2 id="pYrH">By category</h2><span class="p-small">Tap for monthly detail</span></div>
+    {% set biggest = d.categories[0].total | float %}
+    <ul class="p-catbars-list p-year-list">
+      {% for r in d.categories %}
+      <li><a class="p-catbar" href="/analytics/{{ this_month }}/{{ r.id }}">
+        <span class="p-catbar-top"><span class="p-category-name">{{ r.name }}</span><span class="p-catbar-pct">{{ pct(r.share_percent) }}<span class="p-visually-hidden"> of the year</span></span><span class="p-year-amt">{{ money(r.total, bare=True, dec=0) }}</span></span>
+        <span class="p-progress-bar" aria-hidden="true"><span class="p-progress-fill p-year-fill" style="width:{{ (r.total | float) / biggest * 100 }}%"></span></span>
+        <span class="p-year-sub">Average {{ money(r.monthly_average, bare=True, dec=0) }} a month · allocation {{ money(r.allocated, bare=True) }}</span></a></li>
+      {% endfor %}
+    </ul>
+    <p class="p-small p-muted">Bar length compares categories with the biggest one. Totals count {{ 'withdrawals' if sav else 'spending only' }}.</p>
+  </section>
+  {% else %}
+  {% call empty_box('fa-calendar', 'Nothing recorded in ' ~ d.year, 'Pick another year or budget.') %}{% endcall %}
+  {% endif %}
+
+  {% elif view == 'category' %}
+  {% set d = data %}
+  {% set c = d.category %}
+  <nav class="p-crumbs" aria-label="Breadcrumb"><a href="/analytics/{{ d.month }}">{{ d.month | month_label }}</a><i class="fa fa-chevron-right" aria-hidden="true"></i><span aria-current="page">{{ c.name }}</span></nav>
+  {% set diff = (d.spent | float) - (d.previous_spent | float) %}
+  <section class="p-stat-grid">
+    <div class="p-stat"><span class="p-stat-label">{{ c.name }} in {{ d.month | month_name }}</span><strong class="p-stat-value">{{ money(d.spent) }}</strong>
+      <span class="p-small">{% if d.allocated is not none %}{{ pct(d.allocation_percent) }} of {{ money(d.allocated, bare=True) }} allocated{% else %}No allocation recorded{% endif %}{% if (d.previous_spent | float) > 0 %} · {{ money(diff, bare=True, sign=True) }} vs {{ shift_month(d.month, -1) | month_name }}{% endif %}</span></div>
+    <div class="p-stat"><span class="p-stat-label">{{ d.year }} so far</span><strong class="p-stat-value">{{ money(d.year_total, bare=True, dec=0) }}</strong><span class="p-small">Average {{ money(d.year_average, bare=True, dec=0) }} a month</span></div>
+    <div class="p-stat"><span class="p-stat-label">Last 6 months</span><strong class="p-stat-value {{ 'p-up' if d.last6.over >= 2 }}">{% if d.last6.over %}Over {{ d.last6.over }} of {{ d.last6.months }}{% else %}Never over{% endif %}</strong>
+      <span class="p-small">{% if d.last6.top_ups %}Topped up {{ d.last6.top_ups }} time{{ 's' if d.last6.top_ups > 1 }} · {{ money(d.last6.topped_up, bare=True) }}{% else %}No top-ups{% endif %}</span></div>
+  </section>
+  <section class="p-card">
+    <div class="p-section-head"><h2>{{ c.name }} in {{ d.year }}</h2></div>
+    {{ trend_chart(d.year_months, d.month, c.allocated | float, '/analytics/', '/' ~ c.id, c.name ~ ' spending by month', compact=(d.year_months | length) > 6) }}
+  </section>
+  <section class="p-card">
+    <div class="p-section-head"><h2>Expenses <span class="p-count">{{ d.expenses | length }}</span></h2></div>
+    {% if d.expenses %}
+    <ul class="p-category-progress-ul">
+      {% for e in d.expenses %}
+      <li class="p-category-progress-li"><span><b>{{ e.description or 'Expense' }}</b><small>{{ e.created_at[:10] }}</small></span><span>{{ money(e.amount) }}</span></li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="p-category-progress-no-content">No expenses in this category for the month.</p>
+    {% endif %}
+  </section>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block data %}
+<script type="application/json" id="pData">{{ page_data | tojson }}</script>
 {% endblock %}

@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from data.db.models.models import Allocation, Budget, Category, Expense, Target, Transfer
 from schema.category import CategoryAllocationCreate, CategoryBase
 from services.budget_service import BudgetService
+from services.snapshot_service import SnapshotService
 from services.target_progress import target_progress
 
 logger = logging.getLogger(__name__)
@@ -74,6 +75,10 @@ class CategoryService:
 
         if not budget:
             return []
+
+        # Keep this month's allocation history for analytics.
+        if current_month == SnapshotService.current_month():
+            SnapshotService.record_current_month(db, budget.id)
 
         category_type = budget.type  # expense OR savings
         # expense_type = "spend" if category_type == "expense" else "withdrawal"
