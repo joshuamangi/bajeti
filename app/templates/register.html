@@ -1,115 +1,26 @@
 {% extends "base_auth.html" %}
 
-{% block title %}
-Register - Bajeti
-{% endblock %}
+{% block title %}Create account{% endblock %}
+{% block subtitle %}Create an account{% endblock %}
 
 {% block content %}
-<section class="p-login">
-  <div class="p-register-container">
-    <h1 class="p-input-header">Register</h1>
-
-    {% if error %}
-    <div class="p-alert-error">
-      <span><i class="fa fa-exclamation-circle"></i></span>
-      <span>{{ error }}</span>
-    </div>
-    {% endif %}
-
-    <div id="pSnackBar">
-    </div>
-
-    <form method="POST" action="/register">
-      <div class="p-signin-details">
-        <label for="first_name">First Name</label>
-        <input
-          type="text"
-          id="first_name"
-          name="first_name"
-          placeholder="Enter First Name"
-          value="{{ first_name | default('') }}"
-          required
-        />
-
-        <label for="last_name">Last Name</label>
-        <input
-          type="text"
-          id="last_name"
-          name="last_name"
-          placeholder="Enter Last Name"
-          value="{{ last_name | default('') }}"
-          required
-        />
-
-        <label for="email">Email</label>
-        <input
-          type="email"
-          id="email"
-          name="email"
-          placeholder="Enter Email"
-          value="{{ email | default('') }}"
-          required
-        />
-
-        <label for="security_answer">
-          What was your childhood best friend's name?
-        </label>
-        <input
-          type="text"
-          id="security_answer"
-          name="security_answer"
-          placeholder="Enter Security Answer"
-          value="{{ security_answer | default('') }}"
-          required
-        />
-
-        <label for="password">Password</label>
-        <div class="p-password-field">
-          <input
-            type="password"
-            id="password"
-            name="password"
-            placeholder="Enter Password"
-            required
-          />
-          <i class="fa fa-eye p-eye-toggle" id="togglePassword"></i>
-        </div>
-
-        <label for="confirm_password">Confirm Password</label>
-        <div class="p-password-field">
-          <input
-            type="password"
-            id="confirm_password"
-            name="confirm_password"
-            placeholder="Confirm Password"
-            required
-          />
-          <i class="fa fa-eye p-eye-toggle" id="toggleConfirm"></i>
-        </div>
-
-        <div id="message" class="p-password-message"></div>
-
-        <button type="submit" class="p-login-button" id="registerBtn">
-          <span class="p-btn-text">Register</span>
-          <span class="p-btn-spinner" style="display: none">
-            <i class="fa fa-spinner fa-spin"></i>
-          </span>
-        </button>
-
-        <div class="p-auth-links">
-          <p>
-            Already have a login?
-            <a class="p-links" href="/login">Login</a>
-          </p>
-          <p>
-            Change Password?
-            <a class="p-links" href="/forgot_password">Reset Password</a>
-          </p>
-        </div>
-      </div>
-    </form>
+<form method="POST" action="/register" class="p-auth-card" data-match="password,confirm_password">
+  <div class="p-form-row">
+    <label class="p-field"><span>First name</span><input name="first_name" value="{{ first_name | default('') }}" autocomplete="given-name" required></label>
+    <label class="p-field"><span>Last name</span><input name="last_name" value="{{ last_name | default('') }}" autocomplete="family-name" required></label>
   </div>
-</section>
-
-<script src="/static/js/register.js"></script>
+  <label class="p-field"><span>Email</span><input name="email" type="email" value="{{ email | default('') }}" autocomplete="email" required></label>
+  <label class="p-field"><span>Security question: what was your childhood best friend's name?</span><input name="security_answer" autocomplete="off" required></label>
+  <div class="p-field">
+    <label for="pPassword">Password</label>
+    <div class="p-pass">
+      <input id="pPassword" name="password" type="password" autocomplete="new-password" required>
+      <button type="button" data-act="toggle-pass" aria-label="Show password" aria-pressed="false"><i class="fa fa-eye" aria-hidden="true"></i></button>
+    </div>
+  </div>
+  <label class="p-field"><span>Confirm password</span><input name="confirm_password" type="password" autocomplete="new-password" required></label>
+  <p class="p-error-text" data-err aria-live="polite"></p>
+  <button type="submit" class="p-btn-primary p-btn-block">Create account</button>
+  <a class="p-link" href="/login">I already have an account</a>
+</form>
 {% endblock %}

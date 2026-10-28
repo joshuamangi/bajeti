@@ -1,64 +1,21 @@
 {% extends "base_auth.html" %}
 
-{% block title %}
-Login - Bajeti
-{% endblock %}
+{% block title %}Log in{% endblock %}
 
 {% block content %}
-<section class="p-login">
-  <div class="p-login-container">
-    <h1 class="p-input-header">Sign In</h1>
-
-    {% if error %}
-    <div class="p-alert-error">
-      <span><i class="fa fa-exclamation-circle"></i></span>
-      <span>{{ error }}</span>
-    </div>
-    {% endif %}
-
-    <form method="POST" action="/login">
-      <div class="p-signin-details">
-        <label for="username">Email</label>
-        <input
-          type="email"
-          id="username"
-          name="username"
-          placeholder="Enter Email"
-          required
-        />
-
-        <label for="password">Password</label>
-        <input
-          type="password"
-          id="password"
-          name="password"
-          placeholder="Enter Password"
-          required
-        />
-
-        <button type="submit" class="p-login-button" id="loginBtn">
-          <span class="p-btn-text">Login</span>
-          <span class="p-btn-spinner" style="display: none;">
-            <i class="fa fa-spinner fa-spin"></i>
-          </span>
-        </button>
-      </div>
-    </form>
-
-    <div class="p-auth-links">
-      {% if registration_open() %}
-      <p>
-        Don't have an account?
-        <a class="p-links" href="/register">Register</a>
-      </p>
-      {% endif %}
-      <p>
-        Change Password?
-        <a class="p-links" href="/forgot_password">Reset Password</a>
-      </p>
+<form method="POST" action="/login" class="p-auth-card">
+  <label class="p-field"><span>Email</span><input name="username" type="email" autocomplete="username" required></label>
+  <div class="p-field">
+    <label for="pPassword">Password</label>
+    <div class="p-pass">
+      <input id="pPassword" name="password" type="password" autocomplete="current-password" required>
+      <button type="button" data-act="toggle-pass" aria-label="Show password" aria-pressed="false"><i class="fa fa-eye" aria-hidden="true"></i></button>
     </div>
   </div>
-</section>
-
-<script src="/static/js/login.js"></script>
+  <button type="submit" class="p-btn-primary p-btn-block">Log in</button>
+  <div class="p-auth-links">
+    <a class="p-link" href="/forgot_password">Forgot password?</a>
+    {% if registration_open() %}<a class="p-link" href="/register">Create account</a>{% endif %}
+  </div>
+</form>
 {% endblock %}

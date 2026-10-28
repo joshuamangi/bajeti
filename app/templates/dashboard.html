@@ -1,1176 +1,177 @@
 {% extends "base.html" %}
+{% from "_ui.html" import money, status_text, empty_box, budget_switcher, progress, target_terms %}
+
+{% block title %}Home{% endblock %}
+
 {% block content %}
-{# #pDetailCards { display: none; }#}
-
-{# Security question warning (auto-dismiss after 20s) #}
-{% if user.security_answer is none or user.security_answer == '' %}
-<div class="p-alert-warning" role="alert" id="securityWarning" class="p-security-alert">
-  <i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
-  <strong style="margin-left:.5rem">Important:</strong>
-  <span style="margin-left:.5rem">Please set your <em>Security Question</em> from your Profile (☰ → Account → Profile) to help protect your account and enable password recovery.</span>
-  <button id="closeSecurityWarning" class="p-security-btn">×</button>
-</div>
-{% endif %}
-
-{# Generic error alert (server-provided) #}
-{% if error %}
-<div class="p-alert-error" role="alert" class="p-security-alert-error">
-  <i class="fa fa-exclamation-circle"></i>
-  <span style="margin-left:.5rem">{{ error }}</span>
-</div>
-{% endif %}
-
-<!-- Title + toggles -->
-<div class="p-title-card">
-  <h1>{{ current_month }}'s Budget</h1>
-  <div class="p-welcome-visibility">
+{% set b = budget_details %}
+{% set v = home %}
+<div class="p-home">
+  <section class="p-title-card">
     <div>
-      <p class="p-welcome-text">Welcome, {{ user.first_name }} {{ user.last_name }}</p>
+      <h1>{{ current_month }}'s Budget</h1>
+      <p>Welcome, {{ user.first_name }} {{ user.last_name }}</p>
     </div>
-    <div  class="p-visibility">
-      <button id="toggleVisibility" class="p-actions-btns p-actions-btns-primary" title="Hide/Show sensitive values"><i id="eyeIcon" class="fa fa-eye"></i></button>
-    </div>
+    <button type="button" class="p-eye-toggle" data-act="eye" aria-pressed="false" aria-label="Hide amounts" title="Hide amounts"><i class="fa fa-eye" aria-hidden="true"></i></button>
+  </section>
+
+  {% if not user.has_security_answer %}
+  <div class="p-alert-warning" role="note" data-dismiss-key="secq">
+    <i class="fa fa-triangle-exclamation" aria-hidden="true"></i>
+    <p>Add a security question so you can reset your password without help. <a class="p-link-btn" href="/profile">Set it now</a></p>
+    <button type="button" class="p-alert-close" data-act="alert-dismiss" aria-label="Dismiss this warning">&times;</button>
   </div>
-</div>
+  {% endif %}
 
-<div id="pSnackBar">
-</div>
-
-<!-- Summary & Add Category -->
-<section>
-  {% set total_limit = categories_with_stats | sum(attribute='allocated_amount') %}
-  {% set total_balance = categories_with_stats | sum(attribute='balance') %}
-  {% set total_used = total_limit - total_balance %}
-  {% set progress_percent = (total_used / total_limit * 100) if total_limit > 0 else 0 %}
-  
-  <!-- <div class="p-summary-progress-bar">
-    <div class="p-summary-progress-fill" 
-          style="width: {{ progress_percent }}%;">
-    </div>
-  </div> -->
-  <p style="margin-left: 0.8em; font-weight: 600; margin-top: 0.4em; margin-bottom: 0.4em;"> Active</p>
-  <div class="p-summary-card">
-    <div class="p-summary-cards">
-      <div onclick="generateModal('pBudgetModal','pBudgetClose','')">
-        <p>{{ budget_details.name }} Budget</p>
-        {% if budget_details and budget_details.amount %}
-          <h3 class="p-summary-value sensitive">{{budget_details.amount | commafy(2)}}</h3>
-        {% else %}
-          <h3 class="p-summary-value">0.00</h3>
-        {% endif %}
+  <div class="p-home-main">
+    {% if b %}
+    <section class="p-block" aria-labelledby="pActiveH">
+      <div class="p-section-head"><h2 id="pActiveH">Active</h2><a class="p-link" href="/budgets">All budgets</a></div>
+      {{ budget_switcher(all_budgets, b.id) }}
+      <div class="p-summary-card">
+        <div class="p-summary-cards">
+          <span class="p-summary-label">{{ 'Savings Budget' if v.savings else b.name ~ ' Budget' }}</span>
+          <h3 class="p-summary-value">{{ money(b.amount) }}</h3>
+          <span class="p-small">{{ money(v.unallocated, bare=True) }} unallocated</span>
+        </div>
+        <div class="p-summary-cards">
+          <span class="p-summary-label">{{ 'Total Saved' if v.savings else 'Total Balance' }}</span>
+          <h3 class="p-summary-value {{ 'p-negative' if v.balance < 0 }}">{{ money(v.balance) }}</h3>
+          <span class="p-small">{{ money(v.used, bare=True) }} {{ 'withdrawn' if v.savings else 'spent' }}</span>
+        </div>
       </div>
-    </div>
-    <div class="p-summary-cards">
-        <p>Total Balance</p>
-        <h3 class="p-summary-value sensitive {% if categories_with_stats | sum(attribute='balance') < 0 %} p-negative {% endif %}" data-value="{{ categories_with_stats | sum(attribute='balance') | commafy(2)}}">
-            {{ categories_with_stats | sum(attribute='balance') | commafy(2) }}
-        </h3>
-    </div>
-  </div>
-  <div style="border-bottom: 0.4em solid var(--border-muted); margin: 0.1em 0.6em; 0em 0.6em;">
-  </div>
-</section>
+      {% set m = v.meter %}
+      <div class="p-meter">
+        <div class="p-meter-top"><span>{{ 'Withdrawn' if v.savings else 'Spent' }} this month</span><b>{{ m.percent | round | int }}%</b></div>
+        <div class="p-meter-track">
+          <div class="p-progress-bar p-progress-lg" role="progressbar" aria-label="Share of allocation {{ 'withdrawn' if v.savings else 'spent' }}" aria-valuenow="{{ m.percent | round | int }}" aria-valuemin="0" aria-valuemax="100">
+            <span class="p-progress-fill {{ 'p-exceeded-fill' if m.percent > 100 else 'p-ok-fill' }}" style="width:{{ [m.percent, 100] | min }}%"></span>
+          </div>
+          {% if not v.savings %}<span class="p-today-mark" style="left:{{ m.month_percent }}%" aria-hidden="true"></span>{% endif %}
+        </div>
+        <div class="p-meter-foot">
+          <span>{{ money(v.used, bare=True, dec=0) }} of {{ money(v.allocated, bare=True, dec=0) }}</span>
+          {% if v.savings %}
+          <span>{{ m.days_left }} day{{ '' if m.days_left == 1 else 's' }} left</span>
+          {% else %}
+          <span><span class="p-today-key" aria-hidden="true"></span>Today, day {{ m.day }} of {{ m.days }}</span>
+          {% endif %}
+        </div>
+        {% if m.pace == 'bad' %}<span class="p-pace bad"><i class="fa fa-circle-exclamation" aria-hidden="true"></i> Over budget</span>
+        {% elif m.pace == 'warn' %}<span class="p-pace warn"><i class="fa fa-gauge-high" aria-hidden="true"></i> Ahead of the month</span>
+        {% elif m.pace == 'ok' %}<span class="p-pace ok"><i class="fa fa-circle-check" aria-hidden="true"></i> On track</span>{% endif %}
+      </div>
+    </section>
 
-<!-- Budgets -->
-<section>
-  <div class="p-budget-create-container">
-    <p style="margin-left: 0.8em; font-weight: 600; margin-top: 0.4em; margin-bottom: 0.4em;"> Budgets</p>
-    <button class="p-budget-create-btn p-actions-btns-primary" id="launchCreateBudget" onclick="generateModal('pBudgetCreateModal','pBudgetCreateModalClose','closeBudgetCreateModalBtn')"><i class="fa-solid fa-plus"></i></button>
-  </div>
+    <hr class="p-divider">
 
-
-  <!-- Budget Container -->
-  <div class="p-budgets-container" style="max-height: 150px; overflow-y: auto; padding: 0.4em;">
-    <!-- Savings Container -->
-    {% set savings_budgets = all_budgets | selectattr("type", "equalto", "savings") | list %}
-    <div class="p-budgets-containers">
-      <div>
-  <p class="p-budget-title">
-    Savings <span class="p-budget-total sensitive">Total: {{ total_savings_amount | commafy(0)}}</span> 
-  </p>
-</div>
-
-      <div class="p-budget-items">
-        {% if savings_budgets %}
-          {% for budget in savings_budgets %}
-            <div class="p-budget-item">
-              <div class="p-budget-item-containers">
-
-                <div class="p-budget-item-container" style="flex:2;">
-                  <input
-                    type="radio"
-                    id="budget-sav-{{ budget.id }}"
-                    name="selected_budget"
-                    value="/dashboard?budget_id={{ budget.id }}"
-                    onchange="window.location.href=this.value"
-                    {% if budget_details.id == budget.id %}checked{% endif %}
-                  >
-                  <label for="budget-sav-{{ budget.id }}">
-                    {{ budget.name }}
-                  </label>
-                </div>
-
-                <div class="p-budget-item-container" style="flex:1;">
-                  <div style="display:flex; gap:0.4em;">
-                    <button class="p-icon-btn-warning"
-                            onclick="generateModal('pBudgetEditModal{{ budget.id }}','pEditBudgetClose{{ budget.id }}','')">
-                      <i class="fa fa-pencil"></i>
-                    </button>
-
-                    <form method="POST"
-                          action="/dashboard/{{ budget.id }}/delete"
-                          onsubmit="return confirmSubmit(this,'Delete Budget?')"
-                          style="margin:0;">
-                      <button class="p-icon-btn-danger">
-                        <i class="fa fa-trash"></i>
-                      </button>
-                    </form>
-                  </div>
-                </div>
-
-              </div>
-            </div>
+    <section class="p-block" aria-labelledby="pCatH">
+      <div class="p-section-head">
+        <h2 id="pCatH">Categories</h2>
+        <span class="p-row-actions">
+          <a class="p-btn-ghost p-btn-icon" href="/budgets" aria-label="Allocations and targets" title="Allocations and targets"><i class="fa fa-sliders" aria-hidden="true"></i></a>
+          <button type="button" class="p-btn-ghost" data-act="cat-new"><i class="fa fa-plus" aria-hidden="true"></i> Category</button>
+        </span>
+      </div>
+      {% if v.categories %}
+      <div class="p-catbars">
+        <p class="p-catbars-note">Most used first · tap a category to view or add expenses</p>
+        <ul class="p-catbars-list" aria-label="Categories, most used first">
+          {% for c in v.chart %}
+          <li {% if loop.index > 8 %}class="p-cat-extra" hidden{% endif %}>
+            <button type="button" class="p-catbar" data-act="cat" data-id="{{ c.id }}">
+              <span class="p-catbar-top">
+                <span class="p-category-name">{{ c.name }}</span>
+                <span class="p-catbar-pct">{{ c.percent | round | int }}%<span class="p-visually-hidden"> {{ 'withdrawn' if c.savings else 'used' }},</span></span>
+                <span class="p-category-status {{ c.status }}">{% if c.status == 'exceeded' %}<i class="fa fa-triangle-exclamation" aria-hidden="true"></i> {% endif %}{{ status_text(c) }}</span>
+              </span>
+              {{ progress(c.percent, c.status) }}
+            </button>
+          </li>
           {% endfor %}
-        {% else %}
-          <div class="p-category-item" style="font-size: 0.8em; font-weight: 500; height: 45px; text-align: center; align-content: center;">Create Savings Budgets</div>
+        </ul>
+        {% if v.chart | length > 8 %}
+        <button type="button" class="p-catbars-more" data-act="cats-all" aria-expanded="false" data-count="{{ v.chart | length }}">Show all {{ v.chart | length }} categories <i class="fa fa-chevron-down" aria-hidden="true"></i></button>
         {% endif %}
       </div>
-    </div>
 
-
-    <!-- Expenses Container -->
-     {% set expense_budgets = all_budgets | selectattr("type", "equalto", "expense") | list %}
-      <div class="p-budgets-containers">
-        <div>
-          <p class="p-budget-title">
-            Expense <span class="p-budget-total sensitive">Total: {{ total_expense_amount | commafy(0)}}</span> 
-          </p>
-        </div>
-
-        <div class="p-budget-items">
-          {% if expense_budgets %}
-            {% for budget in expense_budgets %}
-              <div class="p-budget-item">
-                <div class="p-budget-item-containers">
-
-                  <div class="p-budget-item-container" style="flex:2;">
-                    <input
-                      type="radio"
-                      id="budget-{{ budget.id }}"
-                      name="selected_budget"
-                      value="/dashboard?budget_id={{ budget.id }}"
-                      onchange="window.location.href=this.value"
-                      {% if budget_details.id == budget.id %}checked{% endif %}
-                    >
-                    <label for="budget-{{ budget.id }}">
-                      {{ budget.name }}
-                    </label>
-                  </div>
-
-                  <div class="p-budget-item-container" style="flex:1;">
-                    <div style="display:flex; gap:0.4em;">
-                      <button class="p-icon-btn-warning"
-                              onclick="generateModal('pBudgetEditModal{{ budget.id }}','pEditBudgetClose{{ budget.id }}','')">
-                        <i class="fa fa-pencil"></i>
-                      </button>
-
-                      <form method="POST"
-                            action="/dashboard/{{ budget.id }}/delete"
-                            onsubmit="return confirmSubmit(this,'Delete Budget?')"
-                            style="margin:0;">
-                        <button class="p-icon-btn-danger"
-                                {% if budget.name|lower == 'monthly' %}disabled{% endif %}>
-                          <i class="fa fa-trash"></i>
-                        </button>
-                      </form>
-                    </div>
-                  </div>
-
-                </div>
-              </div>
+      <div class="p-table-wrap">
+        <table class="p-table">
+          <caption class="p-visually-hidden">Categories this month</caption>
+          <thead><tr><th scope="col">Category</th><th scope="col" class="p-num">Available</th><th scope="col" class="p-num">Used</th><th scope="col" class="p-num">Balance</th><th scope="col">Status</th><th scope="col"><span class="p-visually-hidden">Actions</span></th></tr></thead>
+          <tbody>
+            {% for c in v.table %}
+            <tr>
+              <th scope="row"><button type="button" class="p-link-btn" data-act="cat" data-id="{{ c.id }}">{{ c.name }}</button></th>
+              <td class="p-num">{{ money(c.available) }}</td>
+              <td class="p-num">{{ money(c.used) }}</td>
+              <td class="p-num">{{ money(c.balance) }}</td>
+              <td><span class="p-category-status {{ c.status }}">{{ 'Over' if c.status == 'exceeded' else ('Fully used' if c.status == 'zero' else 'On track') }}</span></td>
+              <td><div class="p-table-actions">
+                <button type="button" class="p-actions-btns p-actions-btns-tertiary" data-act="quick" data-id="{{ c.id }}" aria-label="Quick expense for {{ c.name }}" title="Quick Expense"><i class="fa fa-bolt" aria-hidden="true"></i></button>
+                <button type="button" class="p-actions-btns p-actions-btns-primary" data-act="add-exp" data-id="{{ c.id }}" aria-label="Add expense to {{ c.name }}" title="Add expense"><i class="fa fa-plus" aria-hidden="true"></i></button>
+                <button type="button" class="p-actions-btns p-actions-btns-warning" data-act="cat-edit" data-id="{{ c.id }}" aria-label="Edit {{ c.name }}" title="Edit"><i class="fa fa-pencil" aria-hidden="true"></i></button>
+                <button type="button" class="p-actions-btns p-actions-btns-danger" data-act="cat-del" data-id="{{ c.id }}" aria-label="Delete {{ c.name }}" title="Delete"><i class="fa fa-trash" aria-hidden="true"></i></button>
+              </div></td>
+            </tr>
             {% endfor %}
-          {% else %}
-            <div class="p-category-item" style="font-size: 0.8em; font-weight: 500; height: 45px; text-align: center; align-content: center;">Create Expense Budgets</div>
-          {% endif %}
-        </div>
+          </tbody>
+        </table>
       </div>
+      {% else %}
+      {% call empty_box('fa-layer-group', 'No categories yet', 'Split this budget into categories like Rent or Groceries to track spending.') %}
+      <button type="button" class="p-btn-primary" data-act="cat-new"><i class="fa fa-plus" aria-hidden="true"></i> Add category</button>
+      {% endcall %}
+      {% endif %}
+    </section>
+    {% else %}
+    {% call empty_box('fa-wallet', 'No budgets yet', 'Create your first budget for ' ~ current_month ~ ', then split it into categories.') %}
+    <a class="p-btn-primary" href="/budgets?new=1"><i class="fa fa-plus" aria-hidden="true"></i> Create a budget</a>
+    {% endcall %}
+    {% endif %}
   </div>
-    <div style="border-bottom: 0.4em solid var(--border-muted); margin: 1em 0.6em -0.2em 0.6em;">
-  </div>
-</section>
-<!-- <section>
-  <div class="p-add-category">
-      <button class="p-button-info" id="launchAddCategory" onclick="generateModal('pCategoryModal','pCategoryClose','closeCategoryModalBtn')">+ Add New Category</button>
-  </div>
-</section> -->
 
-<!-- Category Progress section -->
-<section>
-  <p class="p-category-progress-paragraph"> Categories</p>
-    {% if categories_with_stats|length > 0 %}
-      <div class="p-category-progress-list" style="max-height: 220px; overflow-y: auto; padding: 0.4em;">
-        {% for c in categories_with_stats %}
-          {% set used = c.used %}
-          {% set limit = c.allocated_amount %}
-          {% set balance = c.balance %}
-          {% set exceeded = balance < 0 %}
-          {% set percent = (used / limit * 100) if limit > 0 else 0 %}
-          {% set display_percent = percent if percent <= 100 else 100 %}
-          {% set allocated_category_ids = budget_allocations.allocations | map(attribute='category_id') | list %}
-          {% set allocated_category_ids = (budget_allocations.allocations | default([])) | map(attribute='category_id') | list %}
-          {% if c.id in allocated_category_ids %}
-            <div class="p-category-item" onclick="generateModal('categoryDetailModal{{ c.id }}','pCategoryDetailClose{{ c.id }}','')">
-              <div class="p-category-header">
-                {% if c.type == 'expense' %}
-                  <span class="p-category-name">{{ c.name }}</span>
-                  {% if balance == 0 %}
-                    <span class="sensitive p-category-status zero">
-                        No balance
-                    </span>
-                  {% elif exceeded %}
-                    <span class="sensitive p-category-status exceeded">
-                        {{ (balance * -1) | commafy(0) }} over
-                    </span>
-                  {% else %}
-                    <span class="sensitive p-category-status ok">
-                        {{ balance | commafy(0) }} left
-                    </span>
-                  {% endif %}
-                {% else %}
-                  <span class="p-category-name">{{ c.name }}</span>
-                  {% if balance == 0 %}
-                    <span class="sensitive p-category-status zero">
-                        {{ balance | commafy(0) }} left
-                    </span>
-                  {% else %}
-                    <span class="sensitive p-category-status ok">
-                        {{ balance | commafy(0) }} left
-                    </span>
-                  {% endif %}
-                {% endif %}
-                </div>
-
-                <!-- Progress bar container -->
-                {% if c.type == 'expense' %}
-                  <div class="p-progress-wrapper">
-                    <div class="p-progress-bar">
-                        <div class="p-progress-fill
-                            {% if balance == 0 %}
-                                p-zero-fill
-                            {% elif exceeded %}
-                                p-exceeded-fill
-                            {% else %}
-                                p-ok-fill
-                            {% endif %}"
-                            style="width: {{ display_percent }}%;">
-                        </div>
-                    </div>
-
-                    <span class="p-progress-percent
-                        {% if percent > 100 %}p-percent-exceeded{% endif %}">
-                        {{ percent | round(1) }}%
-                    </span>
-                  </div>
-                {% else %}
-                  {% if balance != 0 %}
-                    <div class="p-progress-wrapper">
-                      <div class="p-progress-bar">
-                          <div class="p-progress-fill p-ok-fill" style="width: 100%;">
-                          </div>
-                      </div>
-                      <span class="p-progress-percent
-                          {% if percent > 100 %}p-percent-exceeded{% endif %}">
-                          100%
-                      </span>
-                    </div>
-                  {% else %}
-                  <div class="p-progress-wrapper">
-                      <div class="p-progress-bar">
-                          <div class="p-progress-fill p-zero-fill" style="width: 100%;">
-                          </div>
-                      </div>
-                      <span class="p-progress-percent
-                          {% if percent > 100 %}p-percent-exceeded{% endif %}">
-                          {{ balance | commafy(0) }}%
-                      </span>
-                    </div>
-                  {% endif %}
-                {% endif %}
-
-            </div>
-          {% else %}
-          No Categories exist
-          {% endif %}
+  {% if b and v.categories %}
+  <div class="p-home-side">
+    <hr class="p-divider p-divider-phone">
+    {% if v.targets %}
+    <section class="p-card">
+      <div class="p-section-head"><h2>Targets progress</h2></div>
+      <div class="p-target-totals">
+        {% for key, label in [('short_term', 'Short'), ('mid_term', 'Mid'), ('long_term', 'Long')] %}
+        <div><span class="p-target-total-label">{{ label }} term</span><span class="p-target-total-value">{{ money(target_totals[key], bare=True) }}</span></div>
         {% endfor %}
       </div>
-    {% else %}
-      <div class="p-category-item" style="margin-left: 0.6em; margin-right: 0.6em; font-size: 0.8em; font-weight: 500; height: 45px; text-align: center; align-content: center;">
-        Please create and allocate Categories to this Budget
-      </div>
+      <ul class="p-target-list">
+        {% for c in v.targets %}
+        <li class="p-target-li">
+          <div class="p-target-head"><span class="p-category-name">{{ c.name }}</span><span class="p-small">{{ money(c.balance, bare=True) }} saved</span></div>
+          {{ target_terms(c.target) }}
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
     {% endif %}
-</section>
-
-<!-- DESKTOP: table view -->
-<div id="tableView" class="table-responsive">
-  <table id="categoriesTable" class="p-table" style="width:100%; border-collapse:collapse;">
-    <thead>
-      <tr style="text-align:left; border-bottom:1px solid var(--border);">
-        <th style="padding:.6rem">Category</th>
-        <th style="padding:.6rem">Limit</th>
-        <th style="padding:.6rem">Expenses</th>
-        <th style="padding:.6rem">Balance</th>
-        <th style="padding:.6rem">Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for cat in categories_with_stats %}
-      <tr style="border-bottom:1px dashed var(--border);">
-        <td style="padding:.6rem; font-weight:500;" data-label="Category">{{ cat.name }}</td>
-        <td style="padding:.6rem;" data-label="Limit"><span class="sensitive" data-value="{{ cat.allocated_amount }}">{{ cat.allocated_amount}}</span></td>
-        <td style="padding:.6rem;" data-label="Expenses">
-          <a href="#" class="p-expense-amount {% if cat.expense_count == 0 %} p-empty-exp {% endif %}" onclick="generateModal('expensesModal{{ cat.id }}','expensesClose{{ cat.id }}','')">
-            {{ cat.expense_count }}
-          </a>
-        </td>
-        <td style="padding:.6rem;" data-label="Balance">
-          <span class="sensitive {% if cat.balance < 0 %} p-negative {% endif %}" data-value="{{ cat.balance }}">
-            {% if cat.balance < 0 %} Over by {{ -cat.balance }} {% else %} Remaining {{ cat.balance }} {% endif %}
-          </span>
-        </td>
-        <td style="padding:.6rem;" data-label="Actions">
-          <div style="display:flex; gap:.4rem; flex-wrap:wrap;">
-            <form method="POST" action="/dashboard/expenses" onsubmit="return confirmSubmit(this, 'Add Quick expense of {{ cat.allocated_amount }} to {{ cat.name }}?')">
-              <input type="hidden" name="category_id" value="{{ cat.id }}">
-              <input type="hidden" name="amount" value="{{ cat.allocated_amount }}">
-              <input type="hidden" name="description" value="Quick Expense">
-              <input type="hidden" name="month" value="{{ now }}">
-              <button class="p-actions-btns p-actions-btns-primary" type="submit" title="Quick Expense"><i class="fa fa-bolt"></i></button>
-            </form>
-
-            <button class="p-actions-btns p-actions-btns-primary" title="Add Expense" onclick="generateModal('addExpenseModal{{ cat.id }}','addExpenseClose{{ cat.id }}','')"><i class="fa fa-plus"></i></button>
-
-            <button class="p-actions-btns p-actions-btns-primary" title="Edit Category" onclick="generateModal('editCategoryModal{{ cat.id }}','editCategoryClose{{ cat.id }}','')"><i class="fa fa-pencil"></i></button>
-
-            <form method="POST" action="/dashboard/categories/{{ cat.id }}/delete" onsubmit="return confirmSubmit(this, 'Delete category {{ cat.name }}?')">
-              <button class="p-actions-btns p-actions-btns-primary" type="submit" title="Delete Category"><i class="fa fa-trash"></i></button>
-            </form>
-          </div>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-
-<!-- Budget Modal -->
- <!-- This modal should only be closed by the fa-close button. Creating a category should not close this modal and closing the allocations edit should not close this modal -->
- <!-- Budget Modal -->
-{% if budget_allocations %} 
-<div class="p-modal" id="pBudgetModal">
-  <div class="p-modal-content">
-    <a href="#" id="pBudgetClose" class="p-close">
-      <i class="fa fa-close"></i>
-    </a>
-    <div class="p-modal-gap">
-      <!-- Budget Header Section -->
-      <div class="p-modal-divider">
-        <div class="p-category-header">
-          <span style="align-self: center;">
-            <h3 class="p-modal-limit-name">{{ budget_allocations.budget.name }} Budget</h3>
-          </span>
-          
-          <!-- Calculate allocation percentage (like used/limit in your example) -->
-          {% set allocation_percent = (budget_allocations.summary.total_allocated / budget_allocations.budget.amount * 100) if budget_allocations.budget.amount > 0 else 0 %}
-          {% set allocation_exceeded = allocation_percent > 100 %}
-          {% set display_percent = allocation_percent if allocation_percent <= 100 else 100 %}
-          
-          <!-- Calculate unallocated percentage (unallocated/allocated * 100) -->
-          {% set unallocated_percent = (budget_allocations.summary.unallocated / budget_allocations.summary.total_allocated * 100) if budget_allocations.summary.total_allocated > 0 else 0 %}      
-          <div style="display: flex; gap: 0.4em;">
-            <span style="align-items: center;">
-              <div onclick="generateModal('pBudgetEditModal{{ budget_details.id }}','pEditBudgetClose{{ budget_details.id }}','')"
-              style="cursor: pointer; box-shadow: var(--shadow); padding: 0.2em 0.4em 0.2em 0em;
-               background: var(--bg-light); border-radius: 0.4em; display: flex; gap: 0.2em;">
-                <p style="flex: 1;" class="p-category-limit-amount sensitive" 
-                   data-value="{{ budget_allocations.budget.amount | commafy(0) }}">
-                  {{ budget_allocations.budget.amount | commafy(0) }}
-                </p>
-                <i style="margin-left: 0.8em; font-size: 0.8em; align-self: center; color: var(--warning);" class="fa fa-pencil"></i>
-              </div>
-            </span>
-          </div>
-        </div>
-        
-        <!-- Progress Bar for ALLOCATION (like in your working example) -->
-        <div style="margin-bottom: 0.2em;" class="p-progress-bar">
-          <div class="p-progress-fill {% if allocation_exceeded %}p-exceeded-fill{% else %}p-ok-fill{% endif %}"
-               style="width: {{ display_percent }}%;">
-          </div>
-        </div>
-        <div style="font-size: 0.8em;">
-          {% if allocation_exceeded %}
-             <span class="p-category-status exceeded">
-               {{ (allocation_percent - 100) | round(1) }}% over
-             </span>
-           {% else %}
-             <span class="p-category-status ok">
-               {{ allocation_percent | round(1) }}% allocated
-             </span>
-           {% endif %}   
-        </div>
-        </div>
-      </div>
-      
-      <!-- Unallocated Amount Section -->
-      <div class="p-category-progress-transfer-divider">
-        <div class="p-modal-unallocated-container">
-          <p style="font-weight: 600;">
-            {% if budget_allocations.summary.unallocated < 0 %}
-              Over Allocated by:
-            {% else %}
-              Unallocated:
-            {% endif %}
-          </p>
-          <h4 class="sensitive {% if budget_allocations.summary.unallocated <= 0 %}p-negative{% else %}p-positive{% endif %}" 
-              data-value="{{ budget_allocations.summary.unallocated | commafy(2) }}">
-            {% if budget_allocations.summary.unallocated < 0 %}
-              {{ (-budget_allocations.summary.unallocated) | commafy(2) }}
-            {% else %}
-              {{ budget_allocations.summary.unallocated | commafy(2) }}
-            {% endif %}
-          </h4>
-        </div>
-      </div>
-      <!-- Categories Section -->
-      <!-- Categories Section - Compact -->
-      <div>
-        <div class="p-category-progress-transfer-divider">
-          <h4 style="font-size: 0.9em; color: var(--text); margin: 0 0 0.3em 0;">Category Allocation</h4>
-        </div>   
-        <div>    
-          <form action="/dashboard/categories" method="POST">
-            <div style="display: grid; grid-template-columns: 1fr 1fr 28px; gap: 0.5em; align-items: center;">
-              <input type="hidden" name="budget_id" value="{{ budget_details.id }}">
-              {% if budget_details.type == 'expense' %}
-                <input type="hidden" name="category_type" value="expense">
-              {% else %}
-                <input type="hidden" name="category_type" value="savings">
-              {% endif %}
-              <input style=" width: 100%; height: 28px; padding: 0 0.6em; box-sizing: border-box;font-family: var(--ff);
-                font-size: 0.8rem; color: var(--text);background: var(--bg-light);border: 1px solid var(--border-muted);
-                border-radius: 4px;outline: none; transition: border-color 0.15s ease;"  name="name" type="text" placeholder="Name" maxlength="16" required>
-              
-              <input style="width: 100%; height: 28px; padding: 0 0.6em; box-sizing: border-box; font-family: var(--ff);
-              font-size: 0.8rem; color: var(--text); background: var(--bg-light); border: 1px solid var(--border-muted);
-              border-radius: 4px; outline: none;"type="number" name="allocated_amount" placeholder="Amount" required>
-              
-              <button style=" width: 28px; height: 28px; padding: 0;background: var(--primary); color: var(--bg);
-                border: none; border-radius: 4px; font-size: 0.8rem; cursor: pointer;
-                display: flex; align-items: center; justify-content: center; transition: opacity 0.15s ease;" 
-              type="submit"title="Add Category"> <i class="fa fa-add"></i>
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      <!-- Allocations Section - Compact -->
-      <div style="margin-top: 0.8em;">
-        <div class="p-category-progress-transfer-divider">
-          <h4 style="font-size: 0.9em; color: var(--text); margin: 0 0 0.3em 0;">Allocations</h4>
-        </div>
-        <div>
-          <form action="/dashboard/allocations" method="POST">
-            <div style="display: grid; grid-template-columns: 1fr 1fr 28px; gap: 0.5em; align-items: center;">
-              {% set allocated_category_ids = budget_allocations.allocations | map(attribute='category_id') | list %}
-              {% set allocated_category_ids = (budget_allocations.allocations | default([])) | map(attribute='category_id') | list %}
-
-              <input type="hidden" name="budget_id" value="{{ budget_allocations.budget.id }}">
-              
-              <select style="width: 100%; height: 28px; padding: 0 0.6em; box-sizing: border-box;font-family: var(--ff);
-                font-size: 0.8rem; color: var(--text); background: var(--bg-light); border: 1px solid var(--border-muted);
-                border-radius: 4px; outline: none; cursor: pointer; appearance: none;" 
-              name="category_id" 
-              required>
-                <option value="" style="color: var(--text-muted);">Select Category</option>
-                {% for bc in budget_categories %}
-                  {% if bc.id not in allocated_category_ids %}
-                    <option value="{{ bc.id }}" style="color: var(--text);">{{ bc.name }}</option>
-                  {% endif %}
-                {% endfor %}
-              </select>
-              
-              <input style="width: 100%; height: 28px; padding: 0 0.6em; box-sizing: border-box; font-family: var(--ff);
-                font-size: 0.8rem; color: var(--text); background: var(--bg-light); border: 1px solid var(--border-muted);
-                border-radius: 4px; outline: none;"type="number" name="allocated_amount" placeholder="Amount" required>
-              
-              <button style="width: 28px; height: 28px; padding: 0; background: var(--primary); color: var(--bg);
-                border: none; border-radius: 4px; font-size: 0.8rem; cursor: pointer; display: flex;
-                align-items: center; justify-content: center; transition: opacity 0.15s ease;" 
-              type="submit"title="Add Allocation">
-                <i class="fa fa-add"></i>
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-          <!-- Allocation list will go here -->
-          <div style="padding: 0.2em 0em 0em 0.4em; margin-top: 0.6em;">
-          {% if budget_allocations.allocations %}
-            <div style="display: grid; grid-template-columns: 1.5fr 1fr auto; gap: 0.4em; padding: 0.2em 1em 0.4em 0.6em;
-                        border-bottom: 1px solid var(--bg-light); font-size: 0.9em; font-weight: 600; color: var(--highlight);">
-              <div>Category Name</div>
-              <div>Amount</div>
-              <div>Actions</div>
-            </div>
-            <div style="padding: 0.4em; max-height: 200px; overflow-y: auto; border: 1px solid var(--border-muted); border-radius: 6px;">
-              <ul class="p-category-progress-ul" style="margin-top: 0; padding: 0;">
-                {% for ba in budget_allocations.allocations | sort(attribute='category_name') %}
-                  <li class="p-category-progress-li" style="display: grid; grid-template-columns: 1.5fr 1fr auto;
-                    gap: 0.4em; align-items: center; padding: 0.8em 0.6em; border-bottom: 1px solid var(--bg-light);margin: 0;">
-                    <!-- Category Name -->
-                    <div style="font-weight: 500;overflow: hidden;text-overflow: ellipsis;white-space: nowrap;">
-                      {{ ba.category_name }}
-                    </div>
-                    
-                    <!-- Amount - Right aligned -->
-                    <div class="sensitive" style="font-weight: 600;text-align: center;color: var(--success);">
-                      {{ ba.allocated_amount | commafy(0) }}
-                    </div>
-                    
-                    <!-- Actions -->
-                    <div style="display: flex;gap: 0.5em;justify-content: flex-end;flex-shrink: 0;">
-                      <button class="p-icon-btn-warning" 
-                              onclick="generateModal('pEditAllocationModal{{ ba.category_id }}','pEditAllocationClose{{ ba.category_id }}','')">
-                        <i class="fa fa-pencil"></i>
-                      </button>
-                      <form method="POST" 
-                            action="/dashboard/allocations/{{ budget_details.id }}/delete/{{ ba.allocation_id }}" 
-                            onsubmit="return confirmSubmit(this,'Delete allocation?')"
-                            style="margin: 0;">
-                        <button class="p-icon-btn-danger" type="submit">
-                          <i class="fa fa-trash"></i>
-                        </button>
-                      </form>
-                    </div>
-                  </li>
-                {% endfor %}
-              </ul>
-            </div>
-          {% else %}
-            <div class="p-category-progress-no-content" style="padding: 1.5em; text-align: center;">
-              <strong class="p-no-expense" style="color: #6b7280;">
-                No allocations created. Create Category or Create Allocation to create allocations.
-              </strong>
-            </div>
-          {% endif %}
-        </div>
-
-        <!-- Targets Section - below Allocations -->
-        <div style="margin-top: 0.8em;">
-          <div class="p-category-progress-transfer-divider">
-            <h4 style="font-size: 0.9em; color: var(--text); margin: 0 0 0.3em 0;">Targets</h4>
-          </div>
-          <div>
-            <form action="/dashboard/targets" method="POST">
-              <input type="hidden" name="budget_id" value="{{ budget_allocations.budget.id }}">
-              <div style="display: grid; grid-template-columns: 1fr 28px; gap: 0.5em; align-items: center;">
-                <select style="width: 100%; height: 28px; padding: 0 0.6em; box-sizing: border-box;font-family: var(--ff);
-                  font-size: 0.8rem; color: var(--text); background: var(--bg-light); border: 1px solid var(--border-muted);
-                  border-radius: 4px; outline: none; cursor: pointer; appearance: none;"
-                name="category_id"
-                required>
-                  <option value="" style="color: var(--text-muted);">Select Category</option>
-                  {% for ba in (budget_allocations.allocations | default([])) | sort(attribute='category_name') %}
-                    <option value="{{ ba.category_id }}" style="color: var(--text);">{{ ba.category_name }}</option>
-                  {% endfor %}
-                </select>
-
-                <button style="width: 28px; height: 28px; padding: 0; background: var(--primary); color: var(--bg);
-                  border: none; border-radius: 4px; font-size: 0.8rem; cursor: pointer; display: flex;
-                  align-items: center; justify-content: center; transition: opacity 0.15s ease;"
-                type="submit" title="Save Target">
-                  <i class="fa fa-add"></i>
-                </button>
-              </div>
-              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5em; align-items: center; margin-top: 0.5em;">
-                <input style="width: 100%; height: 28px; padding: 0 0.6em; box-sizing: border-box; font-family: var(--ff);
-                  font-size: 0.8rem; color: var(--text); background: var(--bg-light); border: 1px solid var(--border-muted);
-                  border-radius: 4px; outline: none;" type="number" step="0.01" min="0" name="short_term_amount" placeholder="Short term">
-                <input style="width: 100%; height: 28px; padding: 0 0.6em; box-sizing: border-box; font-family: var(--ff);
-                  font-size: 0.8rem; color: var(--text); background: var(--bg-light); border: 1px solid var(--border-muted);
-                  border-radius: 4px; outline: none;" type="number" step="0.01" min="0" name="mid_term_amount" placeholder="Mid term">
-                <input style="width: 100%; height: 28px; padding: 0 0.6em; box-sizing: border-box; font-family: var(--ff);
-                  font-size: 0.8rem; color: var(--text); background: var(--bg-light); border: 1px solid var(--border-muted);
-                  border-radius: 4px; outline: none;" type="number" step="0.01" min="0" name="long_term_amount" placeholder="Long term">
-              </div>
-            </form>
-          </div>
-
-          <!-- Totals of all targets in this budget (0 when none are set) -->
-          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5em; text-align: center; margin-top: 0.6em;
-            padding: 0.4em; background: var(--bg-dark); border-radius: 0.4em;">
-            <div>
-              <p style="font-size: 0.8em; color: var(--text-muted);">Short term</p>
-              <p class="sensitive" style="font-size: 0.9em; font-weight: 600;" data-value="{{ (target_totals.short_term if target_totals else 0) | commafy(0) }}">{{ (target_totals.short_term if target_totals else 0) | commafy(0) }}</p>
-            </div>
-            <div>
-              <p style="font-size: 0.8em; color: var(--text-muted);">Mid term</p>
-              <p class="sensitive" style="font-size: 0.9em; font-weight: 600;" data-value="{{ (target_totals.mid_term if target_totals else 0) | commafy(0) }}">{{ (target_totals.mid_term if target_totals else 0) | commafy(0) }}</p>
-            </div>
-            <div>
-              <p style="font-size: 0.8em; color: var(--text-muted);">Long term</p>
-              <p class="sensitive" style="font-size: 0.9em; font-weight: 600;" data-value="{{ (target_totals.long_term if target_totals else 0) | commafy(0) }}">{{ (target_totals.long_term if target_totals else 0) | commafy(0) }}</p>
-            </div>
-          </div>
-
-          <div style="padding: 0.2em 0em 0em 0.4em; margin-top: 0.6em;">
-            {% set targeted = categories_with_stats | selectattr('target') | sort(attribute='name') | list %}
-            {% if targeted %}
-              <div style="padding: 0.4em; max-height: 200px; overflow-y: auto; border: 1px solid var(--border-muted); border-radius: 6px;">
-                <ul class="p-category-progress-ul" style="margin-top: 0; padding: 0;">
-                  {% for cat in targeted %}
-                    <li class="p-category-progress-li" style="display: grid; grid-template-columns: 1fr auto;
-                      gap: 0.4em; align-items: center; padding: 0.8em 0.6em; border-bottom: 1px solid var(--bg-light); margin: 0;">
-                      <!-- Category Name -->
-                      <div style="font-weight: 500;overflow: hidden;text-overflow: ellipsis;white-space: nowrap;">
-                        {{ cat.name }}
-                      </div>
-
-                      <!-- Actions -->
-                      <div style="display: flex;gap: 0.5em;justify-content: flex-end;flex-shrink: 0;">
-                        <button class="p-icon-btn-warning"
-                                onclick="generateModal('pEditTargetModal{{ cat.id }}','pEditTargetClose{{ cat.id }}','')">
-                          <i class="fa fa-pencil"></i>
-                        </button>
-                        <form method="POST"
-                              action="/dashboard/targets/{{ budget_details.id }}/{{ cat.target.id }}/delete"
-                              onsubmit="return confirmSubmit(this,'Delete target?')"
-                              style="margin: 0;">
-                          <button class="p-icon-btn-danger" type="submit">
-                            <i class="fa fa-trash"></i>
-                          </button>
-                        </form>
-                      </div>
-
-                      <!-- Progress per term -->
-                      {% set terms = [('Short term', cat.target.short_term), ('Mid term', cat.target.mid_term), ('Long term', cat.target.long_term)] %}
-                      {% set has_terms = terms | selectattr('1') | list %}
-                      {% for label, term in terms %}
-                        {% if term %}
-                          {% set term_percent = term.percent %}
-                          <div style="grid-column: 1 / -1;">
-                            <div style="display: flex; justify-content: space-between; gap: 0.4em; margin-bottom: 0.2em;">
-                              <span>{{ label }}</span>
-                              <span class="sensitive" data-value="{{ term.amount | commafy(0) }}">{{ term.amount | commafy(0) }}</span>
-                            </div>
-                            <div style="margin-bottom: 0.2em;" class="p-progress-bar">
-                              <div class="p-progress-fill p-ok-fill"
-                                   style="width: {{ term_percent if term_percent <= 100 else 100 }}%;">
-                              </div>
-                            </div>
-                            <span class="p-category-status ok">
-                              {% if term_percent >= 100 %}
-                                Target reached
-                              {% else %}
-                                {{ term_percent | round(1) }}% &middot; <span class="sensitive" data-value="{{ term.remaining | commafy(0) }}">{{ term.remaining | commafy(0) }}</span> to go
-                              {% endif %}
-                            </span>
-                          </div>
-                        {% endif %}
-                      {% endfor %}
-                      {% if not has_terms %}
-                        <div style="grid-column: 1 / -1; color: #6b7280;">No amounts set. Press edit to add short, mid or long term targets.</div>
-                      {% endif %}
-                    </li>
-                  {% endfor %}
-                </ul>
-              </div>
-            {% else %}
-              <div class="p-category-progress-no-content" style="padding: 1.5em; text-align: center;">
-                <strong class="p-no-expense" style="color: #6b7280;">
-                  No targets set. Choose a category above and enter short, mid or long term amounts.
-                </strong>
-              </div>
-            {% endif %}
-          </div>
-        </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-{% else %}
-  <div class="p-modal" id="pBudgetModal" style="display: none;">
-    <div class="p-modal-content">
-      <p>No budget data available</p>
-    </div>
-  </div>
-{% endif %}
-
-<!-- Add Category modal -->
-<div class="p-modal" id="pCategoryModal">
-  <div class="p-modal-content">
-    <form class="p-category-form" method="POST" action="/dashboard/categories">
-      <a href="#" id="pCategoryClose" class="p-close"><i class="fa fa-close"></i></a>
-      <h2 class="p-modal-limit-name">New Category</h2>
-      <div class="p-modal-details">
-        <div class="p-modal-form-content">
-          <label for="name">Name</label>
-          <input name="name" type="text" placeholder="Category Name (16 characters)" maxlength="16" required>
-          <!-- <label for="limit_amount">Limit</label>
-          <input name="limit_amount" type="number" placeholder="Category Limit" required> -->
-        </div>
-        <button type="submit" class="p-modal-btn" id="closeCategoryModalBtn">Add Category</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- Category Modal -->
-{% for cat in categories_with_stats %}
-  {% set used = cat.used %}
-  {% set limit = cat.allocated_amount %}
-  {% set balance = cat.balance %}
-  {% set percent = (used / limit * 100) if limit > 0 else 0 %}
-  {% set exceeded = percent > 100 %}
-  {% set display_percent = percent if percent <= 100 else 100 %}
-  <div class="p-modal" id="categoryDetailModal{{ cat.id }}">
-    <div class="p-modal-content">
-      <a href="#" id="pCategoryDetailClose{{ cat.id }}" class="p-close"><i class="fa fa-close"></i></a>
-      <div class="p-modal-gap">
-        <div class="p-modal-divider p-category-header">
-          <span> <h3 class="p-modal-limit-name">{{cat.name}}</h3> </span>
-          {% if exceeded %}
-            <span style="align-self:center;" class="p-category-status exceeded">
-                {{ (percent - 100) | round(1) }}% over
-            </span>
-          {% else %}
-            <span style="align-self:center;" class="p-category-status ok">
-                {{ percent | round(1) }}% used
-            </span>
-          {% endif %}
-           <span style="align-self:center;">
-            <p class="p-category-limit-amount sensitive" data-value="{{ limit | commafy(0) }}">{{ limit | commafy(0) }}</p>
-           </span>
-        </div>
-          <div class="p-category-progress-balance-container">
-            <p style="font-weight: 600;">{% if cat.balance < 0 %} Over by: {% else %}Remaining: {% endif %}</p>
-            <h4 class="sensitive {% if cat.balance <= 0 %} p-negative {% else %} p-positive {% endif %}" data-value="{{ cat.balance | commafy(2) }}">
-              {% if cat.balance < 0 %}{{ (-cat.balance) | commafy(2) }}{% else %}{{ cat.balance | commafy(2) }}{% endif %}
-            </h4>
-          </div>
-        <div style="margin-bottom: 0.8em;" class="p-progress-bar">
-          <div class="p-progress-fill {% if exceeded %}p-exceeded-fill{% else %}p-ok-fill{% endif %}"
-              style="width: {{ display_percent }}%;">
-          </div>
-        </div>
-        <!-- Transfers -->
-        <div class="p-category-progress-transfer-divider">
-          <h4 style="font-size: 0.9em; padding-bottom: 0.4em;">Transfers</h4>
-        </div>
-        <div class="p-category-transfers-list">
-          {% if cat.transfers_in or cat.transfers_out %}
-          <div style="padding: 0.4em; max-height: 100px; overflow-y: auto; border: 1px solid var(--border-muted); border-radius: 6px; margin-bottom: 0.4em;">
-            <ul class="p-category-progress-ul">
-              {% for t in cat.transfers_in %}
-              <li class="p-category-progress-li">
-                <div style="align-self: center;">
-                  <strong style="color: var(--success);">+{{ t.amount }}</strong> 
-                  <small>from {{ t.from_category_name }}</small>
-                  <small style="color:var(--text-muted)"> ({{ t.month }})</small>
-                </div>
-                <div style="display:flex; gap:.8rem;">
-                  <form method="POST" action="/dashboard/transfers/{{t.id}}/undo" onsubmit="return confirmSubmit(this, 'Undo Transfer?')">
-                    <button class="p-icon-btn-tertiary" type="submit"><i class="fa fa-undo"></i>
-                </div>
-              </li>
-              {% endfor %}
-              {% for t in cat.transfers_out %}
-              <li class="p-category-progress-li">
-                <div style="align-self: center;">
-                  <strong style="color: var(--danger);">-{{ t.amount }}</strong>
-                  <small> to {{ t.to_category_name }} </small>
-                  <small style="color:var(--text-muted)"> ({{ t.month }})</small>
-                </div>
-                <div style="display:flex; gap:.8rem;">
-                  <form method="POST" action="/dashboard/transfers/{{t.id}}/undo" onsubmit="return confirmSubmit(this, 'Undo Transfer?')">
-                    <button class="p-icon-btn-tertiary" type="submit"><i class="fa fa-undo"></i>
-                </div>
-              </li>
-              {% endfor %}
-            </ul>
-          </div>
-          {% else %}
-            <div class="p-category-progress-no-content">
-              <strong class="p-no-expense">No transfer/topup this month.</strong>
-            </div>
-          {% endif %}
-        </div>
-        <!-- TODO: Add is this a mandatory expense --> 
-         <!-- Expenses -->
-        <div class="p-category-progress-expense-divider">
-          <h4 style="font-size: 0.9em;">
-            {{ "Expenses" if cat.type == "expense" else "Withdrawals" }}
-          </h4>
-        </div>
-        <div class="p-category-progress-expenses">   
-          <div style="flex:1;">
-            <form method="POST" action="/dashboard/expenses"
-              onsubmit="return confirmSubmit(this, 'Add Quick expense of {{ limit }} to {{ cat.name }}?')">
-              <input type="hidden" name="category_id" value="{{ cat.id }}">
-              <input type="hidden" name="amount" value="{{ limit }}">
-              <input type="hidden" name="description" value="Quick Expense">
-              <input type="hidden" name="month" value="{{ now }}">
-              {% if cat.type == 'expense' %}
-                <input type="hidden" name="expense_type" value="spend">
-              {% else %}
-                <input type="hidden" name="expense_type" value="withdrawal">
-              {% endif %}
-              <button class="p-modal-btn-tertiary" type="submit" title="Quick Expense">
-                {{"Quick Expense" if cat.type == "expense" else "Quick Withdrawal" }}
-              </button>
-            </form>
-          </div>
-          <div style="flex:1;">
-              <button class="p-modal-btn-primary" title="Add Expense"
-              onclick="generateModal('addExpenseModal{{ cat.id }}','addExpenseClose{{ cat.id }}','')">
-              {{"Add Expense" if cat.type == "expense" else "Add Withdrawal" }}
-            </button>
-            </div>
-          </div>
-          <div style="margin-top: 0.6em; max-height: 200px; overflow-y: auto; border: 1px solid var(--border-muted); border-radius: 6px; padding: 0.4em;">
-            {% if cat.expenses %}
-              <ul class="p-category-progress-ul">
-                {% for e in cat.expenses %}
-                <li class="p-category-progress-li ">
-                  <div style="align-self: center;">
-                    <strong>{{ e.amount }}</strong> — <small>{{ e.description or "(no desc)" }}</small>
-                    <small style="color:var(--text-muted)"> ({{ e.month }})</small>
-                  </div>
-                  <div style="display:flex; gap:.8rem;">
-                    <button class="p-icon-btn-warning" onclick="generateModal('editExpenseModal{{ e.id }}','editExpenseClose{{ e.id }}','')"><i class="fa fa-pencil"></i></button>
-                    <form method="POST" action="/dashboard/expenses/{{ e.id }}/delete" onsubmit="return confirmSubmit(this,'Delete expense?')">
-                      <input type="hidden" name="expense_type" value="{{ e.type }}">
-                      <button class="p-icon-btn-danger" type="submit"><i class="fa fa-trash"></i></button>
-                    </form>
-                  </div>
-                </li>
-                {% endfor %}
-              </ul>
-            {% else %}
-              <div class="p-category-progress-no-content">
-                <strong class="p-no-expense">No expenses this month. Click the Quick Expense or Add Expense button to add an expense</strong>
-              </div>
-            {% endif %}
-          </div>
-        </div>
-        <div class="p-category-progress-btns-container"> 
-          <div style="flex:1;">
-            <button class="p-modal-btn-primary" onclick="generateModal('transferModal{{ cat.id }}','transferClose{{ cat.id }}','')">
-            Top Up Category
-          </button>
-
-          </div>  
-          <div style="flex:1;">
-            <button class="p-modal-btn-warning" title="Edit Category"
-                    onclick="generateModal('editCategoryModal{{ cat.id }}','editCategoryClose{{ cat.id }}','')">
-              Edit Category
-            </button>
-          </div>
-          <div style="flex:1;">
-            <form method="POST" action="/dashboard/categories/{{ cat.id }}/delete"
-                  onsubmit="return confirmSubmit(this, 'Delete category {{ cat.name }}?')">
-              <button class="p-modal-btn-danger" type="submit" title="Delete">
-                Delete Category
-              </button>
-            </form>
-          </div>
-        </div>
-      </div>  
-    </div>
-  </div>
-{% endfor %}
-
-<!-- Per-category modals -->
-{% for cat in categories_with_stats %}
-  <!-- Expenses list modal -->
-   {% if cat.type == 'expense' %}
-   {% endif %}
-  <div class="p-modal" id="expensesModal{{ cat.id }}">
-    <div class="p-modal-content">
-      <a href="#" id="expensesClose{{ cat.id }}" class="p-close"><i class="fa fa-close"></i></a>
-      {% if cat.type == 'expense' %}
-        <h2 style="text-align: center;">Expenses — {{ cat.name }}</h2>
-        {% else %}
-        <h2 style="text-align: center;">Withdrawals — {{ cat.name }}</h2>
+    <section class="p-card">
+      <div class="p-section-head"><h2>Recent</h2><a class="p-link" href="/analytics">See all</a></div>
+      {% if v.recent %}
+      <ul class="p-category-progress-ul">
+        {% for e in v.recent %}
+        <li class="p-category-progress-li">
+          <span><b>{{ e.description or 'Expense' }}</b><small>{{ e.category_name }}{% if e.type == 'withdrawal' %} · withdrawal{% endif %}</small></span>
+          <span>{{ money(e.amount) }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="p-category-progress-no-content">No expenses this month yet.</p>
       {% endif %}
-      <div class="p-modal-body">
-        {% if cat.expenses %}
-          <ul style="list-style:none;padding:1.2em;margin:0;">
-            {% for e in cat.expenses %}
-            <li style="padding:.5rem 0; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; gap:1rem;">
-              <div>
-                <strong>{{ e.amount }}</strong> — {{ e.description or "(no desc)" }}
-                <small style="color:var(--text-muted)"> ({{ e.month }})</small>
-              </div>
-              <div style="display:flex; gap:.8rem;">
-                <button class="p-btn-warning" onclick="generateModal('editExpenseModal{{ e.id }}','editExpenseClose{{ e.id }}','')">Edit</button>
-                <form method="POST" action="/dashboard/expenses/{{ e.id }}/delete" onsubmit="return confirmSubmit(this,'Delete expense?')">
-                  <button class="p-btn-danger" type="submit">Delete</button>
-                </form>
-              </div>
-            </li>
-            {% endfor %}
-          </ul>
-        {% else %}
-          <p class="p-no-expense">No expenses for this month. Click the ➕ or ⚡️ button to add expenses</p>
-        {% endif %}
-      </div>
-    </div>
+    </section>
   </div>
-
-  <!-- Add Expense modal -->
-  <div class="p-modal" id="addExpenseModal{{ cat.id }}">
-    <div class="p-modal-content">
-      <form class="p-category-form" method="POST" action="/dashboard/expenses">
-        <a href="#" id="addExpenseClose{{ cat.id }}" class="p-close"><i class="fa fa-close"></i></a>
-        <p style="font-size: 1.1em;" class="p-modal-limit-name">{{ "Add Expense to" if cat.type == "expense" else "Add Withdrawal to"}} {{ cat.name }}</p>
-        <div class="p-modal-details">
-          <div class="p-modal-form-content">
-            {% if cat.type == 'expense' %}
-              <input type="hidden" name="expense_type" value="spend">
-            {% else %}
-              <input type="hidden" name="expense_type" value="withdrawal">
-            {% endif %}
-            <input type="hidden" name="category_id" value="{{ cat.id }}">
-            <label>Amount</label>
-            <input name="amount" type="number" placeholder="Enter Expense Amount" required>
-            <label>Description</label>
-            <input name="description" type="text" placeholder="Optional">
-            <label>Month</label>
-            <input name="month" type="text" placeholder="YYYY-MM" value="{{ now }}" readonly>
-          </div>
-          <button type="submit" class="p-modal-btn" id="closeAddExpenseBtn{{ cat.id }}">{{ "Add Expense" if cat.type == "expense" else "Add Withdrawal"}}</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Edit Category modal -->
-  <div class="p-modal" id="editCategoryModal{{ cat.id }}">
-    <div class="p-modal-content">
-      <form class="p-category-form" method="POST" action="/dashboard/categories/{{ cat.id }}/edit">
-        <a href="#" id="editCategoryClose{{ cat.id }}" class="p-close"><i class="fa fa-close"></i></a>
-        <h2 class="p-modal-limit-name">Edit Category</h2>
-        <div class="p-modal-details">
-          <div class="p-modal-form-content">
-            <label>Name</label>
-            <input type="text" name="name" value="{{ cat.name }}" maxlength="16" required>
-            <!-- <label>Limit</label>
-            <input name="limit_amount" type="number" value="{{ cat.limit_amount }}" required> -->
-          </div>
-          <button type="submit" class="p-modal-btn" id="closeEditCategoryBtn{{ cat.id }}">Save</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  {# Edit each expense of this category #}
-  {% for e in cat.expenses %}
-  <div class="p-modal" id="editExpenseModal{{ e.id }}">
-    <div class="p-modal-content">
-      <form class="p-category-form" method="POST" action="/dashboard/expenses/{{ e.id }}/edit">
-        <a href="#" id="editExpenseClose{{ e.id }}" class="p-close"><i class="fa fa-close"></i></a>
-        <h2 class="p-modal-limit-name">
-          {{ "Edit Expense" if cat.type == "expense" else "Edit Withdrawals" }}</h2>
-        <div class="p-modal-details">
-          <div class="p-modal-form-content">
-            <label>Amount</label>
-            <input name="expense_type" type="hidden" value="{{ e.type }}">
-            <input name="amount" type="number" value="{{ e.amount }}" required>
-            <label>Description</label>
-            <input name="description" type="text" placeholder="Optional" value="{{ e.description }}">
-            <label>Month</label>
-            <input name="month" type="text" value="{{ e.month }}" readonly>
-            <label>Category</label>
-            <select style="border: 1px solid var(--text-muted);" name="category_id" required>
-              {% for c in categories_with_stats %}
-              <option value="{{ c.id }}" {% if c.id == e.category_id %}selected{% endif %}>{{ c.name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <button type="submit" class="p-modal-btn" id="closeEditExpenseBtn{{ e.id }}">Save</button>
-        </div>
-      </form>
-    </div>
-  </div>
-  {% endfor %}
-
-<!-- Transfer Modal -->
-  <div class="p-modal" id="transferModal{{ cat.id }}">
-    <div class="p-modal-content">
-      <form class="p-category-form" method="POST" action="/dashboard/transfers">
-        <a href="#" id="transferClose{{ cat.id }}" class="p-close"><i class="fa fa-close"></i></a>
-        <p style="font-size: 1.1em;" class="p-modal-limit-name">Top Up {{ cat.name }}</p>
-        <div class="p-modal-details">
-          <div class="p-modal-form-content">
-            <input type="hidden" name="to_category_id" value="{{ cat.id }}">
-            <label>From Category</label>
-            <select style="border: 1px solid var(--text-muted);" name="from_category_id" required>
-              <option value="">Select</option>
-              {% for c in categories_with_stats if c.id != cat.id and c.balance > 0 %}
-              <option value="{{ c.id }}">{{ c.name }} (Remaining: {{ c.balance | commafy(2) }})</option>
-              {% endfor %}
-            </select>
-            <label>Amount</label>
-            <input name="amount" type="number" step="0.01" placeholder="Enter Amount" required>
-            <label>Description (optional)</label>
-            <input name="description" placeholder="Optional" type="text">
-            <label>Month</label>
-            <input name="month" type="text" value="{{ now }}" readonly>
-          </div>
-          <button type="submit" class="p-modal-btn">Make Transfer</button>
-        </div>
-      </form>
-    </div>
-  </div>
-{% endfor %}
-
-<!-- Edit Budget Modal-->
-{% for budget in all_budgets %}
-{% set budget_id=budget.id%}
-{% set is_monthly = budget.name|lower == 'monthly' %}
-
-<div class="p-modal" id="pBudgetEditModal{{ budget_id }}">
-  <div class="p-modal-content">
-    <form class="p-category-form" method="POST" action="/dashboard/budgets/{{ budget_id }}/edit">
-      <a href="#" id="pEditBudgetClose{{ budget_id}}" class="p-close"><i class="fa fa-close"></i></a>
-      <h2 class="p-modal-limit-name">Edit {{budget.name}}</h2>
-      <div class="p-modal-details">
-        <div class="p-modal-form-content">
-          <label>Budget Name</label>
-          <input type="text" name="budget_name" value="{{ budget.name }}" {% if is_monthly %} readonly {% endif %} maxlength="10" required>
-          <label>Expense Type</label>
-          {% if is_monthly %}
-            <input type="hidden" name="expense_type" value="{{ budget.type }}">
-            <input type="hidden" name="budget_type" value="{{ budget.type }}">
-          {% endif %}
-          <select name="budget_type" {% if is_monthly %} disabled {% endif %} required>
-            <option value="expense" {% if budget.type == 'expense' %}selected{% endif %}>Expense</option>
-            <option value="savings" {% if budget.type == 'savings' %}selected{% endif %}>Savings</option>
-          </select>
-          <label>Budget Amount</label>
-          <input class="sensitive" type="number" name="budget_amount" value="{{ budget.amount }}" step="any" required>
-          {% if is_monthly %}
-            <small class="p-text-muted">
-              Monthly budgets can only have the amount edited.
-            </small>
-          {% endif %}
-          <button type="submit" class="p-modal-btn" id="pCloseEditBudgetBtn{{ budget_id }}">Save</button>
-        </div>
-      </div>
-    </form>
-  </div>
+  {% endif %}
 </div>
-{% endfor %}
+{% endblock %}
 
-<!-- Create Budget Modal -->
- <div class="p-modal" id="pBudgetCreateModal">
-  <div class="p-modal-content">
-    <form class="p-category-form" method="POST" action="/dashboard/budgets">
-      <a href="#" id="pBudgetCreateModalClose" class="p-close"><i class="fa fa-close"></i></a>
-      <!-- Title -->
-       <h2 class="p-modal-limit-name">Create Budget</h2>
-       <div class="p-modal-details">
-        <div class="p-modal-form-content">
-          <!-- Budget Type -->
-           <label>Budget Type</label>
-           <select style="border: 1px solid var(--text-muted);" name="budget_type" required>
-              <option value="" disabled selected>Select</option>
-             <!-- <option value="expense">Expense</option> -->
-              <option value="savings">Savings</option>
-            </select>
-          <!-- Budget Name -->
-           <label>Budget Name</label>
-           <input type="text" name="budget_name" placeholder="Enter Budget Name" maxlength="10" required>
-          <!-- Budget Amount -->
-           <label>Budget Amount</label>
-           <input type="number" name="budget_amount" placeholder="Enter Budget Amount" step="any" required>
-          <!-- Budget Submit Button -->
-           <button type="submit" class="p-modal-btn" id="pBudgetCreateCloseBtn">Submit</button>
-        </div>
-       </div>
-    </form>
-  </div>
- </div>
-
-
-<!-- Edit Allocation Modal -->
-{% for ba in budget_allocations.allocations %}
-{% set allocation_category_id = ba.category_id %}
-{% set allocation_category_name = ba.category_name %}
-{% set allocation_allocated_amount = ba.allocated_amount %}
-<div class="p-modal" id="pEditAllocationModal{{ allocation_category_id }}">
-  <div class="p-modal-content">
-    <form class="p-category-form" method="POST", action="/dashboard/allocations/{{ budget_details.id }}/edit">
-      <a href="#" id="pEditAllocationClose{{ allocation_category_id }}" class="p-close"><i class="fa fa-close"></i></a>
-      <h2 class="p-modal-limit-name">Edit Allocation</h2>
-      <div class="p-modal-form-content">
-        <input type="hidden" name="category_id" value="{{ allocation_category_id }}" required>
-        <label>Category Name</label>
-        <input type="text" value="{{ allocation_category_name }}" readonly>
-        <label>Allocation Amount</label>
-        <input type="number" name="allocated_amount" value="{{ allocation_allocated_amount }}" required>
-        <button type="submit" class="p-modal-btn" id="pcloseEditAllocationBtn{{ allocation_category_id }}">Save</button>
-      </div>
-    </form>
-  </div>
-</div>
-{% endfor %}
-
-<!-- Edit Target modals -->
-{% for cat in categories_with_stats if cat.target %}
-<div class="p-modal" id="pEditTargetModal{{ cat.id }}">
-  <div class="p-modal-content">
-    <form class="p-category-form" method="POST" action="/dashboard/targets/{{ budget_details.id }}/{{ cat.target.id }}/edit">
-      <a href="#" id="pEditTargetClose{{ cat.id }}" class="p-close"><i class="fa fa-close"></i></a>
-      <h2 class="p-modal-limit-name">Edit Target</h2>
-      <div class="p-modal-form-content">
-        <label>Category Name</label>
-        <input type="text" value="{{ cat.name }}" readonly>
-        <label>Short Term Amount</label>
-        <input type="number" step="0.01" min="0" name="short_term_amount" value="{{ cat.target.short_term.amount if cat.target.short_term else '' }}">
-        <label>Mid Term Amount</label>
-        <input type="number" step="0.01" min="0" name="mid_term_amount" value="{{ cat.target.mid_term.amount if cat.target.mid_term else '' }}">
-        <label>Long Term Amount</label>
-        <input type="number" step="0.01" min="0" name="long_term_amount" value="{{ cat.target.long_term.amount if cat.target.long_term else '' }}">
-        <button type="submit" class="p-modal-btn" id="pcloseEditTargetBtn{{ cat.id }}">Save</button>
-      </div>
-    </form>
-  </div>
-</div>
-{% endfor %}
-
-<!-- Alert & Confirm (single) -->
-<div id="pAlert" class="p-alert">
-  <div class="p-alert-content">
-    <h3 id="pAlertTitle">Alert</h3>
-    <p id="pAlertMessage"></p>
-    <div class="p-alert-footer">
-      <button id="pAlertOk" class="p-btn">OK</button>
-    </div>
-  </div>
-</div>
-
-<div id="pConfirm" class="p-confirm">
-  <div class="p-confirm-content">
-    <h3 id="pConfirmTitle">Confirm Action</h3>
-    <p id="pConfirmMessage"></p>
-    <div class="p-confirm-footer">
-      <button id="pConfirmOk" class="p-btn p-btn-primary">OK</button>
-      <button id="pConfirmCancel" class="p-btn p-btn-secondary">Cancel</button>
-    </div>
-  </div>
-</div>
+{% block data %}
+<script type="application/json" id="pData">{{ page_data | tojson }}</script>
 {% endblock %}

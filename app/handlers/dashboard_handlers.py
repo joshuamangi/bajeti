@@ -1,7 +1,6 @@
 # app/handlers/dashboard_handlers.py
-from decimal import Decimal
 import logging
-from datetime import datetime
+from datetime import date, datetime
 from typing import Optional
 from fastapi import Depends, Request, Form, Response, status
 from fastapi.responses import RedirectResponse, HTMLResponse
@@ -11,13 +10,14 @@ from app.utils.active_budget import resolve_active_budget_id
 from app.utils.templates import render_with_user
 from app.utils.tokens import get_current_user
 from app.services.auth_service import get_current_user as svc_get_current_user
-from app.services.category_service import get_categories_by_type, get_categories_with_stats as svc_get_categories
+from app.services.category_service import get_categories_with_stats as svc_get_categories
 from app.services.user_service import reset_password as svc_reset_password
 from app.services.auth_service import login as svc_login
 from core.rate_limit import client_ip
 from app.utils.cookies import set_active_budget_cookie, set_auth_cookies
 from app.utils.redirects import redirect_with_toast
 from app.utils.target_totals import target_totals
+from app.utils.home_view import home_view, page_data
 from fastapi import HTTPException
 
 logger = logging.getLogger(__name__)
@@ -31,6 +31,7 @@ async def profile(request: Request):
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
     user = user_response.json()
     return await render_with_user("profile.html", request, {
+        "active_tab": "more",
         "token": token,
         "current_month": datetime.now().strftime('%B'),
         "user": user,
@@ -57,83 +58,57 @@ async def profile_update(request: Request,
     if response.status_code in (status.HTTP_200_OK, status.HTTP_201_CREATED):
         return redirect_with_toast("/dashboard", "Profile updated successfully!", "success")
 
-    if (response.status_code == status.HTTP_409_CONFLICT):
-        return await render_with_user("profile.html", request, {
-            "error": response.json().get('detail', 'Email already exists'),
-            "email": email,
-            "first_name": first_name,
-            "last_name": last_name,
-            "security_answer": security_answer,
-        })
-    if (response.status_code == status.HTTP_404_NOT_FOUND):
-        return await render_with_user("profile.html", request, {
-            "error": response.json().get('detail', 'User not found'),
-            "email": email,
-            "first_name": first_name,
-            "last_name": last_name,
-            "security_answer": security_answer,
-        })
+    if response.status_code in (status.HTTP_409_CONFLICT, status.HTTP_404_NOT_FOUND):
+        fallback = "Email already exists" if response.status_code == status.HTTP_409_CONFLICT else "User not found"
+        return redirect_with_toast("/profile", response.json().get("detail", fallback), "error")
     try:
         error_detail = response.json().get("detail", "Update failed. Try again.")
     except Exception:
         error_detail = "Unexpected error. Please try again."
-
-    return await render_with_user("profile.html", request, {
-        "error": error_detail,
-        "email": email,
-        "first_name": first_name,
-        "last_name": last_name,
-        "security_answer": security_answer,
-    })
+    return redirect_with_toast("/profile", str(error_detail), "error")
 
 
-async def dashboard(
-    request: Request,
-    token: str = Depends(get_current_user),
-    budget_id: Optional[int] = None
-):
+async def load_app_context(request: Request, token: str, budget_id: Optional[int] = None):
+    """Data every signed-in screen needs: the user, all budgets and the active budget with its
+    category stats for this month. Returns (context, active budget id) or a Response to send."""
     # 1. Resolve authenticated user
     user_response = await svc_get_current_user(token=token)
     if user_response.status_code != status.HTTP_200_OK:
-        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER), None
 
     user = user_response.json()
+    month = datetime.now().strftime("%Y-%m")
 
     # 2. Fetch ALL budgets for this user FIRST
     all_budgets_response = await get_all_budgets(token=token)
 
     if all_budgets_response.status_code != status.HTTP_200_OK:
         return redirect_with_toast(
-            "/dashboard",
+            "/more",
             "Unable to load budgets.",
             "error"
-        )
+        ), None
 
     all_budgets = all_budgets_response.json()
 
-    # If user truly has no budgets → correct message
+    context = {
+        "user": user,
+        "all_budgets": all_budgets,
+        "current_month": datetime.now().strftime("%B"),
+        "now": month,
+    }
+
+    # No budgets yet: the screens show the "Create a budget" empty state.
     if not all_budgets:
-        return redirect_with_toast(
-            "/budgets/create",
-            "Please create your first budget to continue.",
-            "error"
-        )
+        context.update({
+            "budget_details": None,
+            "home": None,
+            "budget_allocations": {},
+            "target_totals": target_totals([]),
+            "page_data": {"budget": None, "budgets": [], "categories": [], "month": month},
+        })
+        return context, None
 
-    savings_budgets = [
-        b for b in all_budgets if b["type"] == "savings"
-    ]
-
-    expense_budgets = [
-        b for b in all_budgets if b["type"] == "expense"
-    ]
-    # Calculate totals safely using Decimal
-    total_savings_amount = sum(
-        Decimal(str(b["amount"])) for b in savings_budgets
-    )
-
-    total_expense_amount = sum(
-        Decimal(str(b["amount"])) for b in expense_budgets
-    )
     # 3. Safely resolve active budget
     valid_budget_ids = {b["id"] for b in all_budgets}
 
@@ -163,7 +138,7 @@ async def dashboard(
         b for b in all_budgets if b["id"] == resolved_budget_id
     )
 
-    # 4. Fetch dashboard data safely
+    # 4. Fetch the active budget's data safely
     categories_response = await svc_get_categories(
         token=token,
         budget_id=resolved_budget_id
@@ -186,43 +161,64 @@ async def dashboard(
         else {}
     )
 
-    budget_categories_response = await get_categories_by_type(
-        token=token,
-        category_type=active_budget["type"]
-    )
+    home = home_view(active_budget, categories_with_stats, date.today())
+    data = page_data(active_budget, all_budgets, home, month)
+    # Allocation ids, so the Budgets screen can remove an allocation.
+    allocation_ids = {row["category_id"]: row["allocation_id"]
+                      for row in budget_allocations.get("allocations", [])}
+    for category in data["categories"]:
+        category["allocation_id"] = allocation_ids.get(category["id"])
 
-    budget_categories = (
-        budget_categories_response.json()
-        if budget_categories_response.status_code == status.HTTP_200_OK
-        else []
-    )
+    context.update({
+        "home": home,
+        "page_data": data,
+        "categories_with_stats": categories_with_stats,
+        "target_totals": target_totals(categories_with_stats),
+        "budget_allocations": budget_allocations,
+        "budget_details": active_budget,
+    })
+    return context, resolved_budget_id
 
-    # 5. Render template
-    template_response = await render_with_user(
-        "dashboard.html",
-        request,
-        {
-            "categories_with_stats": categories_with_stats,
-            "target_totals": target_totals(categories_with_stats),
-            "budget_allocations": budget_allocations,
-            "budget_details": active_budget,
-            "all_budgets": all_budgets,
-            "total_savings_amount": total_savings_amount,
-            "total_expense_amount": total_expense_amount,
-            "budget_categories": budget_categories,
-            "token": token,
-            "current_month": datetime.now().strftime("%B"),
-            "user": user,
-            "now": datetime.now().strftime("%Y-%m"),
-        }
-    )
-    # 6. Normalize / Repair Cookie
-    existing_cookie = request.cookies.get("active_budget_id")
 
-    if str(resolved_budget_id) != existing_cookie:
+async def render_app_page(template: str, tab: str, request: Request, token: str,
+                          budget_id: Optional[int] = None, extra: Optional[dict] = None):
+    context, resolved_budget_id = await load_app_context(request, token, budget_id)
+    if not isinstance(context, dict):
+        return context
+    context["active_tab"] = tab
+    if extra:
+        context.update(extra)
+    template_response = await render_with_user(template, request, context)
+    # Normalize / Repair Cookie
+    if resolved_budget_id and str(resolved_budget_id) != request.cookies.get("active_budget_id"):
         set_active_budget_cookie(template_response, resolved_budget_id)
-
     return template_response
+
+
+async def dashboard(
+    request: Request,
+    token: str = Depends(get_current_user),
+    budget_id: Optional[int] = None
+):
+    return await render_app_page("dashboard.html", "home", request, token, budget_id)
+
+
+async def budgets_page(
+    request: Request,
+    token: str = Depends(get_current_user),
+    budget_id: Optional[int] = None
+):
+    return await render_app_page("budgets.html", "budgets", request, token, budget_id)
+
+
+async def more_page(request: Request, token: str = Depends(get_current_user)):
+    user_response = await svc_get_current_user(token=token)
+    if user_response.status_code != status.HTTP_200_OK:
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+    return await render_with_user("more.html", request, {
+        "active_tab": "more",
+        "user": user_response.json(),
+    })
 
 
 async def forgot_password(request: Request):

@@ -45,10 +45,10 @@ The rules that apply to every stage (public repo, placeholders for hosts, no com
 | S10 | [App security fixes with tests](S10-app-security-fixes.md) | claude | S00 | done |
 | S11 | [E0 Targets (#101, #103 to #106)](S11-targets-e0.md) | claude | S10 | in-progress |
 | S12 | [E1 Pi cleanup and performance (#110)](S12-pi-cleanup-performance.md) | claude+human | S05, S11 | todo |
-| S13 | [E2 Analytics page (#111)](S13-analytics-e2.md) | design-gate | S12 | todo |
+| S13 | [E2 Analytics page (#111)](S13-analytics-e2.md) | design-gate | S12 | in-progress |
 | S14 | [E3 Recurring expenses (#112)](S14-recurring-e3.md) | design-gate | S10 | todo |
 | S15 | [E6 Future planning (#115), design only](S15-future-planning-e6.md) | design-gate | S11 | todo |
-| S16 | [E5 PWA and prototype context bundle (#114)](S16-pwa-prototype-e5.md) | claude+human | S13 | todo |
+| S16 | [E5 PWA and prototype context bundle (#114)](S16-pwa-prototype-e5.md) | claude+human | S13 | in-progress |
 | S17 | [E4 Payment capture (#113)](S17-payment-capture-e4.md) | design-gate | S10 | todo |
 | S18 | [E7 Code and workflow improvements (#116)](S18-code-workflow-e7.md) | claude | S10 | todo |
 
