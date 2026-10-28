@@ -561,6 +561,40 @@
     deferDelete({ url: `/recurring/${el.dataset.id}/delete`, rows: rowsFor(`[data-rec="${el.dataset.id}"]`), message: `Deleted ${esc(el.dataset.name)}` });
   }
 
+  /* ---------- Payments inbox (docs/design/payments.md) ---------- */
+  // Made-up messages for "Try a sample": fake names, numbers and codes.
+  const SAMPLES = [
+    'QXY78ZK2LM Confirmed. Ksh1,840.00 paid to Demo Supermarket. on 27/10/26 at 7:15 PM. New M-PESA balance is Ksh12,300.00. Transaction cost, Ksh0.00.',
+    'QRT45UV6WX Confirmed. Ksh300.00 sent to DEMO WATER VENDOR 0700000000 on 27/10/26 at 9:02 AM. New M-PESA balance is Ksh8,743.00. Transaction cost, Ksh7.00.',
+    'Your payment of KES 3,500.00 to Demo Fibre Internet was successful. Reference: FBR20261027.'
+  ];
+  let sampleIdx = 0;
+  async function submitPaste(f) {
+    const raw = f.raw.value.trim(), err = f.querySelector('[data-err]');
+    err.textContent = '';
+    if (!raw) { err.textContent = 'Paste a message first.'; f.raw.focus(); return; }
+    const r = await post('/payments/capture', { raw });
+    await refreshMain();
+    if (r.ok === false && !r.message) return;
+    toast(esc(r.message), { type: r.type === 'success' ? 'success' : r.type });
+    if (r.type === 'success' || r.type === 'warning') { const t = $('#pPaste'); if (t && r.type === 'success') t.value = ''; }
+  }
+  function submitPayApprove(f) {
+    const err = f.querySelector('[data-err]'), category = f.category_id.value;
+    if (!category) { err.textContent = 'Choose a category.'; f.category_id.focus(); return; }
+    const fields = { category_id: category, remember: f.remember && f.remember.checked ? '1' : '' };
+    if (f.amount) {
+      const amount = parseAmount(f.amount.value);
+      if (!(amount > 0)) { err.textContent = 'Enter the amount.'; f.amount.focus(); return; }
+      fields.amount = amount.toFixed(2);
+    }
+    const id = f.dataset.id;
+    save(`/payments/${id}/approve`, fields, { undo: () => save(`/payments/${id}/restore`, {}, { success: 'Back in the inbox' }) });
+  }
+  function dismissPayment(el) {
+    deferDelete({ url: `/payments/${el.dataset.id}/dismiss`, rows: rowsFor(`[data-pay="${el.dataset.id}"]`), message: `Dismissed ${esc(el.dataset.payee)}` });
+  }
+
   async function setActiveBudget(id) {
     if (budget() && +id === budget().id) return;
     try { await fetch(`/dashboard?budget_id=${encodeURIComponent(id)}`, { credentials: 'same-origin' }); }
@@ -603,6 +637,8 @@
     'rec-pause': el => save(`/recurring/${el.dataset.id}/pause`, {}, { success: 'Paused' }),
     'rec-resume': el => save(`/recurring/${el.dataset.id}/resume`, {}, { success: 'Resumed' }),
     'rec-del': el => deleteRecurring(el),
+    'paste-sample': () => { const t = $('#pPaste'); if (t) { t.value = SAMPLES[sampleIdx++ % SAMPLES.length]; t.focus(); } },
+    'pay-dismiss': el => dismissPayment(el),
     'exp-edit': el => openExpenseEdit(el.dataset.cat, el.dataset.id),
     'exp-del': el => deleteExpense(el.dataset.cat, el.dataset.id),
     'set-budget': el => setActiveBudget(el.dataset.id),
@@ -639,7 +675,8 @@
   };
   const FORMS = {
     'add-expense': submitAddExpense, 'expense-edit': submitExpenseEdit, category: submitCategory, transfer: submitTransfer,
-    budget: submitBudget, 'inline-category': submitInlineCategory, target: submitTarget, recurring: submitRecurring
+    budget: submitBudget, 'inline-category': submitInlineCategory, target: submitTarget, recurring: submitRecurring,
+    paste: submitPaste, 'pay-approve': submitPayApprove
   };
   document.addEventListener('click', e => {
     const el = e.target.closest('[data-act]'); if (!el) return;

@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import Boolean, CheckConstraint, Column, Date, DateTime, ForeignKey, Index, Integer, Numeric, String, UniqueConstraint
+from sqlalchemy import Boolean, CheckConstraint, Column, Date, DateTime, ForeignKey, Index, Integer, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 from data.db.db import Base
 
@@ -261,4 +261,46 @@ class RecurringRun(Base):
         # One run per due date: approving twice (or from two tabs) cannot record two expenses.
         UniqueConstraint("recurring_id", "due_date", name="uq_recurring_run_due_date"),
         CheckConstraint("action IN ('approved', 'skipped', 'auto')", name="ck_recurring_run_action"),
+    )
+
+
+class PendingPayment(Base):
+    """A captured M-Pesa SMS or payment email waiting for a category (docs/design/payments.md)."""
+    __tablename__ = "pending_payments"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    source = Column(String(10), nullable=False, default="paste")
+    kind = Column(String(10), nullable=False)
+    # Sensitive: cleared on approve or dismiss unless KEEP_RAW_MESSAGES; never logged.
+    raw_text = Column(Text, nullable=True)
+    amount = Column(Numeric, nullable=True)
+    fee = Column(Numeric, nullable=True)
+    payee = Column(String(80), nullable=True)
+    reference = Column(String(20), nullable=True)
+    paid_on = Column(Date, nullable=True)
+    status = Column(String(10), nullable=False, default="pending")
+    expense_id = Column(Integer, ForeignKey("expenses.id", ondelete="SET NULL"), nullable=True)
+    received_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        # Dedupe: the same transaction code cannot be captured twice by one user.
+        UniqueConstraint("user_id", "reference", name="uq_pending_payment_reference"),
+        CheckConstraint("status IN ('pending', 'approved', 'dismissed')", name="ck_pending_payment_status"),
+        CheckConstraint("source IN ('paste', 'sms', 'email')", name="ck_pending_payment_source"),
+    )
+
+
+class PayeeRule(Base):
+    """'Remember Demo Grocer for next time': a payee's usual category."""
+    __tablename__ = "payee_rules"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    payee = Column(String(80), nullable=False)
+    category_id = Column(Integer, ForeignKey("categories.id", ondelete="CASCADE"), nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "payee", name="uq_payee_rule"),
     )

@@ -11,6 +11,7 @@ from app.handlers import (
     page_handlers,
     analytics_handlers,
     recurring_handlers,
+    payment_handlers,
     target_handlers,
     transfer_handlers
 )
@@ -46,6 +47,12 @@ router.post("/recurring/{recurring_id}/edit")(recurring_handlers.edit_recurring)
 router.post("/recurring/{recurring_id}/delete")(recurring_handlers.delete_recurring)
 router.post("/recurring/{recurring_id}/runs/{due_date}/undo")(recurring_handlers.undo_recurring_run)
 router.post("/recurring/{recurring_id}/{name}")(recurring_handlers.recurring_action)
+router.get("/payments",
+           response_class=payment_handlers.HTMLResponse)(payment_handlers.payments_page)
+router.post("/payments/capture")(payment_handlers.capture_payment)
+router.post("/payments/{payment_id}/approve")(payment_handlers.approve_payment)
+router.post("/payments/{payment_id}/dismiss")(payment_handlers.dismiss_payment)
+router.post("/payments/{payment_id}/restore")(payment_handlers.restore_payment)
 router.get("/more",
            response_class=dashboard_handlers.HTMLResponse)(dashboard_handlers.more_page)
 

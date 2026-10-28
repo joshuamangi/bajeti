@@ -19,6 +19,7 @@ from app.utils.redirects import redirect_with_toast
 from app.utils.target_totals import target_totals
 from app.utils.home_view import home_view, page_data
 from app.services.recurring_service import fetch_due
+from app.services.payment_service import fetch_count as fetch_payment_count
 from fastapi import HTTPException
 
 logger = logging.getLogger(__name__)
@@ -175,9 +176,13 @@ async def load_app_context(request: Request, token: str, budget_id: Optional[int
     due = due_response.json() if due_response.status_code == status.HTTP_200_OK else []
     data["due"] = due
 
+    count_response = await fetch_payment_count(token=token)
+    pending_count = count_response.json().get("pending", 0) if count_response.status_code == status.HTTP_200_OK else 0
+
     context.update({
         "due": due,
-        "attention_count": len(due),
+        "pending_count": pending_count,
+        "attention_count": len(due) + pending_count,
         "home": home,
         "page_data": data,
         "categories_with_stats": categories_with_stats,
