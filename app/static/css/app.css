@@ -491,3 +491,14 @@ body[data-route="home"] .p-header .p-hbtn[data-act=eye]{display:none}
 
 /* Sign-in pages: the error sits above the card at the card's width */
 .p-auth-alert{width:100%;max-width:400px}
+
+/* ===== Recurring (Prototype A) ===== */
+.p-rec-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.8em}
+.p-rec-li{display:grid;grid-template-columns:1fr auto;gap:.8em;align-items:center;padding:1.2em;background:var(--bg-light);border-radius:var(--r);box-shadow:var(--shadow)}
+.p-rec-main{display:flex;flex-direction:column;gap:.4em;min-width:0}
+.p-rec-name{color:var(--text);font-weight:700}
+.p-rec-meta{font:var(--small)}
+.p-rec-li .p-row-actions{grid-column:1 / -1;justify-content:flex-end}
+.p-rec-li.is-paused{opacity:.75;box-shadow:inset .4em 0 0 var(--border),var(--shadow)}
+/* NEW COMPONENT: "Approve all" under an overdue card */
+.p-due-all{grid-column:1 / -1;justify-self:center;min-height:var(--tap)}

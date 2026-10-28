@@ -50,3 +50,24 @@
 {% endif %}
 {% endfor %}
 {%- endmacro %}
+
+{# Due now: ask-first recurring items due within 5 days (docs/design/recurring.md) #}
+{% macro due_list(due) -%}
+<ul class="p-due-list">
+  {% for r in due %}
+  <li><div class="p-due-card">
+    <span class="p-due-name">{{ r.name }}</span>
+    <span class="p-due-amount">{{ money(r.amount) }}</span>
+    <span class="p-due-meta">{{ r.category_name }} · Monthly · {{ r.due_date | short_date }}</span>
+    <span class="p-tag {{ 'p-tag-danger' if r.days < 0 else 'p-tag-warning' }}"><i class="fa fa-clock" aria-hidden="true"></i> {% if r.overdue > 1 %}{{ r.overdue }} payments overdue{% else %}{{ r.days | relative_due }}{% endif %}</span>
+    <div class="p-due-actions">
+      <button type="button" class="p-btn-ghost" data-act="due-skip" data-id="{{ r.id }}" data-date="{{ r.due_date }}" data-name="{{ r.name }}" aria-label="Skip {{ r.name }} for {{ r.due_date | short_date }}">Skip</button>
+      <button type="button" class="p-btn-primary" data-act="due-approve" data-id="{{ r.id }}" data-date="{{ r.due_date }}" data-name="{{ r.name }}" aria-label="Approve {{ r.name }} for {{ r.due_date | short_date }}"><i class="fa fa-check" aria-hidden="true"></i> Approve</button>
+    </div>
+    {% if r.overdue > 1 %}
+    <button type="button" class="p-link-btn p-due-all" data-act="due-approve-all" data-id="{{ r.id }}" data-count="{{ r.overdue }}" data-name="{{ r.name }}">Approve all {{ r.overdue }}, each in its own month</button>
+    {% endif %}
+  </div></li>
+  {% endfor %}
+</ul>
+{%- endmacro %}

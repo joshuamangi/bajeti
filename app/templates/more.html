@@ -6,6 +6,14 @@
 <div class="p-page">
   <h1>More</h1>
 
+  {% set n = attention_count | default(0) %}
+  <section>
+    <h2 class="p-group-title">Money</h2>
+    <ul class="p-list">
+      <li><a class="p-list-row" href="/recurring"><span class="p-list-icon"><i class="fa fa-repeat" aria-hidden="true"></i></span><span class="p-list-main"><b>Recurring expenses</b><span class="p-list-sub">Monthly bills{% if n %} · {{ n }} due now{% endif %}</span></span>{% if n %}<span class="p-badge-inline">{{ n }}<span class="p-visually-hidden"> need attention</span></span>{% endif %}<i class="fa fa-chevron-right p-chev" aria-hidden="true"></i></a></li>
+    </ul>
+  </section>
+
   <section>
     <h2 class="p-group-title">You</h2>
     <ul class="p-list">

@@ -10,6 +10,7 @@ from app.handlers import (
     expense_handlers,
     page_handlers,
     analytics_handlers,
+    recurring_handlers,
     target_handlers,
     transfer_handlers
 )
@@ -38,6 +39,13 @@ router.get("/dashboard",
            response_class=dashboard_handlers.HTMLResponse)(dashboard_handlers.dashboard)
 router.get("/budgets",
            response_class=dashboard_handlers.HTMLResponse)(dashboard_handlers.budgets_page)
+router.get("/recurring",
+           response_class=recurring_handlers.HTMLResponse)(recurring_handlers.recurring_page)
+router.post("/recurring")(recurring_handlers.add_recurring)
+router.post("/recurring/{recurring_id}/edit")(recurring_handlers.edit_recurring)
+router.post("/recurring/{recurring_id}/delete")(recurring_handlers.delete_recurring)
+router.post("/recurring/{recurring_id}/runs/{due_date}/undo")(recurring_handlers.undo_recurring_run)
+router.post("/recurring/{recurring_id}/{name}")(recurring_handlers.recurring_action)
 router.get("/more",
            response_class=dashboard_handlers.HTMLResponse)(dashboard_handlers.more_page)
 

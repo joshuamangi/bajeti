@@ -1,6 +1,6 @@
 # Payment capture: design
 
-Status: waiting for the owner's approval. No code before that.
+Status: approved by the owner on 2026-10-29, as written.
 
 Look and behaviour: Prototype A (`design/prototype-a/`, PORT-GUIDE §5.9). Manual paste ships first; the iPhone shortcut comes in a second step, after you try it.
 

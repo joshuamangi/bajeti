@@ -1,12 +1,12 @@
 # Recurring expenses: design
 
-Status: waiting for the owner's approval. No code before that.
+Status: approved by the owner on 2026-10-29, monthly only (weekly and yearly removed for now).
 
 Look and behaviour: Prototype A (`design/prototype-a/`, PORT-GUIDE §5.8 and the Due now cards in §5.2). This note settles the data and the edge cases the stage asks for.
 
 ## Decisions to approve
 
-1. **Weekly, monthly and yearly**, as in the prototype, not monthly only. Each item stores its next due date; approving or skipping moves it on by one period.
+1. **Monthly only** (owner decision; weekly and yearly may come later). Each item stores its next due date; approving or skipping moves it on by one month.
 2. **No background job.** Due items are worked out when a page loads. "Auto-add" items whose date has come are recorded then, the next time anyone opens the app. They appear in a "Recently added" list on the Recurring page (your decision: no push or email, log only).
 3. **Expense budgets only.** Savings withdrawals stay out of scope, as the stage says. The category list in the form shows expense categories only.
 4. **Deleting a category that has recurring items is blocked**, with the message "Gym has 2 recurring items. Delete or move them first." I recommend blocking over deleting them silently, because the items are your record of what you pay regularly.
@@ -17,8 +17,8 @@ Look and behaviour: Prototype A (`design/prototype-a/`, PORT-GUIDE §5.8 and the
 ```
 recurring_expenses
   id, user_id, category_id (FK categories, no cascade: see decision 4)
-  name, amount (Decimal), frequency: week | month | year
-  anchor_day      the day of the month it was set up on (1..31), for month and year
+  name, amount (Decimal)
+  anchor_day      the day of the month it is due (1..31)
   next_due        date
   mode            ask_first | auto
   paused          bool
@@ -35,7 +35,7 @@ recurring_runs                       one row per due date that was handled
 
 ## Edge cases, with examples
 
-- **Days 29 to 31.** Monthly items keep their anchor day and use the last day of shorter months. An item anchored on the 31st is due 31 Jan, 28 Feb (29 in a leap year), 31 Mar, 30 Apr. The form says "Due on the 31st, or the last day of shorter months" when the day is 29 or later. Yearly items anchored on 29 Feb fall on 28 Feb in other years.
+- **Days 29 to 31.** Monthly items keep their anchor day and use the last day of shorter months. An item anchored on the 31st is due 31 Jan, 28 Feb (29 in a leap year), 31 Mar, 30 Apr. The form says "Due on the 31st, or the last day of shorter months" when the day is 29 or later.
 - **Catch-up after missed periods.** One card per item, oldest due date first. Approving or skipping moves the item on by one period. If it is still due, the next card appears at once with its own date. I recommend this over one combined item: each payment belongs to its own month, so analytics stay right, and you can skip a month you did not actually pay. If an item is more than one period behind, the card says "3 payments overdue" and has **Approve all**, which records each one in its own month in one step.
 - **Due now window.** Ask-first items show from 5 days before the due date (decision already made). Auto items are recorded on or after the due date only.
 - **Amount changed later.** The expense stores the amount at the time it was approved, and `recurring_runs.amount` keeps it too. Editing the item changes future payments only.
@@ -55,4 +55,4 @@ recurring_runs                       one row per due date that was handled
 
 - **Home:** the Due now cards (Skip, Approve), shown only when something is due. The More tab gets a red count of due items.
 - **More → Recurring:** the budget switcher, "About X a month across n active items", the Due now cards, then the list (Ask first or Auto-add tag, next date or Paused, with Pause, Edit and Delete). Under it, "Recently added": the last 10 approvals, skips and auto-adds.
-- **Form:** name, amount, category (expense categories of the active budget, A to Z), repeats (weekly, monthly, yearly), next due date, and mode as two radio cards.
+- **Form:** name, amount, category (expense categories of the active budget, A to Z), next due date (it repeats monthly), and mode as two radio cards.

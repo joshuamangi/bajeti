@@ -18,6 +18,7 @@ from app.utils.cookies import set_active_budget_cookie, set_auth_cookies
 from app.utils.redirects import redirect_with_toast
 from app.utils.target_totals import target_totals
 from app.utils.home_view import home_view, page_data
+from app.services.recurring_service import fetch_due
 from fastapi import HTTPException
 
 logger = logging.getLogger(__name__)
@@ -169,7 +170,14 @@ async def load_app_context(request: Request, token: str, budget_id: Optional[int
     for category in data["categories"]:
         category["allocation_id"] = allocation_ids.get(category["id"])
 
+    # Ask-first recurring items due within 5 days (auto items are recorded by this call).
+    due_response = await fetch_due(token=token, budget_id=resolved_budget_id)
+    due = due_response.json() if due_response.status_code == status.HTTP_200_OK else []
+    data["due"] = due
+
     context.update({
+        "due": due,
+        "attention_count": len(due),
         "home": home,
         "page_data": data,
         "categories_with_stats": categories_with_stats,
@@ -181,13 +189,16 @@ async def load_app_context(request: Request, token: str, budget_id: Optional[int
 
 
 async def render_app_page(template: str, tab: str, request: Request, token: str,
-                          budget_id: Optional[int] = None, extra: Optional[dict] = None):
+                          budget_id: Optional[int] = None, extra: Optional[dict] = None, extra_async=None):
+    """Render a signed-in page. extra_async(context, active budget id) can add data per page."""
     context, resolved_budget_id = await load_app_context(request, token, budget_id)
     if not isinstance(context, dict):
         return context
     context["active_tab"] = tab
     if extra:
         context.update(extra)
+    if extra_async:
+        context.update(await extra_async(context, resolved_budget_id))
     template_response = await render_with_user(template, request, context)
     # Normalize / Repair Cookie
     if resolved_budget_id and str(resolved_budget_id) != request.cookies.get("active_budget_id"):
@@ -212,13 +223,7 @@ async def budgets_page(
 
 
 async def more_page(request: Request, token: str = Depends(get_current_user)):
-    user_response = await svc_get_current_user(token=token)
-    if user_response.status_code != status.HTTP_200_OK:
-        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
-    return await render_with_user("more.html", request, {
-        "active_tab": "more",
-        "user": user_response.json(),
-    })
+    return await render_app_page("more.html", "more", request, token)
 
 
 async def forgot_password(request: Request):

@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import CheckConstraint, Column, DateTime, ForeignKey, Index, Integer, Numeric, String, UniqueConstraint
+from sqlalchemy import Boolean, CheckConstraint, Column, Date, DateTime, ForeignKey, Index, Integer, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import relationship
 from data.db.db import Base
 
@@ -218,4 +218,47 @@ class AllocationSnapshot(Base):
     __table_args__ = (
         UniqueConstraint("budget_id", "category_id", "month",
                          name="uq_allocation_snapshot_month"),
+    )
+
+
+class RecurringExpense(Base):
+    """A bill that repeats monthly. Due items are worked out when a page loads."""
+    __tablename__ = "recurring_expenses"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    # No cascade: deleting a category that still has recurring items is refused.
+    category_id = Column(Integer, ForeignKey("categories.id"), nullable=False)
+    name = Column(String(60), nullable=False)
+    amount = Column(Numeric, nullable=False)
+    anchor_day = Column(Integer, nullable=False)
+    next_due = Column(Date, nullable=False)
+    mode = Column(String(10), nullable=False, default="ask_first", server_default="ask_first")
+    paused = Column(Boolean, nullable=False, default=False, server_default="0")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        CheckConstraint("mode IN ('ask_first', 'auto')", name="ck_recurring_mode"),
+        CheckConstraint("anchor_day BETWEEN 1 AND 31", name="ck_recurring_anchor_day"),
+    )
+
+
+class RecurringRun(Base):
+    """One due date of a recurring item that was approved, skipped or added automatically."""
+    __tablename__ = "recurring_runs"
+
+    id = Column(Integer, primary_key=True)
+    recurring_id = Column(Integer, ForeignKey("recurring_expenses.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    due_date = Column(Date, nullable=False)
+    action = Column(String(10), nullable=False)
+    expense_id = Column(Integer, ForeignKey("expenses.id", ondelete="SET NULL"), nullable=True)
+    amount = Column(Numeric, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        # One run per due date: approving twice (or from two tabs) cannot record two expenses.
+        UniqueConstraint("recurring_id", "due_date", name="uq_recurring_run_due_date"),
+        CheckConstraint("action IN ('approved', 'skipped', 'auto')", name="ck_recurring_run_action"),
     )
