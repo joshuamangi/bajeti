@@ -72,3 +72,5 @@
 .p-trend-plot.is-compact .p-trend-label{font-size:.625rem}
 .p-trend-plot.is-compact .p-trend-budget span{right:auto;left:0}
 
+/* Month columns are links to that month */
+.p-trend-col{text-decoration:none;color:inherit}

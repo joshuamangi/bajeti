@@ -9,6 +9,7 @@ from app.handlers import (
     category_handlers,
     expense_handlers,
     page_handlers,
+    analytics_handlers,
     target_handlers,
     transfer_handlers
 )
@@ -79,7 +80,17 @@ router.post(
 # ---------- STATIC PAGES ----------
 router.get(
     "/reports", response_class=page_handlers.HTMLResponse)(page_handlers.reports_page)
-router.get("/analytics",
-           response_class=page_handlers.HTMLResponse)(page_handlers.analytics_page)
+router.get("/analytics")(analytics_handlers.analytics_home)
+# Fixed paths before /analytics/{month}
+router.get("/analytics/trends",
+           response_class=analytics_handlers.HTMLResponse)(analytics_handlers.analytics_trends)
+router.get("/analytics/year",
+           response_class=analytics_handlers.HTMLResponse)(analytics_handlers.analytics_year)
+router.get("/analytics/year/{year}",
+           response_class=analytics_handlers.HTMLResponse)(analytics_handlers.analytics_year)
+router.get("/analytics/{month}",
+           response_class=analytics_handlers.HTMLResponse)(analytics_handlers.analytics_month)
+router.get("/analytics/{month}/{category_id}",
+           response_class=analytics_handlers.HTMLResponse)(analytics_handlers.analytics_category)
 router.get("/settings",
            response_class=page_handlers.HTMLResponse)(page_handlers.settings_page)
