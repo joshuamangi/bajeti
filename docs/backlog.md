@@ -83,3 +83,19 @@ Today the Pi health check (every 15 minutes) and the backup timer only write to 
 ## Dependabot configuration (hardening plan A7)
 
 Add `.github/dependabot.yml` for pip, npm, docker and github-actions (weekly, small PR limit) once the monitoring items are done. Open alerts when this was written: pytest (fix 9.0.3, dev only) and picomatch (build tooling). Never close a Dependabot PR without merging unless the alert is dismissed with a reason: PR #121 was closed unmerged and left the python-multipart alerts open for three days.
+
+## Admin area (from the Prototype A design, 2026-10-28)
+
+Prototype A (`design/prototype-a/`, §5.10 of `PORT-GUIDE.md`) includes an owner-only Admin hub. It is parked because the app has no owner or role concept today (`User` has no role column). Decide the role model first (single owner flag vs roles), then build the hub from a section registry so new sections need no redesign.
+
+Sections drawn in the prototype:
+
+- Users: add a member through a 24-hour invite link, reset access, remove with Undo.
+- Registration: open/closed switch (the `REGISTRATION_OPEN` setting exists; it would move to a stored `setting`), with a warning while open.
+- Backups: last backup, status, size, last restore test (warn after 30 days), "Record restore test", "Back up now". Ties to S09.
+- System health: app, database size, version, uptime, service worker, connection.
+- Activity log: filters All, Money, Access, Admin. Auto recurring items are recorded here (decided 2026-10-28), so the log table may land earlier than the hub.
+- Feature switches: Analytics, Recurring, Payments, Targets; turning one off hides it for everyone and deletes nothing.
+- Data export: CSV and JSON.
+
+Needs: `user.role` (or owner flag), `setting`, `feature_flag`, `activity_log`, an invite token table, owner-only dependency in `core/security.py`, and a test that a member gets 403/404 on every admin route.
