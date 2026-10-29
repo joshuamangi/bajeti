@@ -74,8 +74,9 @@ Adds `budgets.is_default` (false for every existing budget), so nothing changes 
 stars a budget on the Budgets screen. Tested on a scratch database with today's schema: upgrade,
 downgrade (budgets kept), upgrade again; one head.
 
-Status: not yet in production. After the deploy, check `alembic current` shows d4e6a8c0b2f3 and
-record the date here.
+Status: in production since 2026-10-29 (deploy of PR #148; the deploy log shows
+`Running upgrade c3d5f7a9b1e2 -> d4e6a8c0b2f3` and `alembic current` = d4e6a8c0b2f3). Not checked on the
+Pi by hand.
 
 Rollback (drops the column; budgets are kept):
 

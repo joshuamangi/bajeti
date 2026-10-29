@@ -29,30 +29,30 @@ Tick items off as the matching PR merges.
 
 ## E2: Analytics page (#111)
 
-- [ ] Monthly totals endpoint (spend only, excludes withdrawals)
-- [ ] Category breakdown for a month endpoint
-- [ ] Replace the "Under Construction" `analytics.html`
-- [ ] ECharts drill-down: month → category → expense list
+- [x] Monthly totals endpoint (spend only, excludes withdrawals)
+- [x] Category breakdown for a month endpoint
+- [x] Replace the "Under Construction" `analytics.html`
+- [x] ECharts drill-down: month → category → expense list (built as plain HTML and SVG instead of ECharts, see `docs/design/analytics.md`)
 
 ## E3: Recurring expenses (#112)
 
-- [ ] `RecurringExpense` model and migration
-- [ ] CRUD at `/api/recurring`
-- [ ] `GET /due` and `POST /{id}/approve` (creates an expense)
-- [ ] "Due" strip on the dashboard with one-tap approve
+- [x] `RecurringExpense` model and migration
+- [x] CRUD at `/api/recurring`
+- [x] `GET /due` and `POST /{id}/approve` (creates an expense)
+- [x] "Due" strip on the dashboard with one-tap approve
 
 ## E4: Payment capture, M-Pesa and email (#113)
 
-- [ ] `PendingPayment` model and migration
-- [ ] Parser service for M-Pesa SMS and payment emails, with tests
-- [ ] `POST /api/pending-payments` (token protected)
-- [ ] "Paste message" box and category-request inbox on the dashboard
+- [x] `PendingPayment` model and migration
+- [x] Parser service for M-Pesa SMS and payment emails, with tests
+- [x] `POST /api/pending-payments` (token protected) (built as `POST /api/payments/capture`)
+- [x] "Paste message" box and category-request inbox on the dashboard
 - [ ] Ingestion transport: see `docs/backlog.md`
 
 ## E5: Progressive web app (#114)
 
-- [ ] UI brief: palette tokens, 4px spacing, `em` usage, template structure, screenshots
-- [ ] Prototype in Claude web and review
+- [x] UI brief: palette tokens, 4px spacing, `em` usage, template structure, screenshots
+- [x] Prototype in Claude web and review
 - [ ] Manifest, icons, iOS meta tags, safe-area insets
 - [ ] Service worker (static cache, offline shell, never cache authenticated responses)
 - [ ] Install prompt
