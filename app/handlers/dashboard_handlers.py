@@ -70,6 +70,20 @@ async def profile_update(request: Request,
     return redirect_with_toast("/profile", str(error_detail), "error")
 
 
+def pick_budget_id(all_budgets: list, budget_id: Optional[int], cookie_budget: Optional[str]) -> int:
+    """A valid ?budget_id wins, then the cookie (this session's pick), then the default budget
+    (set on the Budgets screen), then the first budget. The login clears the cookie."""
+    valid_budget_ids = {b["id"] for b in all_budgets}
+    if budget_id and budget_id in valid_budget_ids:
+        return budget_id
+    try:
+        if cookie_budget and int(cookie_budget) in valid_budget_ids:
+            return int(cookie_budget)
+    except ValueError:
+        pass  # corrupted cookie
+    return next((b for b in all_budgets if b.get("is_default")), all_budgets[0])["id"]
+
+
 async def load_app_context(request: Request, token: str, budget_id: Optional[int] = None):
     """Data every signed-in screen needs: the user, all budgets and the active budget with its
     category stats for this month. Returns (context, active budget id) or a Response to send."""
@@ -112,28 +126,7 @@ async def load_app_context(request: Request, token: str, budget_id: Optional[int
         return context, None
 
     # 3. Safely resolve active budget
-    valid_budget_ids = {b["id"] for b in all_budgets}
-
-    resolved_budget_id = None
-
-    # Explicit query param wins if valid
-    if budget_id and budget_id in valid_budget_ids:
-        resolved_budget_id = budget_id
-    else:
-        # Fallback to cookie
-        cookie_budget = request.cookies.get("active_budget_id")
-
-        if cookie_budget:
-            try:
-                cookie_budget = int(cookie_budget)
-                if cookie_budget in valid_budget_ids:
-                    resolved_budget_id = cookie_budget
-            except ValueError:
-                pass  # corrupted cookie
-
-    # Final fallback → first available budget
-    if not resolved_budget_id:
-        resolved_budget_id = all_budgets[0]["id"]
+    resolved_budget_id = pick_budget_id(all_budgets, budget_id, request.cookies.get("active_budget_id"))
 
     # Get selected budget object directly
     active_budget = next(

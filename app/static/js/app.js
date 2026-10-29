@@ -429,6 +429,11 @@
     toast(`Created ${esc(name)}. Add categories next.`, { type: 'success' });
     if (created) { await setActiveBudget(created.id); openBudgetManage(created.id); }
   }
+  async function setDefaultBudget(el) {
+    const r = await post(`/dashboard/budgets/${el.dataset.id}/default`, { is_default: el.dataset.on });
+    toast(esc(r.message || 'Could not change the default budget.'), { type: r.ok ? 'success' : 'error' });
+    if (r.ok) await refreshMain();
+  }
   function deleteBudget(id) {
     const b = budgetById(id); if (!b) return;
     deferDelete({ url: `/dashboard/${id}/delete`, rows: rowsFor(`[data-act=budget-del][data-id="${id}"]`), message: `Deleted ${esc(b.name)}` });
@@ -645,6 +650,7 @@
     'budget-new': () => openBudgetForm(),
     'budget-edit': el => openBudgetForm(el.dataset.id),
     'budget-del': el => deleteBudget(el.dataset.id),
+    'budget-default': el => setDefaultBudget(el),
     'budget-manage': el => openBudgetManage(el.dataset.id),
     'alloc-del': el => deleteAllocation(el.dataset.id),
     'target-edit': el => openTargetForm(el.dataset.id),

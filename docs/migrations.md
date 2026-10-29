@@ -67,3 +67,16 @@ c3d5f7a9b1e2). Not checked on the Pi by hand.
 Rollback (drops the four tables and everything in them):
 
 docker compose exec bajeti_app alembic downgrade a7d3c2f19b40
+
+## Default budget, d4e6a8c0b2f3
+
+Adds `budgets.is_default` (false for every existing budget), so nothing changes until the owner
+stars a budget on the Budgets screen. Tested on a scratch database with today's schema: upgrade,
+downgrade (budgets kept), upgrade again; one head.
+
+Status: not yet in production. After the deploy, check `alembic current` shows d4e6a8c0b2f3 and
+record the date here.
+
+Rollback (drops the column; budgets are kept):
+
+docker compose exec bajeti_app alembic downgrade c3d5f7a9b1e2

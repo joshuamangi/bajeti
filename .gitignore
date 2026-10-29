@@ -13,6 +13,8 @@ pytest_cache/
 # Database (if applicable)
 *.sqlite3
 *.db
+*.db.*
+data/db/data/
 
 # Logs
 *.log
@@ -24,6 +26,7 @@ Thumbs.db
 # folders
 recover_backup/
 venv/
+venv-*/
 __pycache__/
 *.pyc
 # static/dist/

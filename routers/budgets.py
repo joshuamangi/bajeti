@@ -78,6 +78,30 @@ async def edit_budget(budget_id: int,
     return updated_budget
 
 
+@router.put("/{budget_id}/default", response_model=BudgetOut)
+async def set_default_budget(budget_id: int,
+                             db: Session = Depends(get_db),
+                             current_user: UserOut = Depends(get_current_user)):
+    existing_budget = BudgetService.get_budget_by_id(
+        db=db, budget_id=budget_id, user_id=current_user.id)
+    if not existing_budget:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Budget not Found")
+    return BudgetService.set_default(db=db, user_id=current_user.id, budget=existing_budget, is_default=True)
+
+
+@router.delete("/{budget_id}/default", response_model=BudgetOut)
+async def clear_default_budget(budget_id: int,
+                               db: Session = Depends(get_db),
+                               current_user: UserOut = Depends(get_current_user)):
+    existing_budget = BudgetService.get_budget_by_id(
+        db=db, budget_id=budget_id, user_id=current_user.id)
+    if not existing_budget:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Budget not Found")
+    return BudgetService.set_default(db=db, user_id=current_user.id, budget=existing_budget, is_default=False)
+
+
 @router.delete("/{budget_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_budget(budget_id: int,
                         db: Session = Depends(get_db),
