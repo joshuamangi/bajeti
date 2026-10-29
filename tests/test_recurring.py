@@ -58,13 +58,13 @@ def setup(client):
     return headers, budget_id, category_id
 
 
-def test_due_now_window_is_five_days(client):
+def test_due_now_shows_on_the_due_date_not_before(client):
     headers, budget_id, cat = setup(client)
-    item(client, headers, cat, TODAY + timedelta(days=5), name="Soon")
-    item(client, headers, cat, TODAY + timedelta(days=6), name="Later")
+    item(client, headers, cat, TODAY, name="Today")
+    item(client, headers, cat, TODAY + timedelta(days=1), name="Tomorrow")
     due = client.get(f"/api/recurring/due?budget_id={budget_id}", headers=headers).json()
-    assert [d["name"] for d in due] == ["Soon"]
-    assert due[0]["days"] == 5 and due[0]["overdue"] == 0
+    assert [d["name"] for d in due] == ["Today"]
+    assert due[0]["days"] == 0 and due[0]["overdue"] == 1
 
 
 def test_approve_records_the_expense_in_the_due_month_and_moves_on(client):
@@ -74,8 +74,10 @@ def test_approve_records_the_expense_in_the_due_month_and_moves_on(client):
     assert r.status_code == 201, r.text
     [e] = expenses(client, headers, cat)
     assert (e["month"], e["description"], float(e["amount"])) == ("2026-09", "Internet", 3500.0)
-    due = client.get(f"/api/recurring/due?budget_id={budget_id}", headers=headers).json()
-    assert due[0]["due_date"] == "2026-10-30"
+    listing = client.get(f"/api/recurring/?budget_id={budget_id}", headers=headers).json()
+    assert listing["items"][0]["next_due"] == "2026-10-30"
+    # 30 Oct is tomorrow, so it is not in Due now yet.
+    assert client.get(f"/api/recurring/due?budget_id={budget_id}", headers=headers).json() == []
 
 
 def test_approving_twice_records_one_expense(client):

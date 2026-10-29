@@ -25,7 +25,7 @@ def list_recurring(budget_id: Optional[int] = None,
 def due(budget_id: Optional[int] = None,
         db: Session = Depends(get_db),
         current_user: UserOut = Depends(get_current_user)):
-    """Ask-first items due within 5 days. Auto items that are due are recorded first."""
+    """Ask-first items due today or overdue. Auto items that are due are recorded first."""
     return RecurringService.due(db=db, user_id=current_user.id, budget_id=budget_id)
 
 

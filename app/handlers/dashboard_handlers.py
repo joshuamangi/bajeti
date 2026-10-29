@@ -164,7 +164,7 @@ async def load_app_context(request: Request, token: str, budget_id: Optional[int
     for category in data["categories"]:
         category["allocation_id"] = allocation_ids.get(category["id"])
 
-    # Ask-first recurring items due within 5 days (auto items are recorded by this call).
+    # Ask-first recurring items due today or overdue (auto items are recorded by this call).
     due_response = await fetch_due(token=token, budget_id=resolved_budget_id)
     due = due_response.json() if due_response.status_code == status.HTTP_200_OK else []
     data["due"] = due

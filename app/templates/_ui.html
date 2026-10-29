@@ -51,7 +51,7 @@
 {% endfor %}
 {%- endmacro %}
 
-{# Due now: ask-first recurring items due within 5 days (docs/design/recurring.md) #}
+{# Due now: ask-first recurring items due today or overdue (docs/design/recurring.md) #}
 {% macro due_list(due) -%}
 <ul class="p-due-list">
   {% for r in due %}
