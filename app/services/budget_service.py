@@ -44,6 +44,12 @@ async def edit_budget(token: str,
     return resp
 
 
+async def set_default_budget(token: str, budget_id: int, is_default: bool):
+    path = f"/budgets/{budget_id}/default"
+    headers = {"Authorization": f"Bearer {token}"}
+    return await (put(path=path, json={}, headers=headers) if is_default else delete(path=path, headers=headers))
+
+
 async def delete_budget(token: str,
                         budget_id: int):
     # call delete api endpoint

@@ -1,6 +1,6 @@
 from fastapi import Depends, Form, Request, status
 
-from app.services.budget_service import add_budget, delete_budget, edit_budget, get_active_budget
+from app.services.budget_service import add_budget, delete_budget, edit_budget, get_active_budget, set_default_budget
 from app.utils.redirects import redirect_with_toast
 from app.utils.tokens import get_current_user
 
@@ -63,3 +63,17 @@ async def remove_budget(request: Request,
             type_="success",)
 
     return redirect_with_toast("/dashboard", "Budget deletion failed", "error")
+
+
+async def default_budget(request: Request,
+                         budget_id: int,
+                         is_default: int = Form(...)):
+    token = get_current_user(request)
+    resp = await set_default_budget(token=token, budget_id=budget_id, is_default=bool(is_default))
+
+    if resp.status_code == status.HTTP_200_OK:
+        message = (f"{resp.json()['name']} opens after login" if is_default
+                   else "No default budget. The first budget opens after login")
+        return redirect_with_toast(base_url="/budgets", message=message, type_="success")
+
+    return redirect_with_toast("/budgets", "Could not change the default budget", "error")

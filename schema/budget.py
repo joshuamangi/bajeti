@@ -12,6 +12,7 @@ class BudgetBase(BaseModel):
 class BudgetOut(BudgetBase):
     id: int
     user_id: int
+    is_default: bool = False
     created_at: datetime
     updated_at: datetime
 

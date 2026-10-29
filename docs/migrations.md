@@ -47,8 +47,9 @@ Adds `allocation_snapshots`, records the current month from today's allocations,
 decision: analytics starts from the migration date). Tested on a scratch database with the production
 schema: upgrade, downgrade (expenses kept), upgrade again; one head.
 
-Status: not yet in production. After the deploy, check `alembic current` shows a7d3c2f19b40 and record
-the date here.
+Status: in production since 2026-10-28 (deploy of PR #145; the deploy log shows
+`Running upgrade 186f1cc1a7ca -> a7d3c2f19b40` and `alembic current` = a7d3c2f19b40). Not checked on the
+Pi by hand.
 
 Rollback (drops the snapshots and the two indexes; no other data is touched):
 
@@ -59,9 +60,23 @@ docker compose exec bajeti_app alembic downgrade 186f1cc1a7ca
 New tables only: `recurring_expenses` and `recurring_runs`, then `pending_payments` and `payee_rules`.
 No existing rows change. Both tested on a scratch database (upgrade, downgrade, upgrade; one head).
 
-Status: not yet in production. After the deploy, check `alembic current` shows c3d5f7a9b1e2 and
-record the date here.
+Status: in production since 2026-10-29 (deploy of PR #147; the deploy log shows
+`Running upgrade a7d3c2f19b40 -> b2c4e6f8a1d3`, `b2c4e6f8a1d3 -> c3d5f7a9b1e2` and `alembic current` =
+c3d5f7a9b1e2). Not checked on the Pi by hand.
 
 Rollback (drops the four tables and everything in them):
 
 docker compose exec bajeti_app alembic downgrade a7d3c2f19b40
+
+## Default budget, d4e6a8c0b2f3
+
+Adds `budgets.is_default` (false for every existing budget), so nothing changes until the owner
+stars a budget on the Budgets screen. Tested on a scratch database with today's schema: upgrade,
+downgrade (budgets kept), upgrade again; one head.
+
+Status: not yet in production. After the deploy, check `alembic current` shows d4e6a8c0b2f3 and
+record the date here.
+
+Rollback (drops the column; budgets are kept):
+
+docker compose exec bajeti_app alembic downgrade c3d5f7a9b1e2

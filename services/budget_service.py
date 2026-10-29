@@ -75,6 +75,19 @@ class BudgetService:
         return existing_budget
 
     @staticmethod
+    def set_default(db: Session, user_id: int, budget: Budget, is_default: bool):
+        # One default per user: clear the others in the same commit
+        if is_default:
+            db.query(Budget).filter(
+                Budget.user_id == user_id,
+                Budget.id != budget.id
+            ).update({Budget.is_default: False}, synchronize_session=False)
+        budget.is_default = is_default
+        db.commit()
+        db.refresh(budget)
+        return budget
+
+    @staticmethod
     def remove_budget(db: Session, budget: Budget):
         db.delete(budget)
         db.commit()

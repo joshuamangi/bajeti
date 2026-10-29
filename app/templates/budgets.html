@@ -25,9 +25,10 @@
         <li class="p-budget-item {{ 'active' if active }}">
           <label>
             <input type="radio" name="pActiveBudget" value="{{ item.id }}" {{ 'checked' if active }} data-act="set-budget" data-id="{{ item.id }}">
-            <span>{{ item.name }}<span class="p-budget-item-sub">{{ money(item.amount, bare=True) }}{% if active %} · {{ v.categories | length }} categories · active{% endif %}</span></span>
+            <span>{{ item.name }}<span class="p-budget-item-sub">{{ money(item.amount, bare=True) }}{% if active %} · {{ v.categories | length }} categories · active{% endif %}{% if item.is_default %} · opens at login{% endif %}</span></span>
           </label>
           <span class="p-row-actions">
+            <button type="button" class="p-icon-btn-tertiary" data-act="budget-default" data-id="{{ item.id }}" data-on="{{ 0 if item.is_default else 1 }}" aria-pressed="{{ 'true' if item.is_default else 'false' }}" aria-label="{{ 'Stop opening ' ~ item.name ~ ' at login' if item.is_default else 'Open ' ~ item.name ~ ' at login' }}" title="{{ 'Default budget' if item.is_default else 'Make default' }}"><i class="{{ 'fa' if item.is_default else 'fa-regular' }} fa-star" aria-hidden="true"></i></button>
             <button type="button" class="p-icon-btn-info" data-act="budget-manage" data-id="{{ item.id }}" aria-label="Allocations and targets for {{ item.name }}" title="Allocations and targets"><i class="fa fa-sliders" aria-hidden="true"></i></button>
             <button type="button" class="p-icon-btn-warning" data-act="budget-edit" data-id="{{ item.id }}" aria-label="Edit {{ item.name }}" title="Edit"><i class="fa fa-pencil" aria-hidden="true"></i></button>
             <button type="button" class="p-icon-btn-danger" data-act="budget-del" data-id="{{ item.id }}" aria-label="Delete {{ item.name }}" title="Delete"><i class="fa fa-trash" aria-hidden="true"></i></button>
