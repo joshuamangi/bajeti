@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% from "_ui.html" import money, empty_box, budget_switcher %}
+
+{% block title %}Payments{% endblock %}
+
+{% block header_left %}
+<a class="p-hbtn" href="/more" aria-label="Back"><i class="fa fa-arrow-left" aria-hidden="true"></i></a><span class="p-header-title">Payments</span>
+{% endblock %}
+
+{% block content %}
+{% set b = budget_details %}
+<div class="p-page">
+  <h1>Payments</h1>
+
+  <form class="p-card p-paste" method="POST" action="/payments/capture" data-form="paste" novalidate>
+    <label for="pPaste"><b>Paste a payment message</b><span class="p-small">An M-Pesa SMS or a payment email. Bajeti reads the amount, payee and reference.</span></label>
+    <textarea id="pPaste" name="raw" class="p-input" rows="3" maxlength="2000" placeholder="e.g. QAB12CD3EF Confirmed. Ksh450.00 paid to…"></textarea>
+    <p class="p-error-text" data-err aria-live="polite"></p>
+    <div class="p-paste-actions">
+      <button type="button" class="p-btn-ghost" data-act="paste-sample">Try a sample</button>
+      <button type="submit" class="p-btn-primary"><i class="fa fa-wand-magic-sparkles" aria-hidden="true"></i> Read message</button>
+    </div>
+  </form>
+
+  {% if all_budgets | length > 1 %}
+  <div class="p-scope"><p class="p-scope-label">File payments into</p>{{ budget_switcher(all_budgets, b.id if b else None) }}</div>
+  {% endif %}
+
+  {% if b and not inbox %}
+  <div class="p-state-error" role="alert"><i class="fa fa-circle-exclamation" aria-hidden="true"></i><h2>Couldn't load payments</h2>
+    <p>The server didn't answer. Nothing was changed.</p><a class="p-btn-primary" href=""><i class="fa fa-rotate-right" aria-hidden="true"></i> Try again</a></div>
+  {% elif inbox %}
+  {% set payments = inbox.payments %}
+  <section aria-labelledby="pInboxH">
+    <div class="p-section-head"><h2 id="pInboxH">Pending payments <span class="p-count">{{ payments | length }}</span></h2></div>
+    {% if payments %}
+    {% if not inbox.categories %}
+    <p class="p-inline-note"><i class="fa fa-circle-info" aria-hidden="true"></i><span>{{ b.name }} has no expense categories. Pick an expense budget above to file these payments.</span></p>
+    {% endif %}
+    <ul class="p-inbox">
+      {% for p in payments %}
+      <li class="p-pay-card" data-pay="{{ p.id }}">
+        <form data-form="pay-approve" data-id="{{ p.id }}" data-payee="{{ p.payee or 'payment' }}" novalidate>
+          <div class="p-pay-head">
+            {% set src = {'sms': ('fa-comment-sms', 'M-Pesa SMS'), 'email': ('fa-envelope', 'Email')}.get(p.source, ('fa-paste', 'Pasted')) %}
+            <span class="p-pay-source"><i class="fa {{ src[0] }}" aria-hidden="true"></i> {{ src[1] }} · {{ p.received_at | short_date }}</span>
+            <span class="p-pay-amount">{% if p.amount is not none %}{{ money(p.total) }}{% else %}Amount not found{% endif %}</span>
+          </div>
+          <div class="p-pay-payee">{{ p.payee or ("Couldn't read this message" if p.kind == 'unknown' else 'Unknown payee') }}</div>
+          <div class="p-small">Ref {{ p.reference or 'none found' }}{% if p.paid_on %} · paid {{ p.paid_on | short_date }}{% endif %}{% if p.fee and (p.fee | float) > 0 %} · {{ money(p.amount, bare=True) }} + {{ money(p.fee, bare=True) }} fee{% endif %}</div>
+          {% if p.raw_text %}
+          <details class="p-pay-raw"><summary>Original message</summary><p class="sensitive">{{ p.raw_text }}</p></details>
+          {% endif %}
+          {% if p.amount is none %}
+          <label class="p-field"><span>Amount</span><input name="amount" class="p-money-input" inputmode="decimal" required></label>
+          {% endif %}
+          <label class="p-field"><span>Category in {{ b.name }}{% if p.suggested_category_id %} <span class="p-tag p-tag-info">Suggested</span>{% endif %}</span>
+            <select name="category_id" required>
+              <option value="">Choose a category</option>
+              {% for c in inbox.categories %}<option value="{{ c.id }}" {{ 'selected' if c.id == p.suggested_category_id }}>{{ c.name }}</option>{% endfor %}
+            </select></label>
+          {% if p.payee %}<label class="p-check"><input type="checkbox" name="remember" value="1"> Remember {{ p.payee }} for next time</label>{% endif %}
+          <p class="p-error-text" data-err aria-live="polite"></p>
+          <div class="p-pay-actions">
+            <button type="button" class="p-btn-ghost" data-act="pay-dismiss" data-id="{{ p.id }}" data-payee="{{ p.payee or 'payment' }}" aria-label="Dismiss payment to {{ p.payee or 'unknown payee' }}"><i class="fa fa-xmark" aria-hidden="true"></i> Dismiss</button>
+            <button type="submit" class="p-btn-primary" aria-label="Approve payment to {{ p.payee or 'unknown payee' }}"><i class="fa fa-check" aria-hidden="true"></i> Approve</button>
+          </div>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    {% call empty_box('fa-inbox', 'All caught up', 'Paste an M-Pesa SMS or a payment email above and it appears here for you to file.') %}{% endcall %}
+    {% endif %}
+  </section>
+  <p class="p-small">Money received, agent withdrawals and Fuliza notices are not added. The original message is deleted once you approve or dismiss a payment.</p>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block data %}
+<script type="application/json" id="pData">{{ page_data | tojson }}</script>
+{% endblock %}

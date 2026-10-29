@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% from "_ui.html" import money, empty_box, budget_switcher, due_list %}
+
+{% block title %}Recurring{% endblock %}
+
+{% block header_left %}
+<a class="p-hbtn" href="/more" aria-label="Back"><i class="fa fa-arrow-left" aria-hidden="true"></i></a><span class="p-header-title">Recurring</span>
+{% endblock %}
+
+{% block content %}
+{% set b = budget_details %}
+<div class="p-page">
+  <div class="p-page-head">
+    <h1>Recurring</h1>
+    {% if b and b.type == 'expense' %}<button type="button" class="p-btn-primary" data-act="rec-new"><i class="fa fa-plus" aria-hidden="true"></i> New</button>{% endif %}
+  </div>
+
+  {% if all_budgets | length > 1 %}
+  <div class="p-scope"><p class="p-scope-label">Showing</p>{{ budget_switcher(all_budgets, b.id if b else None) }}</div>
+  {% endif %}
+
+  {% if not b %}
+  {% call empty_box('fa-wallet', 'No budgets yet', 'Create a budget first, then add the bills you pay every month.') %}
+  <a class="p-btn-primary" href="/budgets">Open Budgets</a>
+  {% endcall %}
+
+  {% elif b.type != 'expense' %}
+  {% call empty_box('fa-repeat', 'Recurring is for expense budgets', b.name ~ ' is a savings budget. Pick an expense budget above to see its bills.') %}{% endcall %}
+
+  {% elif not recurring %}
+  <div class="p-state-error" role="alert"><i class="fa fa-circle-exclamation" aria-hidden="true"></i><h2>Couldn't load recurring expenses</h2>
+    <p>The server didn't answer. Nothing was changed.</p><a class="p-btn-primary" href=""><i class="fa fa-rotate-right" aria-hidden="true"></i> Try again</a></div>
+
+  {% else %}
+  {% if recurring['items'] %}
+  <p class="p-lead">About {{ money(recurring.monthly_total, dec=0) }} a month across {{ recurring.active_count }} active item{{ '' if recurring.active_count == 1 else 's' }} in {{ b.name }}.</p>
+  {% endif %}
+
+  {% if due %}
+  <section class="p-block" aria-labelledby="pDueH">
+    <div class="p-section-head"><h2 id="pDueH">Due now <span class="p-count">{{ due | length }}</span></h2></div>
+    {{ due_list(due) }}
+  </section>
+  {% endif %}
+
+  <section>
+    <div class="p-section-head"><h2>All recurring <span class="p-count">{{ recurring['items'] | length }}</span></h2></div>
+    {% if recurring['items'] %}
+    <ul class="p-rec-list">
+      {% for r in recurring['items'] %}
+      <li class="p-rec-li {{ 'is-paused' if r.paused }}" data-rec="{{ r.id }}">
+        <div class="p-rec-main">
+          <span class="p-rec-name">{{ r.name }}</span>
+          <span class="p-rec-meta">{{ money(r.amount) }} · Monthly · {{ r.category_name }}</span>
+          <span class="p-rec-meta">{% if r.paused %}<i class="fa fa-pause" aria-hidden="true"></i> Paused{% else %}Next: {{ r.next_due | short_date }}{% if r.anchor_day >= 29 %} (day {{ r.anchor_day }}, or the last day of shorter months){% endif %}{% endif %}</span>
+        </div>
+        <span class="p-tag {{ 'p-tag-info' if r.mode == 'auto' else 'p-tag-primary' }}">{% if r.mode == 'auto' %}<i class="fa fa-bolt" aria-hidden="true"></i> Auto-add{% else %}<i class="fa fa-hand" aria-hidden="true"></i> Ask first{% endif %}</span>
+        <span class="p-row-actions">
+          <button type="button" class="p-icon-btn-secondary" data-act="{{ 'rec-resume' if r.paused else 'rec-pause' }}" data-id="{{ r.id }}" aria-label="{{ 'Resume' if r.paused else 'Pause' }} {{ r.name }}" title="{{ 'Resume' if r.paused else 'Pause' }}"><i class="fa {{ 'fa-play' if r.paused else 'fa-pause' }}" aria-hidden="true"></i></button>
+          <button type="button" class="p-icon-btn-warning" data-act="rec-edit" data-item='{{ r | tojson }}' aria-label="Edit {{ r.name }}" title="Edit"><i class="fa fa-pencil" aria-hidden="true"></i></button>
+          <button type="button" class="p-icon-btn-danger" data-act="rec-del" data-id="{{ r.id }}" data-name="{{ r.name }}" aria-label="Delete {{ r.name }}" title="Delete"><i class="fa fa-trash" aria-hidden="true"></i></button>
+        </span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    {% call empty_box('fa-repeat', 'No recurring expenses in ' ~ b.name, 'Add rent, internet or school fees once and Bajeti reminds you or adds them for you.') %}
+    <button type="button" class="p-btn-primary" data-act="rec-new"><i class="fa fa-plus" aria-hidden="true"></i> Add recurring expense</button>
+    {% endcall %}
+    {% endif %}
+  </section>
+
+  {% if recurring.recent %}
+  <section class="p-card">
+    <div class="p-section-head"><h2>Recently added</h2></div>
+    <ul class="p-category-progress-ul">
+      {% for run in recurring.recent %}
+      <li class="p-category-progress-li"><span><b>{{ run.name }}</b><small>{{ run.due_date | short_date }} · {{ {'approved': 'Approved', 'skipped': 'Skipped', 'auto': 'Added automatically'}[run.action] }}</small></span><span>{% if run.amount %}{{ money(run.amount) }}{% else %}–{% endif %}</span></li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  <p class="p-small"><b>Ask first</b> items appear in Due now 5 days ahead for one-tap approval. <b>Auto-add</b> items are recorded on the due date, the next time Bajeti is opened.</p>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block data %}
+<script type="application/json" id="pData">{{ page_data | tojson }}</script>
+{% endblock %}

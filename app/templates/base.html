@@ -50,7 +50,8 @@
         <a class="p-tab" href="/budgets" {% if tab == 'budgets' %}aria-current="page"{% endif %}><i class="fa fa-wallet" aria-hidden="true"></i>Budgets</a>
         <button type="button" class="p-tab p-tab-add" data-act="add" aria-label="Add expense"><span class="p-tab-add-circle"><i class="fa fa-plus" aria-hidden="true"></i></span>Add</button>
         <a class="p-tab" href="/analytics" {% if tab == 'analytics' %}aria-current="page"{% endif %}><i class="fa fa-chart-simple" aria-hidden="true"></i>Analytics</a>
-        <a class="p-tab" href="/more" {% if tab == 'more' %}aria-current="page"{% endif %}><i class="fa fa-ellipsis" aria-hidden="true"></i>More</a>
+        {% set n = attention_count | default(0) %}
+        <a class="p-tab" href="/more" {% if tab == 'more' %}aria-current="page"{% endif %} aria-label="More{% if n %}, {{ n }} item{{ 's' if n > 1 }} need attention{% endif %}"><i class="fa fa-ellipsis" aria-hidden="true"></i>More{% if n %}<span class="p-badge" aria-hidden="true">{{ n }}</span>{% endif %}</a>
       </nav>
       <div id="pSnackBar" role="status" aria-live="polite" aria-atomic="true"></div>
     </div>

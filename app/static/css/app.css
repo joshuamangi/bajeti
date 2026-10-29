@@ -491,3 +491,29 @@ body[data-route="home"] .p-header .p-hbtn[data-act=eye]{display:none}
 
 /* Sign-in pages: the error sits above the card at the card's width */
 .p-auth-alert{width:100%;max-width:400px}
+
+/* ===== Recurring (Prototype A) ===== */
+.p-rec-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.8em}
+.p-rec-li{display:grid;grid-template-columns:1fr auto;gap:.8em;align-items:center;padding:1.2em;background:var(--bg-light);border-radius:var(--r);box-shadow:var(--shadow)}
+.p-rec-main{display:flex;flex-direction:column;gap:.4em;min-width:0}
+.p-rec-name{color:var(--text);font-weight:700}
+.p-rec-meta{font:var(--small)}
+.p-rec-li .p-row-actions{grid-column:1 / -1;justify-content:flex-end}
+.p-rec-li.is-paused{opacity:.75;box-shadow:inset .4em 0 0 var(--border),var(--shadow)}
+/* NEW COMPONENT: "Approve all" under an overdue card */
+.p-due-all{grid-column:1 / -1;justify-self:center;min-height:var(--tap)}
+
+/* ===== Payment capture (Prototype A) ===== */
+.p-paste{display:flex;flex-direction:column;gap:.8em}
+.p-paste label{display:flex;flex-direction:column;gap:.4em}
+.p-paste-actions{display:flex;justify-content:flex-end;gap:.8em;flex-wrap:wrap}
+.p-inbox{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.8em}
+.p-pay-card{background:var(--bg-light);border-radius:var(--r-item);box-shadow:inset .4em 0 0 var(--info),var(--shadow)}
+.p-pay-card>form{display:flex;flex-direction:column;gap:.8em;padding:1.2em}
+.p-pay-head{display:flex;justify-content:space-between;align-items:baseline;gap:.8em}
+.p-pay-source{font:var(--small);display:flex;align-items:center;gap:.4em}
+.p-pay-amount{font:700 1.25rem/1.25 var(--ff);color:var(--text)}
+.p-pay-payee{color:var(--text);font-weight:700;margin-top:-.4em}
+.p-pay-raw summary{min-height:var(--tap);display:flex;align-items:center;font:600 .75rem/1 var(--ff);color:var(--primary-ink);cursor:pointer}
+.p-pay-raw p{font:var(--small);padding:.8em;background:var(--bg-dark);border-radius:var(--r);overflow-wrap:anywhere}
+.p-pay-actions{display:grid;grid-template-columns:1fr 1.6fr;gap:.8em}

@@ -8,6 +8,7 @@ from schema.category import CategoryAllocationCreate, CategoryBase, CategoryOut,
 from schema.user import UserOut
 
 from services.category_service import CategoryService
+from services.recurring_service import RecurringService
 
 router = APIRouter(prefix="/api/categories", tags=["categories"])
 
@@ -131,6 +132,14 @@ async def delete_category(
     if not category:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Category not found")
+
+    # Recurring items point at the category; refuse rather than lose them (docs/design/recurring.md).
+    recurring = RecurringService.count_for_category(db, current_user.id, category.id)
+    if recurring:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"{category.name} has {recurring} recurring item{'s' if recurring > 1 else ''}. "
+                   "Delete or move them first.")
 
     CategoryService.delete_category(db, category)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

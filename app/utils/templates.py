@@ -82,6 +82,26 @@ templates.env.filters["month_label"] = lambda m: f"{month_name(m)} {m[:4]}"
 templates.env.filters["short_month"] = lambda m: month_name(m)[:3]
 templates.env.globals["shift_month"] = shift_month
 
+
+def short_date(value) -> str:
+    """"2026-10-28" -> "28 Oct"."""
+    text = str(value)[:10]
+    return f"{int(text[8:10])} {MONTH_NAMES[int(text[5:7]) - 1][:3]}"
+
+
+def relative_due(days: int) -> str:
+    if days < 0:
+        return f"{-days} day{'' if days == -1 else 's'} overdue"
+    if days == 0:
+        return "Due today"
+    if days == 1:
+        return "Due tomorrow"
+    return f"Due in {days} days"
+
+
+templates.env.filters["short_date"] = short_date
+templates.env.filters["relative_due"] = relative_due
+
 # register filter
 templates.env.filters["commafy"] = commafy
 templates.env.filters["money_text"] = money_text
