@@ -144,12 +144,74 @@
     }
   });
 
+  /* ---------- Loading: a bar while requests run, a spinner on the busy button, a skeleton while a page loads ---------- */
+  const SHOW_AFTER = 150; // ms: quick requests finish before anything flickers
+  let inFlight = 0, barTimer = null, navTimer = null;
+  function bar() {
+    let b = $('#pBusy');
+    if (!b) { b = document.createElement('div'); b.id = 'pBusy'; b.setAttribute('aria-hidden', 'true'); document.body.appendChild(b); }
+    return b;
+  }
+  async function track(promise) {
+    if (++inFlight === 1) { $('#pMain')?.setAttribute('aria-busy', 'true'); barTimer = setTimeout(() => bar().classList.add('on'), SHOW_AFTER); }
+    try { return await promise; }
+    finally {
+      if (--inFlight === 0) { clearTimeout(barTimer); bar().classList.remove('on'); if (!navTimer) $('#pMain')?.removeAttribute('aria-busy'); }
+    }
+  }
+  function setBusy(el, on) {
+    if (!el) return;
+    const i = el.querySelector('i.fa');
+    if (on) {
+      el.setAttribute('aria-busy', 'true');
+      if ('disabled' in el) el.disabled = true;
+      if (i) { i.dataset.icon = i.className; i.className = 'fa fa-spinner fa-spin'; }
+      else if (el.tagName === 'BUTTON') el.insertAdjacentHTML('afterbegin', '<i class="fa fa-spinner fa-spin" aria-hidden="true" data-busy-added></i> ');
+    } else {
+      el.removeAttribute('aria-busy');
+      if ('disabled' in el) el.disabled = false;
+      const added = el.querySelector('[data-busy-added]');
+      if (added) { added.nextSibling?.nodeType === 3 && added.nextSibling.remove(); added.remove(); }
+      else if (i && i.dataset.icon) { i.className = i.dataset.icon; delete i.dataset.icon; }
+    }
+  }
+  // Keep el busy while r (the handler's return value) is a pending promise.
+  function busyWhile(el, r) {
+    if (!el || !r || typeof r.then !== 'function') return;
+    setBusy(el, true);
+    r.then(() => setBusy(el, false), () => setBusy(el, false));
+  }
+  // A full page load: the browser shows nothing until the next page arrives.
+  function pageLoading(btn) {
+    if (btn) setTimeout(() => setBusy(btn, true), 0); // after the browser has read the form, so the button stays in it
+    const main = $('#pMain');
+    clearTimeout(navTimer);
+    navTimer = setTimeout(() => {
+      bar().classList.add('on');
+      if (!main || btn || main.classList.contains('p-loading')) return;
+      main.setAttribute('aria-busy', 'true');
+      main.classList.add('p-loading');
+      main.insertAdjacentHTML('afterbegin', `<div class="p-skel-wrap" data-page-loading><span class="p-visually-hidden" role="status">Loading…</span>
+        <div class="p-skel p-skel-title"></div><div class="p-skel-row"><div class="p-skel p-skel-card"></div><div class="p-skel p-skel-card"></div></div>
+        <div class="p-skel p-skel-line"></div><div class="p-skel-grid">${'<div class="p-skel p-skel-tile"></div>'.repeat(6)}</div></div>`);
+    }, SHOW_AFTER);
+  }
+  // Back and forward can restore this page from memory: clear what pageLoading left behind.
+  window.addEventListener('pageshow', e => {
+    if (!e.persisted) return;
+    clearTimeout(navTimer); navTimer = null;
+    bar().classList.remove('on');
+    $$('[data-page-loading]').forEach(el => el.remove());
+    const main = $('#pMain'); if (main) { main.classList.remove('p-loading'); main.removeAttribute('aria-busy'); }
+    $$('[aria-busy="true"]').forEach(el => setBusy(el, false));
+  });
+
   /* ---------- Saving in the background ---------- */
   async function post(url, fields) {
     const body = new URLSearchParams();
     Object.entries(fields).forEach(([k, v]) => { if (v !== undefined && v !== null) body.append(k, v); });
     let res;
-    try { res = await fetch(url, { method: 'POST', body, credentials: 'same-origin', redirect: 'follow' }); }
+    try { res = await track(fetch(url, { method: 'POST', body, credentials: 'same-origin', redirect: 'follow' })); }
     catch (_) { return { ok: false, message: 'No connection. Nothing was saved.', type: 'error' }; }
     if (res.redirected && new URL(res.url).pathname === '/login') { location.href = '/login'; return { ok: false }; }
     const t = res.redirected ? toastFromUrl(res.url) : null;
@@ -160,7 +222,7 @@
     // The path alone: the active budget comes from its cookie, not a stale ?budget_id.
     const url = location.pathname;
     let html;
-    try { const res = await fetch(url, { credentials: 'same-origin' }); if (!res.ok) throw new Error(res.status); html = await res.text(); }
+    try { html = await track(fetch(url, { credentials: 'same-origin' }).then(res => { if (!res.ok) throw new Error(res.status); return res.text(); })); }
     catch (_) { toast("Couldn't refresh. Pull down or tap refresh to try again.", { type: 'warning' }); return; }
     const doc = new DOMParser().parseFromString(html, 'text/html');
     const main = doc.querySelector('#pMain'), data = doc.querySelector('#pData');
@@ -473,7 +535,7 @@
     if (!name) { err.textContent = 'Enter a name.'; f.name.focus(); return; }
     if (!(allocated >= 0)) { err.textContent = 'Enter an amount (0 or more).'; f.allocated.focus(); return; }
     if (cats().some(c => c.name.toLowerCase() === name.toLowerCase())) { err.textContent = `${esc(name)} already exists in this budget.`; return; }
-    save('/dashboard/categories', { name, category_type: b.type, budget_id: b.id, allocated_amount: allocated.toFixed(2) }).then(() => { const n = $('#pIcName'); n && n.focus(); });
+    return save('/dashboard/categories', { name, category_type: b.type, budget_id: b.id, allocated_amount: allocated.toFixed(2) }).then(() => { const n = $('#pIcName'); n && n.focus(); });
   }
   function deleteAllocation(cid) {
     const c = catById(cid), b = budget(); if (!c || !c.allocation_id) return;
@@ -485,7 +547,7 @@
     if (!Object.values(fields).some(v => parseAmount(v) > 0)) { err.textContent = 'Enter at least one target amount.'; return; }
     const c = catById(f.cid.value), b = budget();
     if (f.dataset.single) closeSheet();
-    save('/dashboard/targets', { budget_id: b.id, category_id: c.id, ...fields }, { success: `Targets saved for ${esc(c.name)}` });
+    return save('/dashboard/targets', { budget_id: b.id, category_id: c.id, ...fields }, { success: `Targets saved for ${esc(c.name)}` });
   }
   function openTargetForm(cid) {
     const c = catById(cid); if (!c) return;
@@ -521,10 +583,10 @@
   function dueAction(el, name) {
     const id = el.dataset.id, date = el.dataset.date, label = esc(el.dataset.name);
     const undo = () => save(`/recurring/${id}/runs/${date}/undo`, {}, { success: 'Undone' });
-    save(`/recurring/${id}/${name}`, { due_date: date }, { success: name === 'approve' ? `Recorded ${label}` : `Skipped ${label} this time`, undo });
+    return save(`/recurring/${id}/${name}`, { due_date: date }, { success: name === 'approve' ? `Recorded ${label}` : `Skipped ${label} this time`, undo });
   }
   function approveAll(el) {
-    save(`/recurring/${el.dataset.id}/approve-all`, {}, { success: `Recorded ${el.dataset.count} payments for ${esc(el.dataset.name)}` });
+    return save(`/recurring/${el.dataset.id}/approve-all`, {}, { success: `Recorded ${el.dataset.count} payments for ${esc(el.dataset.name)}` });
   }
   function openRecurringForm(r) {
     const list = cats().slice().sort(byName);
@@ -594,7 +656,7 @@
       fields.amount = amount.toFixed(2);
     }
     const id = f.dataset.id;
-    save(`/payments/${id}/approve`, fields, { undo: () => save(`/payments/${id}/restore`, {}, { success: 'Back in the inbox' }) });
+    return save(`/payments/${id}/approve`, fields, { undo: () => save(`/payments/${id}/restore`, {}, { success: 'Back in the inbox' }) });
   }
   function dismissPayment(el) {
     deferDelete({ url: `/payments/${el.dataset.id}/dismiss`, rows: rowsFor(`[data-pay="${el.dataset.id}"]`), message: `Dismissed ${esc(el.dataset.payee)}` });
@@ -602,7 +664,7 @@
 
   async function setActiveBudget(id) {
     if (budget() && +id === budget().id) return;
-    try { await fetch(`/dashboard?budget_id=${encodeURIComponent(id)}`, { credentials: 'same-origin' }); }
+    try { await track(fetch(`/dashboard?budget_id=${encodeURIComponent(id)}`, { credentials: 'same-origin' })); }
     catch (_) { toast("Couldn't switch budget. Check your connection.", { type: 'warning' }); return; }
     if (location.search) history.replaceState(null, '', location.pathname);
     await refreshMain();
@@ -674,7 +736,7 @@
       openSheet({
         title: 'Log out everywhere?', render: () => `<p>This signs out every phone and browser, including this one. You will need your password to log back in.</p>
           <div class="p-sheet-actions"><button type="button" class="p-modal-btn-secondary" data-act="close-sheet">Cancel</button><button type="button" class="p-modal-btn-danger" data-confirm-ok>Log out everywhere</button></div>`,
-        mount: m => { m.querySelector('[data-confirm-ok]').onclick = () => form.submit(); }
+        mount: m => { m.querySelector('[data-confirm-ok]').onclick = e2 => { pageLoading(e2.currentTarget); form.submit(); }; }
       });
     },
     'alert-dismiss': el => { const box = el.closest('[data-dismiss-key]'); if (box) { store.set('sessionStorage', 'bajeti-dismiss-' + box.dataset.dismissKey, '1'); box.remove(); } }
@@ -688,7 +750,7 @@
     const el = e.target.closest('[data-act]'); if (!el) return;
     const fn = ACT[el.dataset.act]; if (!fn) return;
     if (el.tagName === 'A') e.preventDefault();
-    try { fn(el, e); } catch (err) { console.error('[Bajeti] action ' + el.dataset.act, err); toast('Something went wrong. Nothing was saved.', { type: 'error' }); }
+    try { busyWhile(el, fn(el, e)); } catch (err) { console.error('[Bajeti] action ' + el.dataset.act, err); toast('Something went wrong. Nothing was saved.', { type: 'error' }); }
   });
   document.addEventListener('submit', e => {
     const f = e.target;
@@ -696,9 +758,20 @@
       const [a, b] = f.dataset.match.split(',').map(n => f.elements[n]), err = f.querySelector('[data-err]');
       if (a.value !== b.value) { e.preventDefault(); if (err) err.textContent = 'The passwords do not match.'; b.setAttribute('aria-invalid', 'true'); b.focus(); return; }
     }
-    const h = FORMS[f.dataset.form]; if (!h) return;
+    const btn = e.submitter || f.querySelector('[type=submit]');
+    const h = FORMS[f.dataset.form];
+    if (!h) { if (!e.defaultPrevented) pageLoading(btn); return; }
     e.preventDefault();
-    try { h(f); } catch (err) { console.error('[Bajeti] form ' + f.dataset.form, err); toast('Something went wrong. Nothing was saved.', { type: 'error' }); }
+    try { busyWhile(btn, h(f)); } catch (err) { console.error('[Bajeti] form ' + f.dataset.form, err); toast('Something went wrong. Nothing was saved.', { type: 'error' }); }
+  });
+  // Links to another page: show the skeleton until it arrives. Registered after the action handler, which cancels its own links.
+  document.addEventListener('click', e => {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const a = e.target.closest('a[href]');
+    if (!a || (a.target && a.target !== '_self') || a.hasAttribute('download')) return;
+    const u = new URL(a.href, location.href);
+    if (u.origin !== location.origin || (u.pathname === location.pathname && u.search === location.search)) return;
+    pageLoading();
   });
 
   /* ---------- Boot ---------- */

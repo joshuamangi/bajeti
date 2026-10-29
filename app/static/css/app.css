@@ -270,6 +270,14 @@ body.p-bare #pMain{padding-bottom:2.4em}
 .p-skel-title{height:4.8em}.p-skel-line{height:1.6em;width:60%}
 .p-skel-row{display:grid;grid-template-columns:1fr 1fr;gap:.8em}.p-skel-card{height:6.4em}
 .p-skel-grid{display:grid;grid-template-columns:1fr 1fr;gap:.8em}.p-skel-tile{height:5.6em}
+/* Loading bar while requests run (#pBusy, added by app.js), and the page skeleton while the next page loads */
+#pBusy{position:fixed;top:var(--safe-top);left:0;right:0;z-index:100;height:3px;overflow:hidden;pointer-events:none;opacity:0;transition:opacity .2s}
+#pBusy.on{opacity:1}
+#pBusy::before{content:"";position:absolute;top:0;bottom:0;left:0;width:40%;border-radius:0 3px 3px 0;background:var(--primary-ink);animation:p-busy 1.2s ease-in-out infinite}
+body:has(.p-header) #pBusy::before{background:color-mix(in srgb,var(--primary) 60%,var(--bg-light))} /* the header uses inverted colours */
+@keyframes p-busy{from{transform:translateX(-100%)}to{transform:translateX(250%)}}
+#pMain.p-loading>:not([data-page-loading]){display:none}
+[aria-busy="true"]:disabled{opacity:.7;cursor:progress}
 .p-state-error{display:flex;flex-direction:column;align-items:center;gap:.8em;padding:2.4em 1.6em;text-align:center;background:var(--bg-light);border-radius:var(--r);box-shadow:inset 0 .4em 0 var(--danger),var(--shadow)}
 .p-state-error>i{font-size:2em;color:var(--danger)}
 
@@ -455,6 +463,7 @@ body.p-bare #pSnackBar{bottom:calc(1.2em + var(--safe-bottom))}
 
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+  #pBusy::before{width:100%;border-radius:0;animation:none;opacity:.6}
 }
 
 /* ===== Prototype A "Evolve": bottom tab bar with a raised Add button ===== */
