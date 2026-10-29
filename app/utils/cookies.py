@@ -25,7 +25,13 @@ def set_active_budget_cookie(response: Response, budget_id: int) -> None:
     response.set_cookie(key="active_budget_id", value=str(budget_id), **_flags())
 
 
+def clear_active_budget_cookie(response: Response) -> None:
+    """At login, so the default budget opens instead of the one picked last session."""
+    response.delete_cookie("active_budget_id", **_flags())
+
+
 def clear_auth_cookies(response: Response) -> None:
     response.delete_cookie("access_token", **_flags())
+    clear_active_budget_cookie(response)
     response.delete_cookie("show_menu", httponly=False,
                            samesite="lax", secure=IS_PRODUCTION)

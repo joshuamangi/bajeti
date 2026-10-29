@@ -8,7 +8,7 @@ from app.utils.templates import render_with_user
 from app.utils.tokens import verify_token
 from app.services.auth_service import (
     login as auth_login, logout_everywhere as auth_logout_everywhere, register as auth_register)
-from app.utils.cookies import clear_auth_cookies, set_auth_cookies
+from app.utils.cookies import clear_active_budget_cookie, clear_auth_cookies, set_auth_cookies
 from app.utils.redirects import redirect_with_toast
 
 logger = logging.getLogger(__name__)
@@ -31,6 +31,7 @@ async def handle_authenticated_login(username: str, password: str, request: Requ
     rsp = RedirectResponse(
         url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
     set_auth_cookies(rsp, access_token)
+    clear_active_budget_cookie(rsp)
     return rsp
 
 
