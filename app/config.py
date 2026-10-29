@@ -41,6 +41,10 @@ class Settings(BaseSettings):
     # Closed by default: the site is public, so strangers must not be able to create accounts.
     # Set REGISTRATION_OPEN=true only while you add a household member.
     REGISTRATION_OPEN: bool = False
+    # "Today" for due dates is local time in Nairobi (UTC+3, no daylight saving).
+    APP_TIMEZONE_OFFSET_HOURS: int = 3
+    # Keep the original text of a captured payment after it is approved or dismissed.
+    KEEP_RAW_MESSAGES: bool = False
 
     @model_validator(mode="after")
     def check_secret_key(self):

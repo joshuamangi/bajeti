@@ -46,4 +46,8 @@ async def delete_category(request: Request,
     if resp.status_code == status.HTTP_204_NO_CONTENT:
         return redirect_with_toast("/dashboard", "Category Deleted successfully!", "warning")
 
-    return redirect_with_toast("/dashboard", "Category deletion failed", "error")
+    try:
+        detail = resp.json().get("detail") if resp.status_code == status.HTTP_409_CONFLICT else None
+    except ValueError:
+        detail = None
+    return redirect_with_toast("/dashboard", detail or "Category deletion failed", "error")

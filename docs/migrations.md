@@ -53,3 +53,15 @@ the date here.
 Rollback (drops the snapshots and the two indexes; no other data is touched):
 
 docker compose exec bajeti_app alembic downgrade 186f1cc1a7ca
+
+## Recurring expenses, b2c4e6f8a1d3, and payment capture, c3d5f7a9b1e2
+
+New tables only: `recurring_expenses` and `recurring_runs`, then `pending_payments` and `payee_rules`.
+No existing rows change. Both tested on a scratch database (upgrade, downgrade, upgrade; one head).
+
+Status: not yet in production. After the deploy, check `alembic current` shows c3d5f7a9b1e2 and
+record the date here.
+
+Rollback (drops the four tables and everything in them):
+
+docker compose exec bajeti_app alembic downgrade a7d3c2f19b40

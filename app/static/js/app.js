@@ -512,6 +512,89 @@
     deferDelete({ url: `/dashboard/transfers/${id}/undo`, rows: rowsFor(`[data-transfer="${id}"]`), message: 'Transfer undone' });
   }
 
+  /* ---------- Recurring (monthly bills; docs/design/recurring.md) ---------- */
+  function dueAction(el, name) {
+    const id = el.dataset.id, date = el.dataset.date, label = esc(el.dataset.name);
+    const undo = () => save(`/recurring/${id}/runs/${date}/undo`, {}, { success: 'Undone' });
+    save(`/recurring/${id}/${name}`, { due_date: date }, { success: name === 'approve' ? `Recorded ${label}` : `Skipped ${label} this time`, undo });
+  }
+  function approveAll(el) {
+    save(`/recurring/${el.dataset.id}/approve-all`, {}, { success: `Recorded ${el.dataset.count} payments for ${esc(el.dataset.name)}` });
+  }
+  function openRecurringForm(r) {
+    const list = cats().slice().sort(byName);
+    if (!list.length) { toast('Add a category to this budget first.', { type: 'warning' }); return; }
+    const pad = n => String(n).padStart(2, '0'), now = new Date();
+    const firstNext = `${now.getMonth() === 11 ? now.getFullYear() + 1 : now.getFullYear()}-${pad(now.getMonth() === 11 ? 1 : now.getMonth() + 2)}-01`;
+    openSheet({
+      title: r ? 'Edit ' + esc(r.name) : 'New recurring expense', render: () => `<form data-form="recurring" data-id="${r ? r.id : ''}" class="p-modal-form-content" novalidate>
+        <label class="p-field"><span>Name</span><input name="name" value="${esc(r ? r.name : '')}" required maxlength="60" placeholder="e.g. Internet"></label>
+        <label class="p-field"><span>Amount</span><input name="amount" class="p-money-input" inputmode="decimal" value="${esc(r ? r.amount : '')}" required></label>
+        <label class="p-field"><span>Category in ${esc(budget().name)}</span><select name="category_id">${list.map(c => `<option value="${c.id}" ${r && r.category_id === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></label>
+        <label class="p-field"><span>Next due date (repeats monthly)</span><input name="next_due" type="date" value="${esc(r ? r.next_due : firstNext)}" required></label>
+        <p class="p-small" data-day-note></p>
+        <fieldset class="p-fieldset"><legend>When it is due</legend>
+          <label class="p-radio-card"><input type="radio" name="mode" value="ask_first" ${!r || r.mode === 'ask_first' ? 'checked' : ''}><span><b>Ask first</b><small>Shows in Due now 5 days ahead for one tap</small></span></label>
+          <label class="p-radio-card"><input type="radio" name="mode" value="auto" ${r && r.mode === 'auto' ? 'checked' : ''}><span><b>Auto-add</b><small>Recorded on the due date and listed under Recently added</small></span></label>
+        </fieldset>
+        <p class="p-error-text" data-err aria-live="polite"></p><button type="submit" class="p-modal-btn-primary">${r ? 'Save' : 'Add recurring expense'}</button></form>`,
+      mount: m => {
+        const f = m.querySelector('form'), note = f.querySelector('[data-day-note]');
+        const upd = () => { const day = +String(f.next_due.value).slice(8, 10); note.textContent = day >= 29 ? `Due on day ${day}, or the last day of shorter months.` : ''; };
+        f.next_due.addEventListener('change', upd); upd();
+      }
+    });
+  }
+  function submitRecurring(f) {
+    const err = f.querySelector('[data-err]'), name = f.name.value.trim(), amount = parseAmount(f.amount.value);
+    if (!name) { err.textContent = 'Enter a name.'; f.name.focus(); return; }
+    if (!(amount > 0)) { err.textContent = 'Enter an amount greater than 0.'; f.amount.focus(); return; }
+    if (!f.next_due.value) { err.textContent = 'Pick the next due date.'; f.next_due.focus(); return; }
+    closeSheet();
+    const id = f.dataset.id;
+    save(id ? `/recurring/${id}/edit` : '/recurring', {
+      name, amount: amount.toFixed(2), category_id: f.category_id.value, next_due: f.next_due.value,
+      mode: f.querySelector('input[name=mode]:checked').value
+    }, { success: `Saved ${esc(name)}` });
+  }
+  function deleteRecurring(el) {
+    deferDelete({ url: `/recurring/${el.dataset.id}/delete`, rows: rowsFor(`[data-rec="${el.dataset.id}"]`), message: `Deleted ${esc(el.dataset.name)}` });
+  }
+
+  /* ---------- Payments inbox (docs/design/payments.md) ---------- */
+  // Made-up messages for "Try a sample": fake names, numbers and codes.
+  const SAMPLES = [
+    'QXY78ZK2LM Confirmed. Ksh1,840.00 paid to Demo Supermarket. on 27/10/26 at 7:15 PM. New M-PESA balance is Ksh12,300.00. Transaction cost, Ksh0.00.',
+    'QRT45UV6WX Confirmed. Ksh300.00 sent to DEMO WATER VENDOR 0700000000 on 27/10/26 at 9:02 AM. New M-PESA balance is Ksh8,743.00. Transaction cost, Ksh7.00.',
+    'Your payment of KES 3,500.00 to Demo Fibre Internet was successful. Reference: FBR20261027.'
+  ];
+  let sampleIdx = 0;
+  async function submitPaste(f) {
+    const raw = f.raw.value.trim(), err = f.querySelector('[data-err]');
+    err.textContent = '';
+    if (!raw) { err.textContent = 'Paste a message first.'; f.raw.focus(); return; }
+    const r = await post('/payments/capture', { raw });
+    await refreshMain();
+    if (r.ok === false && !r.message) return;
+    toast(esc(r.message), { type: r.type === 'success' ? 'success' : r.type });
+    if (r.type === 'success' || r.type === 'warning') { const t = $('#pPaste'); if (t && r.type === 'success') t.value = ''; }
+  }
+  function submitPayApprove(f) {
+    const err = f.querySelector('[data-err]'), category = f.category_id.value;
+    if (!category) { err.textContent = 'Choose a category.'; f.category_id.focus(); return; }
+    const fields = { category_id: category, remember: f.remember && f.remember.checked ? '1' : '' };
+    if (f.amount) {
+      const amount = parseAmount(f.amount.value);
+      if (!(amount > 0)) { err.textContent = 'Enter the amount.'; f.amount.focus(); return; }
+      fields.amount = amount.toFixed(2);
+    }
+    const id = f.dataset.id;
+    save(`/payments/${id}/approve`, fields, { undo: () => save(`/payments/${id}/restore`, {}, { success: 'Back in the inbox' }) });
+  }
+  function dismissPayment(el) {
+    deferDelete({ url: `/payments/${el.dataset.id}/dismiss`, rows: rowsFor(`[data-pay="${el.dataset.id}"]`), message: `Dismissed ${esc(el.dataset.payee)}` });
+  }
+
   async function setActiveBudget(id) {
     if (budget() && +id === budget().id) return;
     try { await fetch(`/dashboard?budget_id=${encodeURIComponent(id)}`, { credentials: 'same-origin' }); }
@@ -546,6 +629,16 @@
     'cat-topup': el => openTransfer({ to: el.dataset.id }),
     transfer: () => openTransfer({}),
     'transfer-undo': el => undoTransfer(el.dataset.id),
+    'due-approve': el => dueAction(el, 'approve'),
+    'due-skip': el => dueAction(el, 'skip'),
+    'due-approve-all': el => approveAll(el),
+    'rec-new': () => openRecurringForm(null),
+    'rec-edit': el => openRecurringForm(JSON.parse(el.dataset.item)),
+    'rec-pause': el => save(`/recurring/${el.dataset.id}/pause`, {}, { success: 'Paused' }),
+    'rec-resume': el => save(`/recurring/${el.dataset.id}/resume`, {}, { success: 'Resumed' }),
+    'rec-del': el => deleteRecurring(el),
+    'paste-sample': () => { const t = $('#pPaste'); if (t) { t.value = SAMPLES[sampleIdx++ % SAMPLES.length]; t.focus(); } },
+    'pay-dismiss': el => dismissPayment(el),
     'exp-edit': el => openExpenseEdit(el.dataset.cat, el.dataset.id),
     'exp-del': el => deleteExpense(el.dataset.cat, el.dataset.id),
     'set-budget': el => setActiveBudget(el.dataset.id),
@@ -582,7 +675,8 @@
   };
   const FORMS = {
     'add-expense': submitAddExpense, 'expense-edit': submitExpenseEdit, category: submitCategory, transfer: submitTransfer,
-    budget: submitBudget, 'inline-category': submitInlineCategory, target: submitTarget
+    budget: submitBudget, 'inline-category': submitInlineCategory, target: submitTarget, recurring: submitRecurring,
+    paste: submitPaste, 'pay-approve': submitPayApprove
   };
   document.addEventListener('click', e => {
     const el = e.target.closest('[data-act]'); if (!el) return;
