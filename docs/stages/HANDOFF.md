@@ -88,3 +88,35 @@ Decisions (owner, 2026-10-22): commit and PR as is; Pi checks after merge: `dock
 Open for the owner: after the deploy, report the three Pi checks; then S07 can be marked done. Dependabot for the pinned digest and tag is still in the backlog (S08 / A7).
 Addendum (2026-10-25, owner confirmed done): PR #139 merged 2026-10-22, `test` and `deploy` green. Pi checks (read-only): repo at the merge commit; `bajeti_app` `Up 2 days (healthy)` with read-only root, user `bajeti`, all capabilities dropped, 768 MiB, 2 CPUs; public `/login` returns 200; one transient tunnel reconnect on 2026-10-25, recovered in about 20 s. Finding: `deploy.yml` only recreates `bajeti_app`, so `cloudflared` kept its old settings until the owner ran `docker compose up -d cloudflared` by hand (2026-10-25); afterwards read-only root, all capabilities dropped, 128 MiB and 128 pids were confirmed, connections registered, `/login` 200. For S08: the deploy must recreate every changed service, not only the app. Still not verified: the lock under two simultaneous starts, image size against the old image.
 Side change the same day: SSH on the app Pi is now allowed from the whole home network (`lan_cidr`) because DHCP moved the Mac's address and locked the owner out; the firewall role is tagged `firewall` so `--tags firewall` works (PR pending, applied by hand with Ansible).
+
+## S16 (P12), 2026-10-29, status: in-progress (redesign done; installable app not started)
+
+Produced: PR #143 (prototype files in `design/prototype-a/`, port guide with the owner's decisions), PR #144 (Prototype A ported to Jinja and vanilla JS: `palette.css` tokens with light mode as the default, `app.css`, `app.js` with sheets, background saves, 6-second undo for deletes and transfers, masking; every page moved to the new shell; `?v=<mtime>` asset URLs so phones do not keep stale CSS). All merged and deployed.
+Verified: full pytest; the owner checked the pages on the phone and compared them side by side with the prototype (padding, light default, letter filter in Add expense from 2 categories, tab bar spacing) before the merge.
+Not verified: Claude did not compare at 375px and 1200px in light and dark itself (the browser driver for screenshots could not be downloaded); only the owner's phone checks exist.
+Decisions (owner): light mode is the default; letter filter shows from 2 categories; Admin area deferred to `docs/backlog.md`; offline Home data in IndexedDB, cleared on logout (for the PWA part).
+Left for this stage: manifest and icons, iOS tags, service worker that never caches signed-in pages or API calls, offline page, install hint (roadmap E5 items 3 to 5).
+
+## S13 (P9), 2026-10-29, status: done
+
+Produced: `docs/design/analytics.md` (approved), PR #145 (Month, 6 months, Year and category detail pages; `routers/analytics.py`, `services/analytics_rules.py`, `analytics_service.py`, `snapshot_service.py`; migration `a7d3c2f19b40` adding `allocation_snapshots` and two indexes), PR #146 (migration recorded).
+Verified: tests for the rules and for every endpoint, including a second user getting 404; the migration tested up, down, up on a scratch database; deployed, production at `a7d3c2f19b40` per the deploy log; the owner checked the pages on the phone.
+Not verified: the cost of the aggregation queries on the Pi (not timed); the Pi was not checked by hand (SSH was refused from the Mac on 2026-10-28, not investigated).
+Decisions (owner): charts are plain HTML and SVG, not ECharts; analytics starts from the migration date, no backfill of earlier months.
+
+## S14 (P10), 2026-10-29, status: done
+
+Produced: `docs/design/recurring.md` (approved), PR #147 (model, migration `b2c4e6f8a1d3`, `/api/recurring`, Due now cards on Home and the Recurring page), PR #149 (ask-first items show in Due now on the due date instead of 5 days before).
+Verified: `tests/test_recurring.py` (dates clamped to short months and leap years, catch-up with approve all, skip and undo, two tabs approving at once, auto items added on page load, every endpoint 404 for a second user); deployed; production at `c3d5f7a9b1e2` and later `d4e6a8c0b2f3` per the deploy logs; the owner tested on the phone.
+Not verified: the Pi by hand.
+Decisions (owner): monthly only; no background job (auto items are recorded when a page loads); expense budgets only; deleting a category with recurring items is refused; "today" is Nairobi time (`APP_TIMEZONE_OFFSET_HOURS=3`); auto items only show in "Recently added"; ask-first items appear on the due date (changed 2026-10-29).
+
+## S17 (P13), 2026-10-29, status: done (sending from the phone left open)
+
+Produced: `docs/design/payments.md` (approved), PR #147 (migration `c3d5f7a9b1e2`, `services/payment_parser.py`, `/api/payments`, Payments page with the paste box and inbox, payee rules and suggestions).
+Verified: table-driven parser tests (paid, sent, airtime, email, ignored types, hostile and malformed text), dedupe by reference per user, fees added to the amount, raw text removed on approve or dismiss and not logged (test), every endpoint 404 for a second user; deployed; the owner tested with "Try a sample".
+Not verified: real M-Pesa messages (all test messages are made up); the Pi by hand.
+Decisions (owner): paid, sent, airtime and email messages enter the inbox; received money, withdrawals and Fuliza notices are ignored; `KEEP_RAW_MESSAGES=False`.
+Left open: the phone Shortcut with its own token (roadmap E4 "Ingestion transport", issue #113 stays open for it).
+
+Also on 2026-10-29: PR #148 (default budget, starred on the Budgets screen, opens after login; migration `d4e6a8c0b2f3`), not tied to a stage.
