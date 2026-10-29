@@ -13,7 +13,6 @@ from schema.recurring import RecurringCreate
 from services.budget_service import BudgetService
 from services.category_service import CategoryService
 
-DUE_WINDOW_DAYS = 5   # ask-first items show from 5 days before the due date
 
 
 def today() -> date:
@@ -165,7 +164,7 @@ class RecurringService:
         RecurringService.record_auto(db, user_id, budget_id)
         items = [i for i in RecurringService._in_budget(db, user_id, budget_id)
                  if i.mode == "ask_first" and not i.paused
-                 and i.next_due <= today() + timedelta(days=DUE_WINDOW_DAYS)]
+                 and i.next_due <= today()]  # on the due date, not before
         names = RecurringService._names(db, items)
         out = [RecurringService.out(i, names.get(i.category_id, ""), due_date=i.next_due,
                                     days=(i.next_due - today()).days,

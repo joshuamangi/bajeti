@@ -534,7 +534,7 @@
         <label class="p-field"><span>Next due date (repeats monthly)</span><input name="next_due" type="date" value="${esc(r ? r.next_due : firstNext)}" required></label>
         <p class="p-small" data-day-note></p>
         <fieldset class="p-fieldset"><legend>When it is due</legend>
-          <label class="p-radio-card"><input type="radio" name="mode" value="ask_first" ${!r || r.mode === 'ask_first' ? 'checked' : ''}><span><b>Ask first</b><small>Shows in Due now 5 days ahead for one tap</small></span></label>
+          <label class="p-radio-card"><input type="radio" name="mode" value="ask_first" ${!r || r.mode === 'ask_first' ? 'checked' : ''}><span><b>Ask first</b><small>Shows in Due now on the due date for one tap</small></span></label>
           <label class="p-radio-card"><input type="radio" name="mode" value="auto" ${r && r.mode === 'auto' ? 'checked' : ''}><span><b>Auto-add</b><small>Recorded on the due date and listed under Recently added</small></span></label>
         </fieldset>
         <p class="p-error-text" data-err aria-live="polite"></p><button type="submit" class="p-modal-btn-primary">${r ? 'Save' : 'Add recurring expense'}</button></form>`,
