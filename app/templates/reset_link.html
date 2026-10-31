@@ -1,0 +1,26 @@
+{% extends "base_auth.html" %}
+
+{% block title %}Set a new password{% endblock %}
+{% block subtitle %}Set a new password{% endblock %}
+
+{% block content %}
+<form method="POST" action="/reset" class="p-auth-card" data-match="new_password,confirm_password" data-reset-link>
+  {# Filled from the URL fragment by app.js; the fragment never reaches the server. #}
+  <input type="hidden" name="token" value="{{ token | default('') }}">
+  <div class="p-field">
+    <label for="pPassword">New password</label>
+    <div class="p-pass">
+      <input id="pPassword" name="new_password" type="password" autocomplete="new-password" minlength="{{ MIN_PASSWORD_LENGTH }}" required aria-describedby="pPassHint">
+      <button type="button" data-act="toggle-pass" aria-label="Show password" aria-pressed="false"><i class="fa fa-eye" aria-hidden="true"></i></button>
+    </div>
+    <span class="p-small" id="pPassHint">At least {{ MIN_PASSWORD_LENGTH }} characters</span>
+  </div>
+  <label class="p-field"><span>Confirm new password</span><input name="confirm_password" type="password" autocomplete="new-password" minlength="{{ MIN_PASSWORD_LENGTH }}" required></label>
+  <p class="p-error-text" data-err aria-live="polite"></p>
+  <button type="submit" class="p-btn-primary p-btn-block">Set password and log in</button>
+  <div class="p-auth-links">
+    <a class="p-link" href="/login">Back to log in</a>
+  </div>
+</form>
+<p class="p-small p-center">The link works once, for 24 hours. If it has expired, ask the household owner for a new one.</p>
+{% endblock %}

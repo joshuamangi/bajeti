@@ -27,23 +27,30 @@
         <label class="p-field"><span>Last name</span><input type="text" name="last_name" value="{{ user.last_name }}" required autocomplete="family-name"></label>
       </div>
       <label class="p-field"><span>Email</span><input type="email" name="email" value="{{ user.email }}" required autocomplete="email"></label>
+      <button type="submit" class="p-modal-btn-primary"><i class="fa fa-check" aria-hidden="true"></i> Save changes</button>
+    </form>
+  </section>
+
+  <section>
+    <h2 class="p-group-title">Security question {% if user.has_security_answer %}<span class="p-tag p-tag-success">Set</span>{% else %}<span class="p-tag p-tag-warning">Missing</span>{% endif %}</h2>
+    <form method="POST" action="/profile/security-question" class="p-modal-form-content">
+      <p class="p-small">Lets you reset a forgotten password without help.</p>
       <div class="p-field">
-        <span><label for="pSecAnswer">Security question: what was your childhood best friend's name?</label>
-          {% if user.has_security_answer %}<span class="p-tag p-tag-success">Set</span>{% else %}<span class="p-tag p-tag-warning">Missing</span>{% endif %}</span>
+        <label for="pSecAnswer">What was your childhood best friend's name?</label>
         <div class="p-pass">
-          <input type="password" id="pSecAnswer" name="security_answer" autocomplete="off"
-                 placeholder="{{ 'Leave blank to keep your current answer' if user.has_security_answer else 'Enter your answer' }}">
+          <input type="password" id="pSecAnswer" name="security_answer" autocomplete="off" required>
           <button type="button" data-act="toggle-pass" aria-label="Show answer" aria-pressed="false"><i class="fa fa-eye" aria-hidden="true"></i></button>
         </div>
       </div>
-      <button type="submit" class="p-modal-btn-primary"><i class="fa fa-check" aria-hidden="true"></i> Save changes</button>
+      <label class="p-field"><span>Current password</span><input type="password" name="current_password" autocomplete="current-password" required></label>
+      <button type="submit" class="p-modal-btn-primary"><i class="fa fa-check" aria-hidden="true"></i> {{ 'Change answer' if user.has_security_answer else 'Save answer' }}</button>
     </form>
   </section>
 
   <section>
     <h2 class="p-group-title">Security</h2>
     <ul class="p-list">
-      <li><a class="p-list-row" href="/forgot_password"><span class="p-list-icon"><i class="fa fa-key" aria-hidden="true"></i></span><span class="p-list-main"><b>Change password</b><span class="p-list-sub">Uses your security question</span></span><i class="fa fa-chevron-right p-chev" aria-hidden="true"></i></a></li>
+      <li><a class="p-list-row" href="/profile/password"><span class="p-list-icon"><i class="fa fa-key" aria-hidden="true"></i></span><span class="p-list-main"><b>Change password</b><span class="p-list-sub">Needs your current password</span></span><i class="fa fa-chevron-right p-chev" aria-hidden="true"></i></a></li>
       <li>
         <form method="POST" action="/logout-all" id="pLogoutAll">
           <button type="submit" class="p-list-row" data-act="logout-all"><span class="p-list-icon"><i class="fa fa-right-from-bracket" aria-hidden="true"></i></span><span class="p-list-main"><b>Log out everywhere</b><span class="p-list-sub">Signs out all phones and browsers, including this one</span></span></button>

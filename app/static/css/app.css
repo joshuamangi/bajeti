@@ -264,6 +264,18 @@ body.p-bare #pMain{padding-bottom:2.4em}
 .p-empty>i{font-size:2em;color:var(--primary-ink)}
 .p-empty h3{font:600 1rem/1.4 var(--ff)}
 .p-empty p{max-width:28em}
+
+/* ===== Admin (owner only) ===== */
+.p-admin-lede{margin-top:.4em}
+.p-admin-grid{display:grid;grid-template-columns:1fr;gap:.8em}
+.p-admin-card{display:grid;grid-template-columns:auto 1fr auto;gap:.4em 1.2em;align-items:center;padding:1.2em;background:var(--gradient);border-radius:var(--r);box-shadow:var(--shadow);text-decoration:none;color:var(--text);transition:transform .2s}
+.p-admin-icon{grid-row:span 2;display:grid;place-items:center;width:2.8em;height:2.8em;border-radius:var(--r);background:var(--tint);color:var(--primary-ink);font-size:1.125rem}
+.p-admin-card b{font-size:.9375rem}
+.p-admin-card .p-list-sub{grid-column:2}
+.p-admin-status{grid-row:1 / span 2;grid-column:3;display:flex;flex-direction:column;align-items:flex-end;gap:.4em}
+.p-admin-card.is-placeholder{border:1px dashed var(--border);background:var(--bg-dark);box-shadow:none;color:var(--text-muted)}
+.p-reset-link{display:grid;gap:.8em}
+.p-reset-link input{font-family:monospace;font-size:.8125rem}
 .p-skel{border-radius:var(--r);background:linear-gradient(90deg,var(--border-muted) 0%,var(--bg-light) 50%,var(--border-muted) 100%);background-size:200% 100%;animation:p-shimmer 1.2s linear infinite}
 @keyframes p-shimmer{from{background-position:100% 0}to{background-position:-100% 0}}
 .p-skel-wrap{display:flex;flex-direction:column;gap:1.2em}

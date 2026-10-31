@@ -55,3 +55,10 @@ def get_current_user(
 
     logger.info("Current user resolved: id=%s email=%s", user.id, user.email)
     return user
+
+
+def get_current_owner(current_user=Depends(get_current_user)):
+    """The household owner. Everyone else gets 404, so Admin does not show it exists."""
+    if not current_user.is_owner:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    return current_user

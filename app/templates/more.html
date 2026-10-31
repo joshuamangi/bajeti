@@ -20,6 +20,9 @@
     <h2 class="p-group-title">You</h2>
     <ul class="p-list">
       <li><a class="p-list-row" href="/profile"><span class="p-list-icon"><i class="fa fa-user" aria-hidden="true"></i></span><span class="p-list-main"><b>Account</b><span class="p-list-sub">Profile, security question and sessions</span></span><i class="fa fa-chevron-right p-chev" aria-hidden="true"></i></a></li>
+      {% if user and user.is_owner %}
+      <li><a class="p-list-row" href="/admin"><span class="p-list-icon"><i class="fa fa-user-shield" aria-hidden="true"></i></span><span class="p-list-main"><b>Admin</b><span class="p-list-sub">Household members and access</span></span><i class="fa fa-chevron-right p-chev" aria-hidden="true"></i></a></li>
+      {% endif %}
     </ul>
   </section>
 

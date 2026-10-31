@@ -6,7 +6,7 @@ from core import rate_limit
 from core.security import get_current_user
 from data.db.db import get_db
 from data.db.models.models import User
-from schema.user import UserUpdate, UserOut, PasswordResetRequest
+from schema.user import UserUpdate, UserOut, PasswordResetRequest, PasswordChange, Token
 from services.user_profile_service import UserProfileService
 
 router = APIRouter(
@@ -41,4 +41,24 @@ async def reset_password(
             rate_limit.reset_failed(ip, request.email)
         raise
     rate_limit.reset_succeeded(ip, request.email)
+    return result
+
+
+@router.post("/me/password", response_model=Token)
+async def change_password(
+    http_request: Request,
+    request: PasswordChange,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Change the password with the current one. Returns a new token for this session."""
+    ip = rate_limit.client_ip(http_request)
+    rate_limit.check_reset(ip, current_user.email)
+    try:
+        result = UserProfileService.change_password(db, current_user, request)
+    except HTTPException as exc:
+        if exc.status_code == status.HTTP_400_BAD_REQUEST:
+            rate_limit.reset_failed(ip, current_user.email)
+        raise
+    rate_limit.reset_succeeded(ip, current_user.email)
     return result
