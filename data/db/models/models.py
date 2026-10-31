@@ -306,3 +306,18 @@ class PayeeRule(Base):
     __table_args__ = (
         UniqueConstraint("user_id", "payee", name="uq_payee_rule"),
     )
+
+
+class ApiToken(Base):
+    """A phone token for the iPhone Shortcut (docs/design/payments.md). It can only capture payments."""
+    __tablename__ = "api_tokens"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    name = Column(String(40), nullable=False)
+    # SHA-256 of the token; the token itself is shown once and never stored.
+    token_hash = Column(String(64), nullable=False, unique=True)
+    prefix = Column(String(12), nullable=False)
+    scope = Column(String(30), nullable=False, default="payments:capture")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    last_used_at = Column(DateTime, nullable=True)

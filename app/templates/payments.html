@@ -46,7 +46,7 @@
             <span class="p-pay-source"><i class="fa {{ src[0] }}" aria-hidden="true"></i> {{ src[1] }} · {{ p.received_at | short_date }}</span>
             <span class="p-pay-amount">{% if p.amount is not none %}{{ money(p.total) }}{% else %}Amount not found{% endif %}</span>
           </div>
-          <div class="p-pay-payee">{{ p.payee or ("Couldn't read this message" if p.kind == 'unknown' else 'Unknown payee') }}</div>
+          <div class="p-pay-payee">{{ p.payee or ("Couldn't read this message" if p.kind == 'unknown' else 'Unknown payee') }}{% if p.possible_duplicate %} <span class="p-tag p-tag-warning" title="Same amount, payee and date as an earlier message, and no reference to tell them apart">Possible duplicate</span>{% endif %}</div>
           <div class="p-small">Ref {{ p.reference or 'none found' }}{% if p.paid_on %} · paid {{ p.paid_on | short_date }}{% endif %}{% if p.fee and (p.fee | float) > 0 %} · {{ money(p.amount, bare=True) }} + {{ money(p.fee, bare=True) }} fee{% endif %}</div>
           {% if p.raw_text %}
           <details class="p-pay-raw"><summary>Original message</summary><p class="sensitive">{{ p.raw_text }}</p></details>

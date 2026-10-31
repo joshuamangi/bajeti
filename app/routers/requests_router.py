@@ -1,5 +1,6 @@
 # app/routers/requests_router.py
 from fastapi import APIRouter
+from fastapi.responses import RedirectResponse
 
 from app.handlers import (
     allocation_handlers,
@@ -36,6 +37,11 @@ router.post("/forgot_password")(auth_handlers.reset_password)
 router.get(
     "/profile", response_class=dashboard_handlers.HTMLResponse)(dashboard_handlers.profile)
 router.post("/profile/update")(dashboard_handlers.profile_update)
+router.post("/profile/phone-tokens",
+            response_class=dashboard_handlers.HTMLResponse)(dashboard_handlers.create_phone_token)
+# Back or refresh after creating a token: return to the Account page (the token is not shown again).
+router.get("/profile/phone-tokens")(lambda: RedirectResponse(url="/profile", status_code=303))
+router.post("/profile/phone-tokens/{token_id}/revoke")(dashboard_handlers.revoke_phone_token)
 router.get("/dashboard",
            response_class=dashboard_handlers.HTMLResponse)(dashboard_handlers.dashboard)
 router.get("/budgets",

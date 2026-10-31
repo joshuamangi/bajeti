@@ -729,6 +729,11 @@
       const what = (el.getAttribute('aria-label') || 'Show password').replace(/^(Show|Hide) /, '');
       el.setAttribute('aria-label', (show ? 'Hide ' : 'Show ') + what); el.querySelector('i').className = 'fa ' + (show ? 'fa-eye-slash' : 'fa-eye');
     },
+    copy: async el => {
+      const input = $(el.dataset.target); if (!input) return;
+      try { await navigator.clipboard.writeText(input.value); toast('Copied', { type: 'success' }); }
+      catch (_) { input.select(); toast('Select the token and copy it.', { type: 'info' }); }
+    },
     // The only confirm dialog in the app: everything else can be undone.
     'logout-all': (el, e) => {
       e.preventDefault();

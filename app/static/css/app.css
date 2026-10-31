@@ -410,6 +410,15 @@ body.p-modal-open{overflow:hidden}
 .p-pending-row{display:flex;align-items:center;gap:.8em;min-height:3.6em;padding:.8em 1.2em;background:var(--bg-light);border-radius:var(--r);box-shadow:var(--shadow);text-decoration:none;color:var(--text)}
 .p-pending-row>span:nth-child(2){flex:1;display:flex;flex-direction:column}
 .p-pending-icon{display:grid;place-items:center;width:2.4em;height:2.4em;border-radius:var(--r);background:var(--tint);color:var(--primary-ink)}
+.p-quick{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.8em}
+.p-quick-tile{gap:.8em;padding:.8em}
+.p-quick-tile>span:nth-child(2){min-width:0}
+.p-quick-tile .p-small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.p-token-new{display:flex;flex-direction:column;gap:.4em;margin-bottom:.8em}
+.p-token-row{display:flex;gap:.8em;align-items:center}
+.p-token-row .p-modal-btn-primary{flex:none;width:auto;padding:0 1.2em}
+.p-token-value{flex:1;min-width:0;min-height:var(--tap);padding:0 .8em;font:400 .875rem/1 ui-monospace,monospace;border:1px solid var(--border);border-radius:var(--r);background:var(--bg-light);color:var(--text)}
+.p-steps{margin:.4em 0 0;padding-left:1.6em;display:flex;flex-direction:column;gap:.4em}
 
 /* ===== Account ===== */
 .p-profile{display:flex;align-items:center;gap:1.2em}

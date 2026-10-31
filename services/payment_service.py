@@ -33,6 +33,19 @@ def _payee_key(payee: Optional[str]) -> str:
     return re.sub(r"\s+", " ", (payee or "").strip().lower())
 
 
+def _capture_message(p: PendingPayment, duplicate: bool) -> str:
+    """One line the iPhone Shortcut shows after sending a message."""
+    if p.amount is None:
+        return "Couldn't read this message. It is in Payments for you to fill in."
+    fee = _money(p.fee)
+    text = f"Added {p.payee or 'payment'}: Ksh {_money(p.amount):,}"
+    if fee:
+        text += f" + {fee:,} fee"
+    if duplicate:
+        return text + ". It looks like one already in Bajeti, so check before you approve."
+    return text + ". Approve it in Bajeti."
+
+
 class PaymentService:
 
     @staticmethod
@@ -44,7 +57,20 @@ class PaymentService:
         return payment
 
     @staticmethod
-    def out(p: PendingPayment, suggested: Optional[int] = None) -> dict:
+    def possible_duplicate(db: Session, p: PendingPayment) -> bool:
+        """A message with no reference cannot be deduplicated, so flag (not refuse) an earlier
+        payment with the same amount, payee and date. Two equal purchases in a day can be real."""
+        if p.reference or p.amount is None:
+            return False
+        query = db.query(PendingPayment.id).filter(
+            PendingPayment.user_id == p.user_id, PendingPayment.id < p.id,
+            PendingPayment.status != "dismissed", PendingPayment.amount == p.amount)
+        query = query.filter(PendingPayment.payee == p.payee if p.payee else PendingPayment.payee.is_(None))
+        query = query.filter(PendingPayment.paid_on == p.paid_on if p.paid_on else PendingPayment.paid_on.is_(None))
+        return query.first() is not None
+
+    @staticmethod
+    def out(p: PendingPayment, suggested: Optional[int] = None, duplicate: bool = False) -> dict:
         amount, fee = _money(p.amount), _money(p.fee)
         return {
             "id": p.id, "source": p.source, "kind": p.kind, "status": p.status,
@@ -53,21 +79,24 @@ class PaymentService:
             "payee": p.payee, "reference": p.reference, "paid_on": p.paid_on,
             "received_at": p.received_at, "raw_text": p.raw_text,
             "suggested_category_id": suggested,
+            "possible_duplicate": duplicate,
         }
 
     @staticmethod
     def capture(db: Session, user_id: int, data: CaptureIn) -> tuple:
-        """Returns (http status, body). 201 added, 200 ignored with a reason, 409 already captured."""
+        """Returns (http status, body). 201 added, 200 ignored with a reason, 409 already captured.
+        Every body has a one-line "message" for the iPhone Shortcut."""
         parsed = parse(data.raw)
         if parsed.get("ignored"):
-            return status.HTTP_200_OK, {"added": False, "kind": parsed["kind"], "reason": parsed["ignored"]}
+            return status.HTTP_200_OK, {"added": False, "kind": parsed["kind"], "reason": parsed["ignored"],
+                                        "message": parsed["ignored"]}
         if parsed["reference"]:
             existing = db.query(PendingPayment).filter(PendingPayment.user_id == user_id,
                                                        PendingPayment.reference == parsed["reference"]).first()
             if existing:
                 when = existing.created_at.strftime("%-d %b") if existing.created_at else ""
-                raise HTTPException(status_code=status.HTTP_409_CONFLICT,
-                                    detail=f"Already captured: {existing.reference} ({existing.status} {when})".strip())
+                detail = f"Already captured: {existing.reference} ({existing.status} {when})".strip()
+                return status.HTTP_409_CONFLICT, {"added": False, "detail": detail, "message": detail}
         payment = PendingPayment(user_id=user_id, source=data.source, kind=parsed["kind"],
                                  raw_text=data.raw[:2000], amount=parsed["amount"], fee=parsed["fee"],
                                  payee=parsed["payee"], reference=parsed["reference"],
@@ -77,9 +106,12 @@ class PaymentService:
             db.commit()
         except IntegrityError:
             db.rollback()
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Already captured")
+            return status.HTTP_409_CONFLICT, {"added": False, "detail": "Already captured",
+                                              "message": "Already captured"}
         db.refresh(payment)
-        return status.HTTP_201_CREATED, {"added": True, "payment": PaymentService.out(payment)}
+        duplicate = PaymentService.possible_duplicate(db, payment)
+        return status.HTTP_201_CREATED, {"added": True, "payment": PaymentService.out(payment, duplicate=duplicate),
+                                         "message": _capture_message(payment, duplicate)}
 
     @staticmethod
     def _budget_categories(db: Session, user_id: int, budget_id: Optional[int]) -> dict:
@@ -116,7 +148,8 @@ class PaymentService:
         pending = (db.query(PendingPayment).filter(PendingPayment.user_id == user_id,
                                                    PendingPayment.status == "pending")
                    .order_by(PendingPayment.received_at.desc(), PendingPayment.id.desc()).all())
-        return {"payments": [PaymentService.out(p, PaymentService.suggest(db, user_id, p.payee, categories))
+        return {"payments": [PaymentService.out(p, PaymentService.suggest(db, user_id, p.payee, categories),
+                                                PaymentService.possible_duplicate(db, p))
                              for p in pending],
                 "categories": [{"id": cid, "name": name} for cid, name in sorted(categories.items(), key=lambda x: x[1].lower())]}
 

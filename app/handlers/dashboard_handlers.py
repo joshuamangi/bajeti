@@ -20,6 +20,8 @@ from app.utils.target_totals import target_totals
 from app.utils.home_view import home_view, page_data
 from app.services.recurring_service import fetch_due
 from app.services.payment_service import fetch_count as fetch_payment_count
+from app.services import api_token_service
+from app.config import settings
 from fastapi import HTTPException
 
 logger = logging.getLogger(__name__)
@@ -27,18 +29,52 @@ HTMLResponse = HTMLResponse  # expose to router
 
 
 async def profile(request: Request):
+    return await _render_profile(request)
+
+
+async def _render_profile(request: Request, new_token: Optional[dict] = None):
     token: str = get_current_user(request)
     user_response = await svc_get_current_user(token)
     if user_response.status_code != status.HTTP_200_OK:
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
     user = user_response.json()
-    return await render_with_user("profile.html", request, {
+    tokens_response = await api_token_service.fetch_tokens(token)
+    phone_tokens = tokens_response.json() if tokens_response.status_code == status.HTTP_200_OK else []
+    response = await render_with_user("profile.html", request, {
         "active_tab": "more",
         "token": token,
         "current_month": datetime.now().strftime('%B'),
         "user": user,
         "now": datetime.now().strftime("%Y-%m"),
+        "phone_tokens": phone_tokens,
+        "new_token": new_token,
+        "shortcut_url": settings.SHORTCUT_INSTALL_URL,
     })
+    if new_token:
+        # The new phone token is in this page only: keep it out of every cache.
+        response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+async def create_phone_token(request: Request, name: str = Form("iPhone")):
+    """Shown once on the page this returns, never put in a redirect or a cookie."""
+    token = get_current_user(request)
+    resp = await api_token_service.create_token(token, (name or "iPhone").strip()[:40] or "iPhone")
+    if resp.status_code != status.HTTP_201_CREATED:
+        try:
+            detail = resp.json().get("detail", "Could not create a token.")
+        except ValueError:
+            detail = "Could not create a token."
+        return redirect_with_toast("/profile", detail if isinstance(detail, str) else "Check the name.", "error")
+    return await _render_profile(request, new_token=resp.json())
+
+
+async def revoke_phone_token(request: Request, token_id: int):
+    token = get_current_user(request)
+    resp = await api_token_service.revoke_token(token, token_id)
+    if resp.status_code == status.HTTP_204_NO_CONTENT:
+        return redirect_with_toast("/profile", "Token revoked. That phone can no longer send payments.", "warning")
+    return redirect_with_toast("/profile", "Could not revoke that token.", "error")
 
 
 async def profile_update(request: Request,

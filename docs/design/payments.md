@@ -78,3 +78,15 @@ The Shortcut uses a **personal API token**, separate from the login:
 - stored only as a hash, named ("iPhone"), and revocable;
 - scope `payments:capture`: it can only call `POST /api/payments/capture`;
 - rate-limited, and listed with its last-used date.
+
+## Phone capture: built (2026-10-31)
+
+Step A (the share-sheet Shortcut) is built. Setup steps for the phone are in `docs/runbooks/iphone-shortcut.md`.
+
+- **Phone tokens** (`api_tokens` table, `services/api_token_service.py`): `bjt_` followed by 32 random bytes. Only the SHA-256 hash and the first 8 characters (for display) are stored. Up to 5 per user. Revoking deletes the row.
+- **Who can use them:** a token belongs to the user who created it on the Account page. Captures land in that user's inbox only. All inbox queries are scoped by `user_id`.
+- **Capture only:** `POST /api/payments/capture` uses `core.security.get_capture_user`, which accepts the login token or a phone token. Every other endpoint uses `get_current_user`, where a phone token fails JWT decoding (401). Tokens are managed at `/api/tokens` with the login token only.
+- **Limits** (`core/rate_limit.py`): 20 unknown tokens per address per 15 minutes; 60 captures per token per hour. Both return 429.
+- **Reply:** every capture reply has a one-line `message` for the Shortcut to show (added, already captured, not spending). 409 replies keep `detail` as before.
+- **Possible duplicate:** a message with **no reference** is flagged, not refused, when an earlier non-dismissed payment has the same amount, payee and date. Messages with a reference are deduplicated exactly (409), as before.
+- **Install link:** `SHORTCUT_INSTALL_URL` (set in the Pi env file, never in the repo) adds an "Add the Shortcut" link on the Account page. The link does not carry the token: iCloud links are public. The Shortcut asks for the token when it is added.
