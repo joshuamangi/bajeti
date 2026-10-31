@@ -20,6 +20,9 @@ class User(Base):
     # Raised to invalidate every token issued earlier (password reset, log out everywhere).
     token_version = Column(Integer, nullable=False, default=0, server_default="0")
 
+    # The household owner can reset other members' access (Admin). Set with python -m cli.set_owner.
+    is_owner = Column(Boolean, nullable=False, default=False, server_default="0")
+
     @property
     def has_security_answer(self) -> bool:
         return bool(self.security_answer)
@@ -306,3 +309,16 @@ class PayeeRule(Base):
     __table_args__ = (
         UniqueConstraint("user_id", "payee", name="uq_payee_rule"),
     )
+
+
+class PasswordResetLink(Base):
+    """One-time link the owner creates so a locked-out member can set a new password."""
+    __tablename__ = "password_reset_links"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    created_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    token_hash = Column(String(64), nullable=False, unique=True)  # sha256 hex, never the token
+    created_at = Column(DateTime, default=datetime.utcnow)
+    expires_at = Column(DateTime, nullable=False)
+    used_at = Column(DateTime, nullable=True)

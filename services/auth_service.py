@@ -98,6 +98,11 @@ class AuthService:
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
+        return AuthService.issue_token(user)
+
+    @staticmethod
+    def issue_token(user):
+        """A fresh token for the user's current token_version."""
         expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = TokenService.create_access_token(
             data={"sub": user.email, "user_id": user.id,

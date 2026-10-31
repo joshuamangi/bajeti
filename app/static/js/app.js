@@ -729,7 +729,22 @@
       const what = (el.getAttribute('aria-label') || 'Show password').replace(/^(Show|Hide) /, '');
       el.setAttribute('aria-label', (show ? 'Hide ' : 'Show ') + what); el.querySelector('i').className = 'fa ' + (show ? 'fa-eye-slash' : 'fa-eye');
     },
-    // The only confirm dialog in the app: everything else can be undone.
+    // Confirm dialogs only for what cannot be undone: logging out everywhere and resetting access.
+    'user-reset': (el, e) => {
+      e.preventDefault();
+      const form = el.closest('form');
+      openSheet({
+        title: 'Reset access?', render: () => `<p>${esc(el.dataset.name)} will be signed out everywhere and you get a one-time link to send them. Their data stays.</p>
+          <div class="p-sheet-actions"><button type="button" class="p-modal-btn-secondary" data-act="close-sheet">Cancel</button><button type="button" class="p-modal-btn-warning" data-confirm-ok>Reset access</button></div>`,
+        mount: m => { m.querySelector('[data-confirm-ok]').onclick = e2 => { pageLoading(e2.currentTarget); form.submit(); }; }
+      });
+    },
+    copy: el => {
+      const input = document.getElementById(el.dataset.target);
+      const done = () => toast('Link copied', { type: 'success' });
+      if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(input.value).then(done);
+      input.select(); document.execCommand('copy'); done();
+    },
     'logout-all': (el, e) => {
       e.preventDefault();
       const form = el.closest('form');
@@ -781,6 +796,13 @@
     setTheme(theme());
     applyMask();
     restoreDismissed();
+    // Reset links: the token travels in the fragment, which the server never sees.
+    const resetForm = document.querySelector('[data-reset-link]');
+    if (resetForm && location.hash.length > 1 && !resetForm.elements.token.value) {
+      resetForm.elements.token.value = location.hash.slice(1);
+      history.replaceState(null, '', location.pathname);
+    }
+    $$('[data-origin-path]').forEach(i => { i.value = location.origin + i.dataset.originPath; });
     const t = toastFromUrl(location.href);
     if (t) {
       toast(esc(t.message), { type: t.type });

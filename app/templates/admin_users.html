@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Users{% endblock %}
+
+{% block header_left %}
+<a class="p-hbtn" href="/admin" aria-label="Back"><i class="fa fa-arrow-left" aria-hidden="true"></i></a><span class="p-header-title">Users</span>
+{% endblock %}
+
+{% block content %}
+<div class="p-page">
+  <h1>Users</h1>
+
+  {% if reset_link %}
+  <section class="p-card p-reset-link" aria-labelledby="pResetLinkTitle">
+    <h2 class="p-group-title" id="pResetLinkTitle">Link for {{ reset_link.name or 'this member' }}</h2>
+    <p class="p-small">Send this to them yourself, for example by WhatsApp. It works once and expires on {{ reset_link.expires_at | short_date }} at {{ reset_link.expires_at[11:16] }} UTC. It is not shown again.</p>
+    <div class="p-pass">
+      <input id="pResetLink" type="text" readonly value="{{ reset_link.path }}" data-origin-path="{{ reset_link.path }}" aria-label="One-time reset link">
+      <button type="button" data-act="copy" data-target="pResetLink" aria-label="Copy link"><i class="fa fa-copy" aria-hidden="true"></i></button>
+    </div>
+  </section>
+  {% endif %}
+
+  <ul class="p-list">
+    {% for u in members %}
+    <li class="p-list-row">
+      <span class="p-avatar" aria-hidden="true">{{ (u.first_name or ' ')[0] }}{{ (u.last_name or ' ')[0] }}</span>
+      <span class="p-list-main"><b>{{ u.first_name }} {{ u.last_name }}{% if u.is_owner %} <span class="p-tag p-tag-primary">Owner</span>{% endif %}</b>
+        <span class="p-list-sub">{{ u.email }}{% if not u.has_security_answer %} · no security question{% endif %}{% if u.reset_link_expires_at %} · reset link open until {{ u.reset_link_expires_at | short_date }}{% endif %}</span></span>
+      {% if not u.is_owner %}
+      <form method="POST" action="/admin/users/{{ u.id }}/reset-access" class="p-row-actions">
+        <button type="submit" class="p-icon-btn-warning" data-act="user-reset" data-name="{{ u.first_name }} {{ u.last_name }}" aria-label="Reset access for {{ u.first_name }} {{ u.last_name }}" title="Reset access"><i class="fa fa-key" aria-hidden="true"></i></button>
+      </form>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  <p class="p-small">Reset access signs the member out everywhere and gives you a one-time link, valid for 24 hours, to send them. Their data stays.</p>
+</div>
+{% endblock %}

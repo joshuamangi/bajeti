@@ -86,11 +86,11 @@ Add `.github/dependabot.yml` for pip, npm, docker and github-actions (weekly, sm
 
 ## Admin area (from the Prototype A design, 2026-10-28)
 
-Prototype A (`design/prototype-a/`, §5.10 of `PORT-GUIDE.md`) includes an owner-only Admin hub. It is parked because the app has no owner or role concept today (`User` has no role column). Decide the role model first (single owner flag vs roles), then build the hub from a section registry so new sections need no redesign.
+Prototype A (`design/prototype-a/`, §5.10 of `PORT-GUIDE.md`) includes an owner-only Admin hub. Issue #152 (2026-10-31) decided the role model, a single owner flag (`users.is_owner`, set with `python -m cli.set_owner <email>`), and built the hub from a section registry (`ADMIN_SECTIONS` in `app/handlers/admin_handlers.py`) with Users → Reset access. The rest stays parked; each section is one registry entry.
 
 Sections drawn in the prototype:
 
-- Users: add a member through a 24-hour invite link, reset access, remove with Undo.
+- Users: add a member through a 24-hour invite link, remove with Undo. (Reset access is done, #152.)
 - Registration: open/closed switch (the `REGISTRATION_OPEN` setting exists; it would move to a stored `setting`), with a warning while open.
 - Backups: last backup, status, size, last restore test (warn after 30 days), "Record restore test", "Back up now". Ties to S09.
 - System health: app, database size, version, uptime, service worker, connection.

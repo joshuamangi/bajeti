@@ -296,7 +296,7 @@ A period switch at the top: **Month | 6 months | Year**. These are sibling views
 
 ### 5.10 Admin (More → Admin; owner only)
 
-> **Deferred.** The app has no owner or role concept, so Admin needs a new model and a separate decision. It is parked in `docs/backlog.md` ("Admin area"). Do not build it in the first pass; keep the More page free of an Admin link until then. Account (§5.11) and the existing registration setting are unaffected.
+> **Partly built (#152).** The owner is `users.is_owner`. The hub and Users → Reset access exist; More shows Admin to the owner only. The other sections are parked in `docs/backlog.md` ("Admin area").
 
 - A hub of cards defined by a **registry** (`ADMIN_SECTIONS`), so a new section is one entry and needs no redesign: icon, title, description, a live status tag and a link to its sub-page.
 - A dashed "Room for more" placeholder card.
