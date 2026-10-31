@@ -82,6 +82,20 @@ Rollback (drops the column; budgets are kept):
 
 docker compose exec bajeti_app alembic downgrade c3d5f7a9b1e2
 
+## Owner flag and reset links, e7a1c3b5d9f2
+
+Adds `users.is_owner` (false for everyone) and the `password_reset_links` table (one-time links the
+owner creates for a locked-out member; only a sha256 of the token is stored). The owner is set once
+with `python -m cli.set_owner`. How this migration was tested before deploy is not recorded here.
+
+Status: in production since 2026-10-31 (deploy of PR #153; the deploy log shows
+`Running upgrade d4e6a8c0b2f3 -> e7a1c3b5d9f2` and `alembic current` = e7a1c3b5d9f2). Not checked on the
+Pi by hand, and whether the owner flag has been set is unchecked.
+
+Rollback (drops the table and the column; outstanding reset links stop working):
+
+docker compose exec bajeti_app alembic downgrade d4e6a8c0b2f3
+
 ## Phone tokens, e5f7a9c1d3b4
 
 Adds the `api_tokens` table for the iPhone Shortcut (hashed tokens, scope `payments:capture`). New
