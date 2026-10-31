@@ -11,10 +11,10 @@ from app.utils.templates import render_with_user
 from app.utils.tokens import get_current_user
 from app.services.auth_service import get_current_user as svc_get_current_user
 from app.services.category_service import get_categories_with_stats as svc_get_categories
-from app.services.user_service import reset_password as svc_reset_password
-from app.services.auth_service import login as svc_login
+from app.services.user_service import change_password as svc_change_password, update_profile
 from core.rate_limit import client_ip
 from app.utils.cookies import set_active_budget_cookie, set_auth_cookies
+from schema.user import MIN_PASSWORD_LENGTH
 from app.utils.redirects import redirect_with_toast
 from app.utils.target_totals import target_totals
 from app.utils.home_view import home_view, page_data
@@ -80,17 +80,13 @@ async def revoke_phone_token(request: Request, token_id: int):
 async def profile_update(request: Request,
                          first_name: str = Form(...),
                          last_name: str = Form(...),
-                         email: str = Form(...),
-                         security_answer: str = Form("")):
-    # A blank answer keeps the current one (it is stored hashed and cannot be shown).
+                         email: str = Form(...)):
     token = get_current_user(request)  # may raise redirect HTTPException
 
-    from app.services.user_service import update_profile
     response = await update_profile(token, {
         "first_name": first_name,
         "last_name": last_name,
         "email": email,
-        "security_answer": security_answer
     })
 
     if response.status_code in (status.HTTP_200_OK, status.HTTP_201_CREATED):
@@ -104,6 +100,53 @@ async def profile_update(request: Request,
     except Exception:
         error_detail = "Unexpected error. Please try again."
     return redirect_with_toast("/profile", str(error_detail), "error")
+
+
+async def security_question_update(request: Request,
+                                   security_answer: str = Form(...),
+                                   current_password: str = Form(...)):
+    # The answer can reset the password, so setting it needs the password too.
+    token = get_current_user(request)
+    response = await update_profile(token, {
+        "security_answer": security_answer,
+        "current_password": current_password,
+    })
+    if response.status_code == status.HTTP_200_OK:
+        return redirect_with_toast("/profile", "Security question saved", "success")
+    if response.status_code == status.HTTP_400_BAD_REQUEST:
+        return redirect_with_toast("/profile", "Current password is incorrect", "error")
+    return redirect_with_toast("/profile", "Could not save. Try again.", "error")
+
+
+async def change_password_page(request: Request, token: str = Depends(get_current_user)):
+    return await render_with_user("change_password.html", request, {"active_tab": "more"})
+
+
+async def change_password(request: Request,
+                          current_password: str = Form(...),
+                          new_password: str = Form(...),
+                          confirm_password: str = Form(...)):
+    token = get_current_user(request)
+
+    def again(error: str):
+        return render_with_user("change_password.html", request, {"active_tab": "more", "error": error})
+
+    if new_password != confirm_password:
+        return await again("New passwords do not match")
+    if len(new_password) < MIN_PASSWORD_LENGTH:
+        return await again(f"Use at least {MIN_PASSWORD_LENGTH} characters")
+
+    response = await svc_change_password(token, current_password, new_password,
+                                         client_ip=client_ip(request))
+    if response.status_code == status.HTTP_200_OK:
+        rsp = redirect_with_toast("/profile", "Password changed. Other devices are signed out.", "success")
+        set_auth_cookies(rsp, response.json()["access_token"])
+        return rsp
+    if response.status_code == status.HTTP_429_TOO_MANY_REQUESTS:
+        return await again("Too many attempts. Please wait a few minutes and try again.")
+    if response.status_code == status.HTTP_400_BAD_REQUEST:
+        return await again("Current password is incorrect")
+    return await again("Could not change the password. Try again.")
 
 
 def pick_budget_id(all_budgets: list, budget_id: Optional[int], cookie_budget: Optional[str]) -> int:
@@ -259,43 +302,3 @@ async def budgets_page(
 async def more_page(request: Request, token: str = Depends(get_current_user)):
     return await render_app_page("more.html", "more", request, token)
 
-
-async def forgot_password(request: Request):
-    return await render_with_user("forgot_password.html", request)
-
-
-async def reset_password(request: Request,
-                         email: str = Form(...),
-                         security_answer: str = Form(...),
-                         new_password: str = Form(...)):
-    try:
-        from app.services.user_service import reset_password as svc_reset
-        response = await svc_reset(email, security_answer, new_password,
-                                   client_ip=client_ip(request))
-    except Exception:
-        # keep original message
-        return await render_with_user("forgot_password.html", request, {
-            "error": "Unable to reach server. Please try again later."
-        })
-
-    if response.status_code == status.HTTP_429_TOO_MANY_REQUESTS:
-        return await render_with_user("forgot_password.html", request, {
-            "error": "Too many attempts. Please wait a few minutes and try again."})
-    if response.status_code == status.HTTP_400_BAD_REQUEST:
-        return await render_with_user("forgot_password.html", request, {"error": response.json().get("detail", "Invalid request.")})
-    if response.status_code >= 500:
-        return await render_with_user("forgot_password.html", request, {"error": "Server error. Try again later."})
-    if response.status_code == status.HTTP_200_OK:
-        # login the user with new password
-        login_resp = await svc_login(email, new_password, client_ip=client_ip(request))
-        if login_resp.status_code == status.HTTP_200_OK:
-            token_data = login_resp.json()
-            access_token = token_data["access_token"]
-            rsp = RedirectResponse(
-                url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
-            set_auth_cookies(rsp, access_token)
-            return rsp
-
-    return await render_with_user("forgot_password.html", request, {
-        "error": f"Unexpected response: {response.status_code}"
-    })

@@ -8,7 +8,7 @@ from app.routers import requests_router
 from core.security_headers import SecurityHeadersMiddleware
 from core.session import renew_session_cookie
 from data.db.db import engine, Base
-from routers import allocations, analytics, api_tokens, auth, budgets, categories, expenses, payments, recurring, targets, transfers, users
+from routers import admin, allocations, analytics, api_tokens, auth, budgets, categories, expenses, payments, recurring, targets, transfers, users
 from app import requests
 from app.config import IS_PRODUCTION
 
@@ -67,6 +67,7 @@ app.include_router(categories.router)
 app.include_router(expenses.router)
 app.include_router(auth.router)
 app.include_router(users.router)
+app.include_router(admin.router)
 app.include_router(transfers.router)
 app.include_router(budgets.router)
 app.include_router(allocations.router)

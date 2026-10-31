@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from fastapi.responses import RedirectResponse
 
 from app.handlers import (
+    admin_handlers,
     allocation_handlers,
     auth_handlers,
     budget_handlers,
@@ -32,11 +33,17 @@ router.post("/logout-all")(auth_handlers.logout_all)
 router.get("/forgot_password",
            response_class=auth_handlers.HTMLResponse)(auth_handlers.forgot_password)
 router.post("/forgot_password")(auth_handlers.reset_password)
+router.get("/reset", response_class=auth_handlers.HTMLResponse)(auth_handlers.reset_link_page)
+router.post("/reset")(auth_handlers.reset_link_submit)
 
 # ---------- PROFILE & DASHBOARD ----------
 router.get(
     "/profile", response_class=dashboard_handlers.HTMLResponse)(dashboard_handlers.profile)
 router.post("/profile/update")(dashboard_handlers.profile_update)
+router.post("/profile/security-question")(dashboard_handlers.security_question_update)
+router.get("/profile/password",
+           response_class=dashboard_handlers.HTMLResponse)(dashboard_handlers.change_password_page)
+router.post("/profile/password")(dashboard_handlers.change_password)
 router.post("/profile/phone-tokens",
             response_class=dashboard_handlers.HTMLResponse)(dashboard_handlers.create_phone_token)
 # Back or refresh after creating a token: return to the Account page (the token is not shown again).
@@ -61,6 +68,11 @@ router.post("/payments/{payment_id}/dismiss")(payment_handlers.dismiss_payment)
 router.post("/payments/{payment_id}/restore")(payment_handlers.restore_payment)
 router.get("/more",
            response_class=dashboard_handlers.HTMLResponse)(dashboard_handlers.more_page)
+
+# ---------- ADMIN (owner only) ----------
+router.get("/admin", response_class=admin_handlers.HTMLResponse)(admin_handlers.admin_hub)
+router.get("/admin/users", response_class=admin_handlers.HTMLResponse)(admin_handlers.admin_users)
+router.post("/admin/users/{user_id}/reset-access")(admin_handlers.reset_access)
 
 # ---------- CATEGORY CRUD ----------
 router.post("/dashboard/categories")(category_handlers.add_category)

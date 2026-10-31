@@ -5,6 +5,7 @@ from fastapi.templating import Jinja2Templates
 from typing import Optional, Dict
 from fastapi import Request
 from app.config import ENVIRONMENT, settings
+from schema.user import MIN_PASSWORD_LENGTH
 import logging
 
 logger = logging.getLogger(__name__)
@@ -13,6 +14,7 @@ templates = Jinja2Templates(directory="app/templates")
 templates.env.globals["ENVIRONMENT"] = ENVIRONMENT
 # A function, so the page follows the setting at request time.
 templates.env.globals["registration_open"] = lambda: settings.REGISTRATION_OPEN
+templates.env.globals["MIN_PASSWORD_LENGTH"] = MIN_PASSWORD_LENGTH
 
 
 def commafy(value, decimals=0):

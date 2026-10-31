@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% from "_ui.html" import empty_box %}
+
+{% block title %}Admin{% endblock %}
+
+{% block header_left %}
+<a class="p-hbtn" href="/more" aria-label="Back"><i class="fa fa-arrow-left" aria-hidden="true"></i></a><span class="p-header-title">Admin</span>
+{% endblock %}
+
+{% block content %}
+<div class="p-page">
+  {% if owner_only %}
+  {% call empty_box('fa-lock', 'Owner only', 'Admin settings are only available to the household owner. Ask the owner if something needs changing.') %}<a class="p-btn-ghost" href="/dashboard">Go home</a>{% endcall %}
+  {% else %}
+  <div><h1>Admin</h1><p class="p-small p-admin-lede">Owner tools for this household. Changes here affect everyone.</p></div>
+  <div class="p-admin-grid">
+    {% for s in sections %}
+    <a class="p-admin-card" href="/admin/{{ s.id }}"><span class="p-admin-icon"><i class="fa {{ s.icon }}" aria-hidden="true"></i></span><b>{{ s.title }}</b><span class="p-list-sub">{{ s.desc }}</span><span class="p-admin-status"><span class="p-tag">{{ s.status_text }}</span><i class="fa fa-chevron-right p-chev" aria-hidden="true"></i></span></a>
+    {% endfor %}
+    <div class="p-admin-card is-placeholder" aria-hidden="true"><span class="p-admin-icon"><i class="fa fa-plus"></i></span><b>Room for more</b><span class="p-list-sub">New sections slot in here as cards.</span></div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

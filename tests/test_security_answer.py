@@ -35,7 +35,8 @@ def test_answer_is_stored_hashed_at_registration(client):
 def test_answer_is_stored_hashed_after_profile_update(client):
     headers, email = make_user(client)
 
-    client.put("/api/users/me", json={"security_answer": "Fluffy"}, headers=headers)
+    client.put("/api/users/me", json={"security_answer": "Fluffy", "current_password": PASSWORD},
+               headers=headers)
 
     stored = _stored_answer(email)
     assert stored != "Fluffy"

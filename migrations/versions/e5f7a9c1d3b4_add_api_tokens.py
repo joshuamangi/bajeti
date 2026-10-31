@@ -1,7 +1,7 @@
 """add phone tokens for the iPhone Shortcut
 
 Revision ID: e5f7a9c1d3b4
-Revises: d4e6a8c0b2f3
+Revises: e7a1c3b5d9f2
 Create Date: 2026-10-31 12:00:00.000000
 
 api_tokens: one row per phone token, stored as a SHA-256 hash, scope payments:capture.
@@ -15,7 +15,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = 'e5f7a9c1d3b4'
-down_revision: Union[str, Sequence[str], None] = 'd4e6a8c0b2f3'
+down_revision: Union[str, Sequence[str], None] = 'e7a1c3b5d9f2'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

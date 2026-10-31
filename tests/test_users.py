@@ -58,7 +58,8 @@ def test_update_user_unauthorized():
 def test_update_user_security_answer(auth_headers):
     """Test updating security answer"""
     update_data = {
-        "security_answer": "NewSecurityAnswer"
+        "security_answer": "NewSecurityAnswer",
+        "current_password": "testpass123"
     }
 
     response = client.put(

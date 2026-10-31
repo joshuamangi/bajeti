@@ -6,7 +6,8 @@ from sqlalchemy.orm import Session
 
 from data.db.db import get_db
 from data.db.models.models import User
-from schema.user import UserCreate, UserOut, Token
+from schema.user import UserCreate, UserOut, Token, ResetLinkUse
+from services.access_reset_service import AccessResetService
 from services.auth_service import AuthService
 from core import rate_limit
 from core.registration import require_registration_open
@@ -55,3 +56,20 @@ async def read_users_me(current_user: User = Depends(get_current_user)):
     logger.debug("Returning current user: id=%s email=%s",
                  current_user.id, current_user.email)
     return current_user
+
+
+# The link's token goes in the body, and the web page keeps it in the URL fragment, which the
+# browser never sends, so it stays out of access logs.
+# One address cannot try many tokens: failures count against a per-address limit.
+RESET_LINK_KEY = "reset-link"
+
+
+@router.post("/reset-link", response_model=Token)
+async def use_reset_link(http_request: Request, request: ResetLinkUse, db: Session = Depends(get_db)):
+    ip = rate_limit.client_ip(http_request)
+    rate_limit.check_reset(ip, RESET_LINK_KEY)
+    try:
+        return AccessResetService.use_link(db, request)
+    except HTTPException:
+        rate_limit.reset_failed(ip, RESET_LINK_KEY)
+        raise
