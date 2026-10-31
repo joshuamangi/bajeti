@@ -12,6 +12,8 @@ class RecurringBase(BaseModel):
     category_id: int
     next_due: date
     mode: Literal["ask_first", "auto"] = "ask_first"
+    # Usual M-Pesa fee, recorded in "M-Pesa fees" with each payment; leave out when there is none.
+    usual_fee: Optional[Decimal] = Field(default=None, ge=0, max_digits=14, decimal_places=2)
 
 
 class RecurringCreate(RecurringBase):
@@ -35,6 +37,10 @@ class RecurringOut(RecurringBase):
     @field_serializer("amount")
     def _two_decimals(self, value: Decimal):
         return format(value.quantize(Decimal("0.01")), "f")
+
+    @field_serializer("usual_fee")
+    def _fee_two_decimals(self, value: Optional[Decimal]):
+        return None if value is None else format(value.quantize(Decimal("0.01")), "f")
 
 
 class DueItem(RecurringOut):

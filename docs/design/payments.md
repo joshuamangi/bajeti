@@ -18,7 +18,7 @@ Look and behaviour: Prototype A (`design/prototype-a/`, PORT-GUIDE §5.9). Manua
 | Fuliza | `QAB12CD3EK Confirmed. Fuliza M-PESA amount is Ksh500.00 ...` | | not added: the "paid to" message for the same payment is the expense |
 | Payment email | `Your payment of KES 3,500.00 to Demo Fibre Internet was successful. Reference: FBR20261027.` | amount, payee, reference | expense, into the inbox |
 
-2. **Transaction fees count.** The fee is added to the amount, because that is the money that left the account. The card shows "Ksh300 + Ksh7 fee". You can change the amount before approving.
+2. **Transaction fees count, as their own expense** (changed 2026-10-31). The fee is a separate expense in the **M-Pesa fees** category, so monthly transaction costs are visible. The card shows "Ksh300 + Ksh7 fee". The amount you can change before approving is the amount before the fee.
 3. **Raw messages are deleted on approve or dismiss.** They are kept only while an item waits in the inbox, never logged, and hidden while amounts are hidden. A setting `KEEP_RAW_MESSAGES=false` controls this.
 4. **Phone transport later: a share-sheet Shortcut with its own token** (details below), not an SMS automation. Built only after the paste flow has been used for a while.
 
@@ -90,3 +90,22 @@ Step A (the share-sheet Shortcut) is built. Setup steps for the phone are in `do
 - **Reply:** every capture reply has a one-line `message` for the Shortcut to show (added, already captured, not spending). 409 replies keep `detail` as before.
 - **Possible duplicate:** a message with **no reference** is flagged, not refused, when an earlier non-dismissed payment has the same amount, payee and date. Messages with a reference are deduplicated exactly (409), as before.
 - **Install link:** `SHORTCUT_INSTALL_URL` (a GitHub Actions variable that the deploy writes into the Pi `.env`; never in the repo) adds an "Add the Shortcut" link on the Account page. The link does not carry the token: iCloud links are public. The Shortcut asks for the token when it is added.
+
+## M-Pesa fees and filing as recurring (2026-10-31)
+
+**Fees.** Approving a payment with a fee creates two expenses: the amount in the chosen category, and the fee in **M-Pesa fees** (`services/fee_service.py`).
+- The category is found by name, or created on the first fee. If you rename it, the next fee creates a new "M-Pesa fees" category.
+- It is added at Ksh 0 to every budget that holds the paid category, so it shows as over budget until you give it an allowance.
+- Payments approved before this change are not split.
+
+**File as recurring.** On a payment card, choose **Recurring payment**, then an existing item or **New recurring item** (`POST /api/payments/{id}/recurring`). The due date in the payment's month decides what happens:
+
+| That month for the item | Result |
+|---|---|
+| Not recorded, and it is the item's next due date | Recorded from the payment with the amount actually paid; the fee goes to M-Pesa fees; the item moves to next month |
+| Already recorded (auto, or approved earlier) | Only the fee is added. A usual fee already recorded is replaced by the real fee. If the amounts differ, the message says so |
+| Skipped, an earlier month still due, or before the item starts | Refused with a message: deal with it in Recurring, or approve as a normal payment |
+
+- **New recurring item:** named after the payee (you can edit it), with the amount paid, the category chosen on the card, monthly on the payment's day, and the message's fee as its usual fee. This month is recorded from the payment.
+- **Suggestions:** the card suggests an item when you remembered the payee as that item, or when exactly one active item has the same amount. It never files the payment by itself.
+- **Undo** removes what was added: the run (the month is due again), the expense and the fee. A replaced usual fee gets its old amount back. A new item created this way stays on the Recurring page; delete it there if needed.

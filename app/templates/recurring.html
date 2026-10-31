@@ -51,7 +51,7 @@
       <li class="p-rec-li {{ 'is-paused' if r.paused }}" data-rec="{{ r.id }}">
         <div class="p-rec-main">
           <span class="p-rec-name">{{ r.name }}</span>
-          <span class="p-rec-meta">{{ money(r.amount) }} · Monthly · {{ r.category_name }}</span>
+          <span class="p-rec-meta">{{ money(r.amount) }}{% if r.usual_fee and (r.usual_fee | float) > 0 %} + {{ money(r.usual_fee, bare=True) }} fee{% endif %} · Monthly · {{ r.category_name }}</span>
           <span class="p-rec-meta">{% if r.paused %}<i class="fa fa-pause" aria-hidden="true"></i> Paused{% else %}Next: {{ r.next_due | short_date }}{% if r.anchor_day >= 29 %} (day {{ r.anchor_day }}, or the last day of shorter months){% endif %}{% endif %}</span>
         </div>
         <span class="p-tag {{ 'p-tag-info' if r.mode == 'auto' else 'p-tag-primary' }}">{% if r.mode == 'auto' %}<i class="fa fa-bolt" aria-hidden="true"></i> Auto-add{% else %}<i class="fa fa-hand" aria-hidden="true"></i> Ask first{% endif %}</span>

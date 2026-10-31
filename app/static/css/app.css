@@ -422,6 +422,11 @@ body.p-modal-open{overflow:hidden}
 .p-pending-row{display:flex;align-items:center;gap:.8em;min-height:3.6em;padding:.8em 1.2em;background:var(--bg-light);border-radius:var(--r);box-shadow:var(--shadow);text-decoration:none;color:var(--text)}
 .p-pending-row>span:nth-child(2){flex:1;display:flex;flex-direction:column}
 .p-pending-icon{display:grid;place-items:center;width:2.4em;height:2.4em;border-radius:var(--r);background:var(--tint);color:var(--primary-ink)}
+.p-pay-kind{display:flex;margin:.4em 0}
+.p-pay-kind button{flex:1}
+.p-pay-hint{display:flex;gap:.4em;align-items:baseline;color:var(--primary-ink)}
+.p-pay-recurring{display:flex;flex-direction:column;gap:.8em}
+.p-pay-recurring[hidden]{display:none}
 .p-quick{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.8em}
 .p-quick-tile{gap:.8em;padding:.8em}
 .p-quick-tile>span:nth-child(2){min-width:0}

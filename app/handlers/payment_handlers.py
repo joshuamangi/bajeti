@@ -62,8 +62,32 @@ async def approve_payment(request: Request, payment_id: int, category_id: int = 
     resp = await payment_service.approve(token, payment_id, payload)
     if resp.status_code == status.HTTP_201_CREATED:
         data = resp.json()
-        return redirect_with_toast(PAGE, f"Added KES {money_text(data['amount'])}", "success")
+        text = f"Added KES {money_text(data['amount'])} to {data.get('category_name') or 'the category'}"
+        if data.get("fee"):
+            text += f" + KES {money_text(data['fee'])} to {data.get('fee_category', 'M-Pesa fees')}"
+        return redirect_with_toast(PAGE, text, "success")
     return redirect_with_toast(PAGE, _detail(resp, "Could not add this payment."), "error")
+
+
+async def file_payment_recurring(request: Request, payment_id: int, recurring_id: str = Form(""),
+                                 name: str = Form(""), category_id: str = Form(""), auto: str = Form(""),
+                                 remember: str = Form("")):
+    """Record a captured payment as a recurring payment: an existing item, or "new" with a name."""
+    token = get_current_user(request)
+    payload = {"remember": remember in ("1", "on", "true")}
+    if recurring_id == "new":
+        if not name.strip() or not category_id.strip().isdigit():
+            return redirect_with_toast(PAGE, "Enter a name and choose a category for the new recurring item.", "error")
+        payload["new"] = {"name": name.strip()[:60], "category_id": int(category_id),
+                          "mode": "auto" if auto in ("1", "on", "true") else "ask_first"}
+    elif recurring_id.isdigit():
+        payload["recurring_id"] = int(recurring_id)
+    else:
+        return redirect_with_toast(PAGE, "Choose a recurring item.", "error")
+    resp = await payment_service.file_recurring(token, payment_id, payload)
+    if resp.status_code == status.HTTP_201_CREATED:
+        return redirect_with_toast(PAGE, resp.json().get("message", "Recorded"), "success")
+    return redirect_with_toast(PAGE, _detail(resp, "Could not record this payment."), "error")
 
 
 async def dismiss_payment(request: Request, payment_id: int):

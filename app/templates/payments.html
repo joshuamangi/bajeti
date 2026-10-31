@@ -59,6 +59,27 @@
               <option value="">Choose a category</option>
               {% for c in inbox.categories %}<option value="{{ c.id }}" {{ 'selected' if c.id == p.suggested_category_id }}>{{ c.name }}</option>{% endfor %}
             </select></label>
+          {% if p.amount is not none %}
+          {% set sug = (inbox.recurring | default([]) | selectattr('id', 'equalto', p.suggested_recurring_id) | list | first) if p.suggested_recurring_id else none %}
+          <input type="hidden" name="kind" value="normal">
+          <div class="p-segmented p-pay-kind" role="group" aria-label="What kind of payment">
+            <button type="button" data-act="pay-kind" data-kind="normal" aria-pressed="true">Normal</button>
+            <button type="button" data-act="pay-kind" data-kind="recurring" aria-pressed="false">Recurring</button>
+          </div>
+          {% if sug %}<p class="p-small p-pay-hint"><i class="fa fa-repeat" aria-hidden="true"></i> Looks like {{ sug.name }}. Choose Recurring to record it as this month's.</p>{% endif %}
+          <div class="p-pay-recurring" data-recurring-fields hidden>
+            <label class="p-field"><span>Recurring item{% if sug %} <span class="p-tag p-tag-info">Suggested</span>{% endif %}</span>
+              <select name="recurring_id">
+                {% for r in inbox.recurring | default([]) %}<option value="{{ r.id }}" {{ 'selected' if r.id == p.suggested_recurring_id }}>{{ r.name }} · {{ money(r.amount, bare=True) }}</option>{% endfor %}
+                <option value="new" {{ 'selected' if not (inbox.recurring | default([])) }}>New recurring item…</option>
+              </select></label>
+            <div data-new-recurring {{ 'hidden' if inbox.recurring | default([]) }}>
+              <label class="p-field"><span>Name</span><input name="rec_name" value="{{ p.payee or '' }}" maxlength="60" autocomplete="off"></label>
+              <label class="p-check"><input type="checkbox" name="auto" value="1"> Add it automatically each month</label>
+              <p class="p-small">Monthly on day {{ (p.paid_on or p.received_at)[8:10] | int }}, in the category above.{% if p.fee and (p.fee | float) > 0 %} Its usual fee will be {{ money(p.fee, bare=True) }}.{% endif %}</p>
+            </div>
+          </div>
+          {% endif %}
           {% if p.payee %}<label class="p-check"><input type="checkbox" name="remember" value="1"> Remember {{ p.payee }} for next time</label>{% endif %}
           <p class="p-error-text" data-err aria-live="polite"></p>
           <div class="p-pay-actions">

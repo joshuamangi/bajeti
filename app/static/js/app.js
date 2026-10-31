@@ -597,6 +597,7 @@
       title: r ? 'Edit ' + esc(r.name) : 'New recurring expense', render: () => `<form data-form="recurring" data-id="${r ? r.id : ''}" class="p-modal-form-content" novalidate>
         <label class="p-field"><span>Name</span><input name="name" value="${esc(r ? r.name : '')}" required maxlength="60" placeholder="e.g. Internet"></label>
         <label class="p-field"><span>Amount</span><input name="amount" class="p-money-input" inputmode="decimal" value="${esc(r ? r.amount : '')}" required></label>
+        <label class="p-field"><span>Usual M-Pesa fee (optional)</span><input name="usual_fee" class="p-money-input" inputmode="decimal" value="${esc(r && r.usual_fee ? r.usual_fee : '')}" placeholder="0"><small class="p-small">Added to M-Pesa fees each time this is recorded</small></label>
         <label class="p-field"><span>Category in ${esc(budget().name)}</span><select name="category_id">${list.map(c => `<option value="${c.id}" ${r && r.category_id === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></label>
         <label class="p-field"><span>Next due date (repeats monthly)</span><input name="next_due" type="date" value="${esc(r ? r.next_due : firstNext)}" required></label>
         <p class="p-small" data-day-note></p>
@@ -617,11 +618,13 @@
     if (!name) { err.textContent = 'Enter a name.'; f.name.focus(); return; }
     if (!(amount > 0)) { err.textContent = 'Enter an amount greater than 0.'; f.amount.focus(); return; }
     if (!f.next_due.value) { err.textContent = 'Pick the next due date.'; f.next_due.focus(); return; }
+    const fee = f.usual_fee.value.trim() ? parseAmount(f.usual_fee.value) : 0;
+    if (!(fee >= 0)) { err.textContent = 'Enter the usual fee as a number, or leave it blank.'; f.usual_fee.focus(); return; }
     closeSheet();
     const id = f.dataset.id;
     save(id ? `/recurring/${id}/edit` : '/recurring', {
       name, amount: amount.toFixed(2), category_id: f.category_id.value, next_due: f.next_due.value,
-      mode: f.querySelector('input[name=mode]:checked').value
+      mode: f.querySelector('input[name=mode]:checked').value, usual_fee: fee > 0 ? fee.toFixed(2) : ''
     }, { success: `Saved ${esc(name)}` });
   }
   function deleteRecurring(el) {
@@ -646,8 +649,29 @@
     toast(esc(r.message), { type: r.type === 'success' ? 'success' : r.type });
     if (r.type === 'success' || r.type === 'warning') { const t = $('#pPaste'); if (t && r.type === 'success') t.value = ''; }
   }
+  function setPayKind(el) {
+    const f = el.closest('form'), recurring = el.dataset.kind === 'recurring';
+    f.kind.value = el.dataset.kind;
+    el.parentElement.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b === el)));
+    f.querySelector('[data-recurring-fields]').hidden = !recurring;
+    const btn = f.querySelector('[type=submit]');
+    btn.lastChild.textContent = recurring ? ' Record' : ' Approve';
+    btn.setAttribute('aria-label', (btn.getAttribute('aria-label') || '').replace(/^(Approve|Record)/, recurring ? 'Record' : 'Approve'));
+  }
+  function submitPayRecurring(f, err) {
+    const id = f.dataset.id, choice = f.recurring_id.value;
+    const fields = { recurring_id: choice, remember: f.remember && f.remember.checked ? '1' : '' };
+    if (choice === 'new') {
+      const name = f.rec_name.value.trim();
+      if (!name) { err.textContent = 'Enter a name for the recurring item.'; f.rec_name.focus(); return; }
+      if (!f.category_id.value) { err.textContent = 'Choose a category for it.'; f.category_id.focus(); return; }
+      Object.assign(fields, { name, category_id: f.category_id.value, auto: f.auto.checked ? '1' : '' });
+    }
+    return save(`/payments/${id}/recurring`, fields, { undo: () => save(`/payments/${id}/restore`, {}, { success: 'Back in the inbox' }) });
+  }
   function submitPayApprove(f) {
     const err = f.querySelector('[data-err]'), category = f.category_id.value;
+    if (f.kind && f.kind.value === 'recurring') return submitPayRecurring(f, err);
     if (!category) { err.textContent = 'Choose a category.'; f.category_id.focus(); return; }
     const fields = { category_id: category, remember: f.remember && f.remember.checked ? '1' : '' };
     if (f.amount) {
@@ -706,6 +730,7 @@
     'rec-del': el => deleteRecurring(el),
     'paste-sample': () => { const t = $('#pPaste'); if (t) { t.value = SAMPLES[sampleIdx++ % SAMPLES.length]; t.focus(); } },
     'pay-dismiss': el => dismissPayment(el),
+    'pay-kind': el => setPayKind(el),
     'exp-edit': el => openExpenseEdit(el.dataset.cat, el.dataset.id),
     'exp-del': el => deleteExpense(el.dataset.cat, el.dataset.id),
     'set-budget': el => setActiveBudget(el.dataset.id),
@@ -766,6 +791,11 @@
     const fn = ACT[el.dataset.act]; if (!fn) return;
     if (el.tagName === 'A') e.preventDefault();
     try { busyWhile(el, fn(el, e)); } catch (err) { console.error('[Bajeti] action ' + el.dataset.act, err); toast('Something went wrong. Nothing was saved.', { type: 'error' }); }
+  });
+  document.addEventListener('change', e => {
+    if (e.target.name !== 'recurring_id') return;
+    const box = e.target.form && e.target.form.querySelector('[data-new-recurring]');
+    if (box) box.hidden = e.target.value !== 'new';
   });
   document.addEventListener('submit', e => {
     const f = e.target;

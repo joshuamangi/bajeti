@@ -56,3 +56,7 @@ recurring_runs                       one row per due date that was handled
 - **Home:** the Due now cards (Skip, Approve), shown only when something is due. The More tab gets a red count of due items.
 - **More → Recurring:** the budget switcher, "About X a month across n active items", the Due now cards, then the list (Ask first or Auto-add tag, next date or Paused, with Pause, Edit and Delete). Under it, "Recently added": the last 10 approvals, skips and auto-adds.
 - **Form:** name, amount, category (expense categories of the active budget, A to Z), next due date (it repeats monthly), and mode as two radio cards.
+
+## Usual M-Pesa fee (2026-10-31)
+
+An item can have an optional **usual fee**. Each time the item is recorded (approve, approve all, or auto), the usual fee is added as its own expense in **M-Pesa fees**, and undoing the run removes it too. When the payment's real M-Pesa message is filed against that month from the Payments queue, the real fee replaces the usual one (see `docs/design/payments.md`, "M-Pesa fees and filing as recurring").
