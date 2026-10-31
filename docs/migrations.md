@@ -81,3 +81,17 @@ Pi by hand.
 Rollback (drops the column; budgets are kept):
 
 docker compose exec bajeti_app alembic downgrade c3d5f7a9b1e2
+
+## Phone tokens, e5f7a9c1d3b4
+
+Adds the `api_tokens` table for the iPhone Shortcut (hashed tokens, scope `payments:capture`). New
+table only. Tested on a scratch database stamped at e7a1c3b5d9f2: upgrade, downgrade, upgrade again;
+one head.
+
+Status: in production since 2026-10-31 (deploy of PR #154; the deploy log shows
+`Running upgrade e7a1c3b5d9f2 -> e5f7a9c1d3b4` and `alembic current` = e5f7a9c1d3b4). Not checked on the
+Pi by hand.
+
+Rollback (drops the table; every phone token stops working):
+
+docker compose exec bajeti_app alembic downgrade e7a1c3b5d9f2
