@@ -37,6 +37,7 @@ jobs:
           API_SERVER=${{ secrets.API_SERVER }}
           ENVIRONMENT=${{ secrets.ENVIRONMENT }}
           REGISTRATION_OPEN=${{ vars.REGISTRATION_OPEN || 'false' }}
+          SHORTCUT_INSTALL_URL=${{ vars.SHORTCUT_INSTALL_URL || '' }}
           EOF
           chmod 600 .env
 

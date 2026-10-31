@@ -34,7 +34,7 @@ Try it: in Messages, press and hold an M-Pesa message → **Share** (or select t
 1. **Duplicate** the Shortcut and clear the token from the copy's Text action, so the copy holds no token.
 2. In the copy's details, add an **Import Question** for that Text action: "Paste your Bajeti phone token".
 3. Share the copy → **Copy iCloud Link**.
-4. On the Pi, add `SHORTCUT_INSTALL_URL=<the iCloud link>` to the app's env file and restart the app. The Account page then shows **Add the Shortcut**.
+4. In GitHub → Settings → Secrets and variables → Actions → **Variables**, add `SHORTCUT_INSTALL_URL` = the iCloud link. The next deploy writes it into the Pi `.env` (the deploy rewrites `.env` every time, so do not edit it on the Pi). The Account page then shows **Add the Shortcut**.
 
 Each person then creates their own token, taps **Add the Shortcut**, and pastes their token when asked. Their messages go to their own inbox only.
 

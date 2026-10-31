@@ -89,4 +89,4 @@ Step A (the share-sheet Shortcut) is built. Setup steps for the phone are in `do
 - **Limits** (`core/rate_limit.py`): 20 unknown tokens per address per 15 minutes; 60 captures per token per hour. Both return 429.
 - **Reply:** every capture reply has a one-line `message` for the Shortcut to show (added, already captured, not spending). 409 replies keep `detail` as before.
 - **Possible duplicate:** a message with **no reference** is flagged, not refused, when an earlier non-dismissed payment has the same amount, payee and date. Messages with a reference are deduplicated exactly (409), as before.
-- **Install link:** `SHORTCUT_INSTALL_URL` (set in the Pi env file, never in the repo) adds an "Add the Shortcut" link on the Account page. The link does not carry the token: iCloud links are public. The Shortcut asks for the token when it is added.
+- **Install link:** `SHORTCUT_INSTALL_URL` (a GitHub Actions variable that the deploy writes into the Pi `.env`; never in the repo) adds an "Add the Shortcut" link on the Account page. The link does not carry the token: iCloud links are public. The Shortcut asks for the token when it is added.
