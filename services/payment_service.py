@@ -1,5 +1,6 @@
+import calendar
 import re
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Optional
 
@@ -8,12 +9,14 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from data.db.models.models import Allocation, Category, Expense, PayeeRule, PendingPayment
-from schema.payment import ApproveIn, CaptureIn
+from data.db.models.models import (Allocation, Category, Expense, PayeeRule, PendingPayment, RecurringExpense,
+                                   RecurringRun)
+from schema.payment import ApproveIn, CaptureIn, RecurringIn
 from services.budget_service import BudgetService
 from services.category_service import CategoryService
 from services.payment_parser import parse
-from services.recurring_service import today
+from services.fee_service import FEE_CATEGORY, FeeService
+from services.recurring_service import RecurringService, month_day, today
 
 # Payee words -> category name, matched in the active budget (from the prototype).
 KEYWORDS = [
@@ -31,6 +34,14 @@ def _money(value) -> Optional[Decimal]:
 
 def _payee_key(payee: Optional[str]) -> str:
     return re.sub(r"\s+", " ", (payee or "").strip().lower())
+
+
+def _month_label(d: date) -> str:
+    return f"{calendar.month_name[d.month]} {d.year}"
+
+
+def _ksh(value) -> str:
+    return f"Ksh {_money(value):,}"
 
 
 def _capture_message(p: PendingPayment, duplicate: bool) -> str:
@@ -70,7 +81,8 @@ class PaymentService:
         return query.first() is not None
 
     @staticmethod
-    def out(p: PendingPayment, suggested: Optional[int] = None, duplicate: bool = False) -> dict:
+    def out(p: PendingPayment, suggested: Optional[int] = None, duplicate: bool = False,
+            suggested_recurring: Optional[int] = None) -> dict:
         amount, fee = _money(p.amount), _money(p.fee)
         return {
             "id": p.id, "source": p.source, "kind": p.kind, "status": p.status,
@@ -79,6 +91,7 @@ class PaymentService:
             "payee": p.payee, "reference": p.reference, "paid_on": p.paid_on,
             "received_at": p.received_at, "raw_text": p.raw_text,
             "suggested_category_id": suggested,
+            "suggested_recurring_id": suggested_recurring,
             "possible_duplicate": duplicate,
         }
 
@@ -142,16 +155,37 @@ class PaymentService:
         return None
 
     @staticmethod
+    def suggest_recurring(db: Session, user_id: int, p: PendingPayment, items: list) -> Optional[int]:
+        """A payee remembered as a recurring item first, then the one active item with the same amount."""
+        if p.amount is None or not items:
+            return None
+        ids = {i.id for i in items}
+        if p.payee:
+            rule = db.query(PayeeRule).filter(PayeeRule.user_id == user_id,
+                                              PayeeRule.payee == _payee_key(p.payee)).first()
+            if rule and rule.recurring_id in ids:
+                return rule.recurring_id
+        amount = _money(p.amount)
+        matches = [i.id for i in items if _money(i.amount) == amount]
+        return matches[0] if len(matches) == 1 else None
+
+    @staticmethod
     def list_pending(db: Session, user_id: int, budget_id: Optional[int]) -> dict:
         """The inbox is every pending payment; only the suggestions follow the active budget."""
         categories = PaymentService._budget_categories(db, user_id, budget_id)
+        items = ([i for i in RecurringService._in_budget(db, user_id, budget_id) if not i.paused]
+                 if budget_id is not None else [])
         pending = (db.query(PendingPayment).filter(PendingPayment.user_id == user_id,
                                                    PendingPayment.status == "pending")
                    .order_by(PendingPayment.received_at.desc(), PendingPayment.id.desc()).all())
         return {"payments": [PaymentService.out(p, PaymentService.suggest(db, user_id, p.payee, categories),
-                                                PaymentService.possible_duplicate(db, p))
+                                                PaymentService.possible_duplicate(db, p),
+                                                PaymentService.suggest_recurring(db, user_id, p, items))
                              for p in pending],
-                "categories": [{"id": cid, "name": name} for cid, name in sorted(categories.items(), key=lambda x: x[1].lower())]}
+                "categories": [{"id": cid, "name": name} for cid, name in sorted(categories.items(), key=lambda x: x[1].lower())],
+                "recurring": [{"id": i.id, "name": i.name, "amount": _money(i.amount), "category_id": i.category_id,
+                               "category_name": categories.get(i.category_id, "")}
+                              for i in sorted(items, key=lambda i: i.name.lower())]}
 
     @staticmethod
     def count_pending(db: Session, user_id: int) -> int:
@@ -177,8 +211,7 @@ class PaymentService:
         if amount is None:
             if payment.amount is None:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Enter the amount")
-            # The fee left the account too, so it counts (owner decision).
-            amount = Decimal(str(payment.amount)) + Decimal(str(payment.fee or 0))
+            amount = Decimal(str(payment.amount))
         month = (payment.paid_on or today()).strftime("%Y-%m")
         now = datetime.utcnow()
         expense = Expense(user_id=user_id, category_id=category.id, amount=amount,
@@ -186,17 +219,101 @@ class PaymentService:
                           created_at=now, updated_at=now)
         db.add(expense)
         db.flush()
+        # The fee left the account too (owner decision), as its own expense in "M-Pesa fees".
+        fee = FeeService.add_fee(db, user_id, payment.fee, month, payment.payee, category.id)
         payment.status, payment.expense_id = "approved", expense.id
+        payment.fee_expense_id = fee.id if fee else None
         PaymentService._forget_raw(payment)
         if data.remember and payment.payee:
-            key = _payee_key(payment.payee)
-            rule = db.query(PayeeRule).filter(PayeeRule.user_id == user_id, PayeeRule.payee == key).first()
-            if rule:
-                rule.category_id = category.id
-            else:
-                db.add(PayeeRule(user_id=user_id, payee=key, category_id=category.id))
+            PaymentService._remember(db, user_id, payment.payee, category.id, None)
         db.commit()
-        return {"expense_id": expense.id, "amount": _money(amount), "month": month}
+        return {"expense_id": expense.id, "amount": _money(amount), "fee": _money(fee.amount) if fee else None,
+                "month": month, "category_name": category.name, "fee_category": FEE_CATEGORY}
+
+    @staticmethod
+    def _remember(db: Session, user_id: int, payee: str, category_id: int, recurring_id: Optional[int]):
+        key = _payee_key(payee)
+        rule = db.query(PayeeRule).filter(PayeeRule.user_id == user_id, PayeeRule.payee == key).first()
+        if rule:
+            rule.category_id, rule.recurring_id = category_id, recurring_id
+        else:
+            db.add(PayeeRule(user_id=user_id, payee=key, category_id=category_id, recurring_id=recurring_id))
+
+    @staticmethod
+    def file_recurring(db: Session, user_id: int, payment_id: int, data: RecurringIn) -> dict:
+        """File a captured payment as this month's payment of a recurring item (docs/design/payments.md)."""
+        payment = PaymentService._get(db, user_id, payment_id)
+        if payment.status != "pending":
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="This payment was already handled")
+        if payment.amount is None:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail="This message has no amount. Approve it as a normal payment.")
+        paid = payment.paid_on or today()
+        amount = Decimal(str(payment.amount))
+        if data.new:
+            category = RecurringService._check_category(db, user_id, data.new.category_id)
+            fee = Decimal(str(payment.fee or 0))
+            item = RecurringExpense(user_id=user_id, category_id=category.id, name=data.new.name.strip(),
+                                    amount=amount, anchor_day=paid.day, next_due=paid, mode=data.new.mode,
+                                    paused=False, usual_fee=fee if fee > 0 else None)
+            db.add(item)
+            db.flush()
+        else:
+            item = RecurringService._get(db, user_id, data.recurring_id)
+            if item.paused:
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                                    detail=f"{item.name} is paused. Resume it in Recurring first.")
+        due = month_day(paid.year, paid.month, item.anchor_day)
+        label = _month_label(due)
+        month = due.strftime("%Y-%m")
+        run = db.query(RecurringRun).filter(RecurringRun.recurring_id == item.id, RecurringRun.due_date == due).first()
+        if run is None:
+            if due != item.next_due:
+                if due > item.next_due:
+                    detail = (f"{item.name} still has {_month_label(item.next_due)} to record or skip. "
+                              "Do that in Recurring first, or approve this as a normal payment.")
+                else:
+                    detail = (f"{item.name} starts in {_month_label(item.next_due)}. "
+                              "Approve this as a normal payment.")
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=detail)
+            run = RecurringService._record(db, item, due, "approved", amount=amount, usual_fee=False, commit=False)
+            fee = FeeService.add_fee(db, user_id, payment.fee, month, payment.payee or item.name, item.category_id)
+            payment.expense_id, payment.recurring_run_id = run.expense_id, run.id
+            payment.fee_expense_id = fee.id if fee else None
+            message = f"Recorded {item.name} for {label}: {_ksh(amount)}"
+        elif run.action == "skipped":
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                                detail=f"{item.name} was skipped for {label}. Undo the skip in Recurring first, "
+                                       "or approve this as a normal payment.")
+        else:
+            # Already recorded (auto, or approved earlier): keep that expense and add only the fee.
+            fee = None
+            real_fee = Decimal(str(payment.fee or 0))
+            usual = (db.query(Expense).filter(Expense.id == run.fee_expense_id, Expense.user_id == user_id).first()
+                     if run.fee_expense_id else None)
+            if usual and real_fee > 0:
+                # The real fee replaces the usual one; Undo puts the usual amount back.
+                payment.previous_fee, usual.amount = usual.amount, real_fee
+                payment.fee_expense_id, fee = usual.id, usual
+            elif not usual:
+                fee = FeeService.add_fee(db, user_id, payment.fee, month, payment.payee or item.name, item.category_id)
+                payment.fee_expense_id = fee.id if fee else None
+            message = f"{item.name} for {label} was already recorded"
+            message += ", so only the fee was added" if fee else ", so nothing new was added"
+            if run.amount is not None and _money(run.amount) != _money(amount):
+                message += f". It was recorded as {_ksh(run.amount)}; this message says {_ksh(amount)}"
+        if fee:
+            message += f" + {_ksh(fee.amount)} to {FEE_CATEGORY}"
+        payment.status = "approved"
+        PaymentService._forget_raw(payment)
+        if data.remember and payment.payee:
+            PaymentService._remember(db, user_id, payment.payee, item.category_id, item.id)
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Already recorded")
+        return {"recurring_id": item.id, "month": month, "message": message + "."}
 
     @staticmethod
     def dismiss(db: Session, user_id: int, payment_id: int):
@@ -209,11 +326,28 @@ class PaymentService:
 
     @staticmethod
     def restore(db: Session, user_id: int, payment_id: int):
-        """Undo: back to the inbox. An approval's expense is removed. The original text stays cleared."""
+        """Undo: back to the inbox. What the approval added is removed (the expense, the fee, and a
+        recurring run it recorded); a usual fee it replaced gets its amount back. The original
+        text stays cleared."""
         payment = PaymentService._get(db, user_id, payment_id)
-        if payment.expense_id:
-            expense = db.query(Expense).filter(Expense.id == payment.expense_id, Expense.user_id == user_id).first()
-            if expense:
-                db.delete(expense)
-        payment.status, payment.expense_id = "pending", None
+
+        def expense(expense_id):
+            return (db.query(Expense).filter(Expense.id == expense_id, Expense.user_id == user_id).first()
+                    if expense_id else None)
+
+        run = (db.query(RecurringRun).filter(RecurringRun.id == payment.recurring_run_id,
+                                             RecurringRun.user_id == user_id).first()
+               if payment.recurring_run_id else None)
+        if run:
+            item = db.query(RecurringExpense).filter(RecurringExpense.id == run.recurring_id).first()
+            RecurringService._remove_run(db, user_id, item, run)
+        elif expense(payment.expense_id):
+            db.delete(expense(payment.expense_id))
+        fee = expense(payment.fee_expense_id)
+        if fee is not None and payment.previous_fee is not None:
+            fee.amount = payment.previous_fee
+        elif fee is not None:
+            db.delete(fee)
+        payment.status, payment.expense_id, payment.fee_expense_id = "pending", None, None
+        payment.previous_fee, payment.recurring_run_id = None, None
         db.commit()

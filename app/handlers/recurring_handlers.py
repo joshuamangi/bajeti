@@ -39,12 +39,20 @@ async def recurring_page(request: Request, token: str = Depends(get_current_user
 
 
 async def _save(request: Request, recurring_id: Optional[int], name: str, amount: str, category_id: int,
-                next_due: str, mode: str):
+                next_due: str, mode: str, usual_fee: str = ""):
     token = get_current_user(request)
     value = _amount(amount)
     if not value:
         return redirect_with_toast(PAGE, "Enter an amount greater than 0.", "error")
-    payload = {"name": name, "amount": value, "category_id": category_id, "next_due": next_due, "mode": mode}
+    payload = {"name": name, "amount": value, "category_id": category_id, "next_due": next_due, "mode": mode,
+               "usual_fee": None}
+    if usual_fee.strip():
+        try:
+            fee = Decimal(usual_fee.replace(",", "").strip())
+        except InvalidOperation:
+            return redirect_with_toast(PAGE, "Enter the usual fee as a number, or leave it blank.", "error")
+        # 0 means no usual fee.
+        payload["usual_fee"] = format(fee.quantize(Decimal("0.01")), "f") if fee > 0 else None
     if recurring_id:
         resp = await recurring_service.update_recurring(token, recurring_id, payload)
         ok = resp.status_code == status.HTTP_200_OK
@@ -57,13 +65,15 @@ async def _save(request: Request, recurring_id: Optional[int], name: str, amount
 
 
 async def add_recurring(request: Request, name: str = Form(...), amount: str = Form(...),
-                        category_id: int = Form(...), next_due: str = Form(...), mode: str = Form("ask_first")):
-    return await _save(request, None, name, amount, category_id, next_due, mode)
+                        category_id: int = Form(...), next_due: str = Form(...), mode: str = Form("ask_first"),
+                        usual_fee: str = Form("")):
+    return await _save(request, None, name, amount, category_id, next_due, mode, usual_fee)
 
 
 async def edit_recurring(request: Request, recurring_id: int, name: str = Form(...), amount: str = Form(...),
-                         category_id: int = Form(...), next_due: str = Form(...), mode: str = Form("ask_first")):
-    return await _save(request, recurring_id, name, amount, category_id, next_due, mode)
+                         category_id: int = Form(...), next_due: str = Form(...), mode: str = Form("ask_first"),
+                         usual_fee: str = Form("")):
+    return await _save(request, recurring_id, name, amount, category_id, next_due, mode, usual_fee)
 
 
 async def delete_recurring(request: Request, recurring_id: int):

@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from core.security import get_capture_user, get_current_user
 from data.db.db import get_db
 from routers.analytics import to_json
-from schema.payment import ApproveIn, CaptureIn
+from schema.payment import ApproveIn, CaptureIn, RecurringIn
 from schema.user import UserOut
 from services.payment_service import PaymentService
 
@@ -38,6 +38,13 @@ def count(db: Session = Depends(get_db), current_user: UserOut = Depends(get_cur
 def approve(payment_id: int, data: ApproveIn, db: Session = Depends(get_db),
             current_user: UserOut = Depends(get_current_user)):
     return to_json(PaymentService.approve(db=db, user_id=current_user.id, payment_id=payment_id, data=data))
+
+
+@router.post("/{payment_id}/recurring", status_code=status.HTTP_201_CREATED)
+def file_recurring(payment_id: int, data: RecurringIn, db: Session = Depends(get_db),
+                   current_user: UserOut = Depends(get_current_user)):
+    """This month's payment of a recurring item ({recurring_id}) or of a new one ({new: {...}})."""
+    return to_json(PaymentService.file_recurring(db=db, user_id=current_user.id, payment_id=payment_id, data=data))
 
 
 @router.post("/{payment_id}/dismiss", status_code=status.HTTP_204_NO_CONTENT)

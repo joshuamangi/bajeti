@@ -58,14 +58,16 @@ def test_unreadable_text_stays_in_the_inbox(client):
     assert p["kind"] == "unknown" and p["raw_text"]
 
 
-def test_approve_adds_the_fee_records_the_month_and_forgets_the_text(client):
+def test_approve_records_the_month_splits_the_fee_and_forgets_the_text(client):
     headers, _ = make_user(client)
     _, household = category(client, headers, "Household")
     pid = capture(client, headers, SENT).json()["payment"]["id"]
     r = client.post(f"/api/payments/{pid}/approve", json={"category_id": household}, headers=headers)
-    assert r.status_code == 201 and r.json() == {"expense_id": r.json()["expense_id"], "amount": "307.00", "month": "2026-10"}
+    assert r.status_code == 201
+    assert (r.json()["amount"], r.json()["fee"], r.json()["month"]) == ("300.00", "7.00", "2026-10")
+    # The fee is its own expense in "M-Pesa fees" (tests/test_fees_recurring.py).
     [e] = expenses(client, headers, household)
-    assert (float(e["amount"]), e["description"], e["month"]) == (307.0, "DEMO PERSON", "2026-10")
+    assert (float(e["amount"]), e["description"], e["month"]) == (300.0, "DEMO PERSON", "2026-10")
     assert client.get("/api/payments/", headers=headers).json()["payments"] == []
     # Approving again is refused.
     assert client.post(f"/api/payments/{pid}/approve", json={"category_id": household}, headers=headers).status_code == 409

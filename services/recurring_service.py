@@ -12,6 +12,7 @@ from data.db.models.models import Allocation, Category, Expense, RecurringExpens
 from schema.recurring import RecurringCreate
 from services.budget_service import BudgetService
 from services.category_service import CategoryService
+from services.fee_service import FeeService
 
 
 
@@ -64,7 +65,8 @@ class RecurringService:
     def out(item: RecurringExpense, category_name: str, **extra) -> dict:
         return {"id": item.id, "name": item.name, "amount": Decimal(str(item.amount)), "category_id": item.category_id,
                 "category_name": category_name, "next_due": item.next_due, "anchor_day": item.anchor_day,
-                "mode": item.mode, "paused": item.paused, **extra}
+                "mode": item.mode, "paused": item.paused,
+                "usual_fee": None if item.usual_fee is None else Decimal(str(item.usual_fee)), **extra}
 
     @staticmethod
     def _names(db: Session, items: list) -> dict:
@@ -76,7 +78,7 @@ class RecurringService:
         category = RecurringService._check_category(db, user_id, data.category_id)
         item = RecurringExpense(user_id=user_id, category_id=category.id, name=data.name.strip(),
                                 amount=data.amount, anchor_day=data.next_due.day, next_due=data.next_due,
-                                mode=data.mode, paused=False)
+                                mode=data.mode, paused=False, usual_fee=data.usual_fee)
         db.add(item)
         db.commit()
         db.refresh(item)
@@ -89,6 +91,7 @@ class RecurringService:
         # A new amount applies to future payments only; recorded expenses keep theirs.
         item.name, item.amount, item.category_id = data.name.strip(), data.amount, category.id
         item.next_due, item.anchor_day, item.mode = data.next_due, data.next_due.day, data.mode
+        item.usual_fee = data.usual_fee
         db.commit()
         return RecurringService.out(item, category.name)
 
@@ -125,30 +128,43 @@ class RecurringService:
             item.next_due = next_month(item.next_due, item.anchor_day)
 
     @staticmethod
-    def _record(db: Session, item: RecurringExpense, due_date: date, action: str):
-        """Write the run (and the expense) for one due date in one transaction."""
+    def _record(db: Session, item: RecurringExpense, due_date: date, action: str,
+                amount: Optional[Decimal] = None, usual_fee: bool = True, commit: bool = True) -> RecurringRun:
+        """Write the run (and the expense) for one due date in one transaction.
+
+        A captured payment passes the amount actually paid and usual_fee=False (it adds the real
+        fee itself) and commit=False (it commits together with the payment)."""
         if due_date != item.next_due:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Already recorded")
-        expense = None
-        amount = Decimal(str(item.amount))
+        expense = fee = None
+        amount = Decimal(str(item.amount)) if amount is None else Decimal(str(amount))
+        month = due_date.strftime("%Y-%m")
         if action in ("approved", "auto"):
             now = datetime.utcnow()
             expense = Expense(user_id=item.user_id, category_id=item.category_id, amount=amount,
-                              description=item.name, month=due_date.strftime("%Y-%m"), type="spend",
+                              description=item.name, month=month, type="spend",
                               created_at=now, updated_at=now)
             db.add(expense)
             db.flush()
-        db.add(RecurringRun(recurring_id=item.id, user_id=item.user_id, due_date=due_date, action=action,
-                            expense_id=expense.id if expense else None,
-                            amount=amount if expense else None))
+            if usual_fee:
+                fee = FeeService.add_fee(db, item.user_id, item.usual_fee, month, item.name, item.category_id)
+        run = RecurringRun(recurring_id=item.id, user_id=item.user_id, due_date=due_date, action=action,
+                           expense_id=expense.id if expense else None,
+                           fee_expense_id=fee.id if fee else None,
+                           amount=amount if expense else None)
+        db.add(run)
         item.next_due = next_month(due_date, item.anchor_day)
         RecurringService._skip_recorded(db, item)
         try:
-            db.commit()
+            if commit:
+                db.commit()
+            else:
+                db.flush()
         except IntegrityError:
             # Two tabs approving at once: the unique (recurring_id, due_date) row wins once.
             db.rollback()
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Already recorded")
+        return run
 
     @staticmethod
     def record_auto(db: Session, user_id: int, budget_id: Optional[int] = None):
@@ -215,14 +231,21 @@ class RecurringService:
                                             RecurringRun.due_date == due_date).first()
         if not run:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Nothing recorded for that date")
-        if run.expense_id:
-            expense = db.query(Expense).filter(Expense.id == run.expense_id, Expense.user_id == user_id).first()
-            if expense:
-                db.delete(expense)
+        RecurringService._remove_run(db, user_id, item, run)
+        db.commit()
+
+    @staticmethod
+    def _remove_run(db: Session, user_id: int, item: RecurringExpense, run: RecurringRun):
+        """Delete a run with its expense and fee expense and make its date due again (no commit)."""
+        for expense_id in (run.expense_id, run.fee_expense_id):
+            if expense_id:
+                expense = db.query(Expense).filter(Expense.id == expense_id, Expense.user_id == user_id).first()
+                if expense:
+                    db.delete(expense)
+        due_date = run.due_date
         db.delete(run)
         if due_date < item.next_due:
             item.next_due = due_date
-        db.commit()
 
     @staticmethod
     def count_for_category(db: Session, user_id: int, category_id: int) -> int:

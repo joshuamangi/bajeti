@@ -240,6 +240,8 @@ class RecurringExpense(Base):
     next_due = Column(Date, nullable=False)
     mode = Column(String(10), nullable=False, default="ask_first", server_default="ask_first")
     paused = Column(Boolean, nullable=False, default=False, server_default="0")
+    # Usual M-Pesa fee, added to "M-Pesa fees" when the item is recorded without a captured message.
+    usual_fee = Column(Numeric, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -260,6 +262,7 @@ class RecurringRun(Base):
     action = Column(String(10), nullable=False)
     expense_id = Column(Integer, ForeignKey("expenses.id", ondelete="SET NULL"), nullable=True)
     amount = Column(Numeric, nullable=True)
+    fee_expense_id = Column(Integer, ForeignKey("expenses.id", ondelete="SET NULL"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     __table_args__ = (
@@ -286,6 +289,11 @@ class PendingPayment(Base):
     paid_on = Column(Date, nullable=True)
     status = Column(String(10), nullable=False, default="pending")
     expense_id = Column(Integer, ForeignKey("expenses.id", ondelete="SET NULL"), nullable=True)
+    # The fee expense this payment added, or the usual-fee expense it replaced (previous_fee holds
+    # the old amount so Undo can put it back). recurring_run_id: the run this payment recorded.
+    fee_expense_id = Column(Integer, ForeignKey("expenses.id", ondelete="SET NULL"), nullable=True)
+    previous_fee = Column(Numeric, nullable=True)
+    recurring_run_id = Column(Integer, ForeignKey("recurring_runs.id", ondelete="SET NULL"), nullable=True)
     received_at = Column(DateTime, default=datetime.utcnow)
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -305,6 +313,8 @@ class PayeeRule(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     payee = Column(String(80), nullable=False)
     category_id = Column(Integer, ForeignKey("categories.id", ondelete="CASCADE"), nullable=False)
+    # Set when the payee was remembered as a recurring item ("this is Rent").
+    recurring_id = Column(Integer, ForeignKey("recurring_expenses.id", ondelete="SET NULL"), nullable=True)
 
     __table_args__ = (
         UniqueConstraint("user_id", "payee", name="uq_payee_rule"),
