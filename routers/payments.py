@@ -5,7 +5,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
-from core.security import get_current_user
+from core.security import get_capture_user, get_current_user
 from data.db.db import get_db
 from routers.analytics import to_json
 from schema.payment import ApproveIn, CaptureIn
@@ -16,8 +16,9 @@ router = APIRouter(prefix="/api/payments", tags=["payments"])
 
 
 @router.post("/capture", status_code=status.HTTP_201_CREATED)
-def capture(data: CaptureIn, db: Session = Depends(get_db), current_user: UserOut = Depends(get_current_user)):
-    """201 added to the inbox, 200 not spending (with the reason), 409 already captured."""
+def capture(data: CaptureIn, db: Session = Depends(get_db), current_user: UserOut = Depends(get_capture_user)):
+    """201 added to the inbox, 200 not spending (with the reason), 409 already captured.
+    Accepts the login token or a phone token (the only endpoint that does)."""
     code, body = PaymentService.capture(db=db, user_id=current_user.id, data=data)
     return JSONResponse(status_code=code, content=jsonable_encoder(to_json(body)), media_type="application/json")
 

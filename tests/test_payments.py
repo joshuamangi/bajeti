@@ -131,3 +131,32 @@ def test_other_user_gets_404_everywhere(client):
     assert client.get("/api/payments/count", headers=headers).json() == {"pending": 1}
     # The same reference is fine for a different user.
     assert capture(client, other, PAID).status_code == 201
+
+
+FIBRE = "Your payment of KES 3,500.00 to Demo Fibre Internet was successful."
+
+
+def test_same_details_without_a_reference_is_flagged_not_refused(client):
+    headers, _ = make_user(client)
+    first = capture(client, headers, FIBRE)
+    second = capture(client, headers, FIBRE)
+    assert first.status_code == second.status_code == 201
+    assert first.json()["payment"]["possible_duplicate"] is False
+    assert second.json()["payment"]["possible_duplicate"] is True
+    assert "looks like one already in Bajeti" in second.json()["message"]
+    flags = {p["id"]: p["possible_duplicate"] for p in client.get("/api/payments/", headers=headers).json()["payments"]}
+    assert flags == {first.json()["payment"]["id"]: False, second.json()["payment"]["id"]: True}
+
+
+def test_a_different_amount_or_a_dismissed_earlier_one_is_not_a_duplicate(client):
+    headers, _ = make_user(client)
+    first = capture(client, headers, FIBRE).json()["payment"]["id"]
+    other = capture(client, headers, FIBRE.replace("3,500.00", "1,200.00")).json()["payment"]
+    assert other["possible_duplicate"] is False
+    client.post(f"/api/payments/{first}/dismiss", headers=headers)
+    assert capture(client, headers, FIBRE).json()["payment"]["possible_duplicate"] is False
+
+
+def test_messages_with_a_reference_are_never_flagged(client):
+    headers, _ = make_user(client)
+    assert capture(client, headers, PAID).json()["payment"]["possible_duplicate"] is False

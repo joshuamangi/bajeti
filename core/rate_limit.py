@@ -1,4 +1,4 @@
-"""In-memory limits on failed logins and password resets.
+"""In-memory limits on failed logins, password resets and phone-token captures.
 
 Why in memory: the app runs as one uvicorn process on one Pi, so a dict is enough, needs no
 new dependency and no extra service. The counters reset when the app restarts, which is an
@@ -22,6 +22,10 @@ LOGIN_PER_IP = 30
 RESET_WINDOW = 60 * 60
 RESET_PER_EMAIL = 5
 RESET_PER_IP = 20
+TOKEN_WINDOW = 15 * 60
+TOKEN_FAILS_PER_IP = 20
+CAPTURE_WINDOW = 60 * 60
+CAPTURES_PER_TOKEN = 60
 
 
 class FailureLimiter:
@@ -68,11 +72,14 @@ _login_email = FailureLimiter(LOGIN_PER_EMAIL, LOGIN_WINDOW)
 _login_ip = FailureLimiter(LOGIN_PER_IP, LOGIN_WINDOW)
 _reset_email = FailureLimiter(RESET_PER_EMAIL, RESET_WINDOW)
 _reset_ip = FailureLimiter(RESET_PER_IP, RESET_WINDOW)
+_token_ip = FailureLimiter(TOKEN_FAILS_PER_IP, TOKEN_WINDOW)
+# Counts every capture, not only failures: a leaked phone token cannot flood the inbox.
+_capture_token = FailureLimiter(CAPTURES_PER_TOKEN, CAPTURE_WINDOW)
 
 
 def reset_all() -> None:
     """Empty every counter (used by tests)."""
-    for limiter in (_login_email, _login_ip, _reset_email, _reset_ip):
+    for limiter in (_login_email, _login_ip, _reset_email, _reset_ip, _token_ip, _capture_token):
         limiter.reset()
 
 
@@ -137,7 +144,27 @@ def reset_succeeded(ip: str, email: str) -> None:
     _reset_email.clear(_email_key(ip, email))
 
 
+def check_api_token(ip: str) -> None:
+    wait = _token_ip.retry_after(ip)
+    if wait:
+        raise _too_many(wait)
+
+
+def api_token_failed(ip: str) -> None:
+    _token_ip.record_failure(ip)
+
+
+def check_capture(token_id: int) -> None:
+    """Allow one more capture for this phone token, or raise 429."""
+    key = str(token_id)
+    wait = _capture_token.retry_after(key)
+    if wait:
+        raise _too_many(wait)
+    _capture_token.record_failure(key)
+
+
 __all__ = [
     "client_ip", "check_login", "login_failed", "login_succeeded",
     "check_reset", "reset_failed", "reset_succeeded", "reset_all",
+    "check_api_token", "api_token_failed", "check_capture",
 ]

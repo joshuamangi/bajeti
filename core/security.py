@@ -1,10 +1,12 @@
 # core/security.py
 import logging
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
+from core import rate_limit
 from data.db.db import get_db
+from services.api_token_service import CAPTURE_SCOPE, ApiTokenService, is_phone_token
 from services.auth_service import AuthService
 from services.user_service import UserService
 
@@ -62,3 +64,31 @@ def get_current_owner(current_user=Depends(get_current_user)):
     if not current_user.is_owner:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     return current_user
+
+
+def get_capture_user(
+    request: Request,
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db)
+):
+    """The login token, or a phone token (iPhone Shortcut). Used only by payment capture.
+
+    Every other endpoint uses get_current_user, where a phone token fails JWT decoding, so a
+    phone token can do nothing but add messages to its owner's inbox.
+    """
+    if not is_phone_token(token):
+        return get_current_user(token=token, db=db)
+    ip = rate_limit.client_ip(request)
+    rate_limit.check_api_token(ip)
+    found = ApiTokenService.resolve(db, token, CAPTURE_SCOPE)
+    if not found:
+        rate_limit.api_token_failed(ip)
+        logger.warning("Unknown phone token used for capture")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="This phone token is not valid. Create a new one on the Account page.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    phone_token, user = found
+    rate_limit.check_capture(phone_token.id)
+    return user

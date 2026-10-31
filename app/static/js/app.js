@@ -741,7 +741,7 @@
     },
     copy: el => {
       const input = document.getElementById(el.dataset.target);
-      const done = () => toast('Link copied', { type: 'success' });
+      const done = () => toast(el.dataset.copied || 'Link copied', { type: 'success' });
       if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(input.value).then(done);
       input.select(); document.execCommand('copy'); done();
     },
