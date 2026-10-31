@@ -45,7 +45,8 @@ class Settings(BaseSettings):
     APP_TIMEZONE_OFFSET_HOURS: int = 3
     # Keep the original text of a captured payment after it is approved or dismissed.
     KEEP_RAW_MESSAGES: bool = False
-    # iCloud link of the "Send to Bajeti" Shortcut, shown on the Account page. Set it in .env only.
+    # iCloud link of the "Send to Bajeti" Shortcut, shown on the Account page. Production: GitHub
+    # Actions variable SHORTCUT_INSTALL_URL, written into .env by deploy.yml. Never in the repo.
     SHORTCUT_INSTALL_URL: str = ""
 
     @model_validator(mode="after")
