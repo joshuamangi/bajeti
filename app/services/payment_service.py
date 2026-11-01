@@ -25,6 +25,10 @@ async def file_recurring(token: str, payment_id: int, payload: dict):
     return await post(path=f"/payments/{payment_id}/recurring", json=payload, headers=_auth(token))
 
 
+async def file_savings(token: str, payment_id: int, payload: dict):
+    return await post(path=f"/payments/{payment_id}/savings", json=payload, headers=_auth(token))
+
+
 async def dismiss(token: str, payment_id: int):
     return await post(path=f"/payments/{payment_id}/dismiss", headers=_auth(token))
 

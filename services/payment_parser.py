@@ -1,4 +1,4 @@
-"""Read M-Pesa SMS and payment emails (docs/design/payments.md).
+"""Read M-Pesa SMS, bank SMS and payment emails (docs/design/payments.md).
 
 The text is untrusted: it is only matched against fixed patterns, never evaluated, and capped
 in length. Nothing here logs the message. A message that matches no type comes back as
@@ -14,8 +14,16 @@ MAX_LENGTH = 2000
 MONEY = r"(?:Ksh|KES|KShs?)\.?\s?([\d,]+(?:\.\d{1,2})?)"
 PHONE = r"(?:\+?254|0)[17]\d{8}"
 
-# Types that are not spending: money received, cash withdrawn at an agent (spent later),
-# Fuliza notices (the "paid to" message for the same payment is the expense).
+# Savings: money from a bank to M-Pesa and bank card purchases are withdrawals from a savings
+# budget; a bank deposit adds to one. Only the last four digits of an account are kept.
+BANK_RECEIVED = re.compile(r"\byou have received\s+" + MONEY + r"\s+from\s+((?:B2C\s+)?.*?\bbank\b.*?)"
+                           r"(?:\s+on\s+\d{1,2}/|\.\s|\.$|$)", re.I | re.S)
+CARD = re.compile(r"\btransaction of\s+" + MONEY + r"\s+was made on card ending(?: with)?\s+(\d{4})\s+at\s+(.+?)"
+                  r"(?:\s+on\s+(\d{4}-\d{2}-\d{2})|\.\s|\.$|$)", re.I | re.S)
+DEPOSIT = re.compile(MONEY + r"\s+was deposited to\s+(?:your\s+)?acc(?:ount)?\.?\s+ending(?: with)?\s+(\d{4})", re.I)
+
+# Types that are not spending: money received from people, cash withdrawn at an agent (spent
+# later), Fuliza notices (the "paid to" message for the same payment is the expense).
 IGNORED = [
     ("received", re.compile(r"\byou have received\b", re.I),
      "This is money received, so it was not added."),
@@ -46,6 +54,7 @@ FEE = re.compile(r"\bTransaction cost,?\s*" + MONEY, re.I)
 BALANCE = re.compile(r"\b(?:New M-?PESA balance is|balance is)\s*" + MONEY + r"\.?", re.I)
 DAY_LIMIT = re.compile(r"\bAmount you can transact within the day is\s*[\d,]+(?:\.\d{1,2})?\.?", re.I)
 DATE = re.compile(r"\b(\d{1,2})/(\d{1,2})/(\d{2,4})\b")
+ISO_DATE = re.compile(r"\b(\d{4})-(\d{2})-(\d{2})\b")
 
 
 def _amount(text: str) -> Optional[Decimal]:
@@ -58,10 +67,14 @@ def _amount(text: str) -> Optional[Decimal]:
 
 def _date(text: str) -> Optional[date]:
     m = DATE.search(text)
-    if not m:
-        return None
-    day, month, year = int(m.group(1)), int(m.group(2)), int(m.group(3))
-    year = year + 2000 if year < 100 else year
+    if m:
+        day, month, year = int(m.group(1)), int(m.group(2)), int(m.group(3))
+        year = year + 2000 if year < 100 else year
+    else:
+        m = ISO_DATE.search(text)
+        if not m:
+            return None
+        year, month, day = int(m.group(1)), int(m.group(2)), int(m.group(3))
     try:
         return date(year, month, day)
     except ValueError:
@@ -75,23 +88,47 @@ def _clean_payee(text: str) -> Optional[str]:
     return text[:80] or None
 
 
+def _reference(text: str) -> Optional[str]:
+    m = LEADING_REFERENCE.match(text)
+    if m and re.search(r"\d", m.group(1)) and re.search(r"[A-Z]", m.group(1)):
+        return m.group(1)
+    m = LABELLED_REFERENCE.search(text)
+    return m.group(1).upper() if m else None
+
+
+def _savings(text: str) -> Optional[dict]:
+    """A bank-to-M-Pesa transfer or card purchase (kinds "received", "card": a withdrawal) or a
+    bank deposit (kind "deposit"). None for anything else."""
+    m = BANK_RECEIVED.search(text)
+    if m:
+        payee = _clean_payee(re.sub(r"^B2C\s+", "", m.group(2), flags=re.I))
+        return {"kind": "received", "amount": _amount(m.group(1)), "payee": payee, "account": None,
+                "reference": _reference(text), "paid_on": _date(text)}
+    m = CARD.search(text)
+    if m:
+        return {"kind": "card", "amount": _amount(m.group(1)), "payee": _clean_payee(m.group(3)),
+                "account": f"Card ending {m.group(2)}", "reference": _reference(text),
+                "paid_on": _date(m.group(4) or "")}
+    m = DEPOSIT.search(text)
+    if m:
+        return {"kind": "deposit", "amount": _amount(m.group(1)), "payee": None,
+                "account": f"Acc. ending {m.group(2)}", "reference": _reference(text), "paid_on": _date(text)}
+    return None
+
+
 def parse(raw: str) -> dict:
-    """Return {"kind", "amount", "fee", "payee", "reference", "paid_on"} for a spending message,
-    {"kind", "ignored": reason} for income, withdrawals and Fuliza, or kind "unknown"."""
+    """Return {"kind", "amount", "fee", "payee", "account", "reference", "paid_on"} for a spending
+    or savings message, {"kind", "ignored": reason} for income, withdrawals and Fuliza, or kind
+    "unknown"."""
     text = re.sub(r"\s+", " ", str(raw or "")).strip()[:MAX_LENGTH]
+    savings = _savings(text)
+    if savings:
+        return {**savings, "fee": None}
     for kind, pattern, reason in IGNORED:
         if pattern.search(text):
             return {"kind": kind, "ignored": reason}
 
-    reference = None
-    m = LEADING_REFERENCE.match(text)
-    if m and re.search(r"\d", m.group(1)) and re.search(r"[A-Z]", m.group(1)):
-        reference = m.group(1)
-    else:
-        m = LABELLED_REFERENCE.search(text)
-        if m:
-            reference = m.group(1).upper()
-
+    reference = _reference(text)
     fee_match = FEE.search(text)
     fee = _amount(fee_match.group(1)) if fee_match else None
     # The amount is the first sum of money that is not the balance, the fee or the day limit.
@@ -107,5 +144,5 @@ def parse(raw: str) -> dict:
         m = PAYEE[kind].search(text)
         payee = _clean_payee(m.group(1)) if m else None
 
-    return {"kind": kind, "amount": amount, "fee": fee, "payee": payee,
+    return {"kind": kind, "amount": amount, "fee": fee, "payee": payee, "account": None,
             "reference": reference, "paid_on": _date(text)}

@@ -285,6 +285,8 @@ class PendingPayment(Base):
     amount = Column(Numeric, nullable=True)
     fee = Column(Numeric, nullable=True)
     payee = Column(String(80), nullable=True)
+    # Bank messages: "Card ending 1234" or "Acc. ending 1234" (last four digits only).
+    account = Column(String(20), nullable=True)
     reference = Column(String(20), nullable=True)
     paid_on = Column(Date, nullable=True)
     status = Column(String(10), nullable=False, default="pending")
@@ -294,6 +296,8 @@ class PendingPayment(Base):
     fee_expense_id = Column(Integer, ForeignKey("expenses.id", ondelete="SET NULL"), nullable=True)
     previous_fee = Column(Numeric, nullable=True)
     recurring_run_id = Column(Integer, ForeignKey("recurring_runs.id", ondelete="SET NULL"), nullable=True)
+    # A deposit's savings budget, so Undo can take the amount off it again.
+    budget_id = Column(Integer, ForeignKey("budgets.id", ondelete="SET NULL"), nullable=True)
     received_at = Column(DateTime, default=datetime.utcnow)
     created_at = Column(DateTime, default=datetime.utcnow)
 

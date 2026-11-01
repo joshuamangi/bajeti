@@ -9,9 +9,9 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from data.db.models.models import (Allocation, Category, Expense, PayeeRule, PendingPayment, RecurringExpense,
-                                   RecurringRun)
-from schema.payment import ApproveIn, CaptureIn, RecurringIn
+from data.db.models.models import (Allocation, Budget, Category, Expense, PayeeRule, PendingPayment,
+                                   RecurringExpense, RecurringRun)
+from schema.payment import ApproveIn, CaptureIn, RecurringIn, SavingsIn
 from services.budget_service import BudgetService
 from services.category_service import CategoryService
 from services.payment_parser import parse
@@ -26,6 +26,10 @@ KEYWORDS = [
     (re.compile(r"power|water|internet|fibre|wifi", re.I), "Utilities"),
     (re.compile(r"cinema|movie|stream", re.I), "Entertainment"),
 ]
+
+# Bank messages (kind -> what they do to savings): money from a bank to M-Pesa and card purchases
+# are withdrawals from a savings category, a deposit adds to a savings budget's amount.
+SAVINGS = {"received": "withdrawal", "card": "withdrawal", "deposit": "deposit"}
 
 
 def _money(value) -> Optional[Decimal]:
@@ -49,7 +53,12 @@ def _capture_message(p: PendingPayment, duplicate: bool) -> str:
     if p.amount is None:
         return "Couldn't read this message. It is in Payments for you to fill in."
     fee = _money(p.fee)
-    text = f"Added {p.payee or 'payment'}: Ksh {_money(p.amount):,}"
+    if SAVINGS.get(p.kind) == "deposit":
+        text = f"Added deposit to {p.account or 'savings'}: Ksh {_money(p.amount):,}"
+    elif p.kind in SAVINGS:
+        text = f"Added savings withdrawal {p.payee or p.account or ''}: Ksh {_money(p.amount):,}".replace("  ", " ")
+    else:
+        text = f"Added {p.payee or 'payment'}: Ksh {_money(p.amount):,}"
     if fee:
         text += f" + {fee:,} fee"
     if duplicate:
@@ -78,20 +87,23 @@ class PaymentService:
             PendingPayment.status != "dismissed", PendingPayment.amount == p.amount)
         query = query.filter(PendingPayment.payee == p.payee if p.payee else PendingPayment.payee.is_(None))
         query = query.filter(PendingPayment.paid_on == p.paid_on if p.paid_on else PendingPayment.paid_on.is_(None))
+        query = query.filter(PendingPayment.account == p.account if p.account else PendingPayment.account.is_(None))
         return query.first() is not None
 
     @staticmethod
     def out(p: PendingPayment, suggested: Optional[int] = None, duplicate: bool = False,
-            suggested_recurring: Optional[int] = None) -> dict:
+            suggested_recurring: Optional[int] = None, suggested_budget: Optional[int] = None) -> dict:
         amount, fee = _money(p.amount), _money(p.fee)
         return {
             "id": p.id, "source": p.source, "kind": p.kind, "status": p.status,
             "amount": amount, "fee": fee,
             "total": (amount + (fee or Decimal("0"))) if amount is not None else None,
-            "payee": p.payee, "reference": p.reference, "paid_on": p.paid_on,
+            "payee": p.payee, "account": p.account, "savings": SAVINGS.get(p.kind),
+            "reference": p.reference, "paid_on": p.paid_on,
             "received_at": p.received_at, "raw_text": p.raw_text,
             "suggested_category_id": suggested,
             "suggested_recurring_id": suggested_recurring,
+            "suggested_budget_id": suggested_budget,
             "possible_duplicate": duplicate,
         }
 
@@ -112,7 +124,7 @@ class PaymentService:
                 return status.HTTP_409_CONFLICT, {"added": False, "detail": detail, "message": detail}
         payment = PendingPayment(user_id=user_id, source=data.source, kind=parsed["kind"],
                                  raw_text=data.raw[:2000], amount=parsed["amount"], fee=parsed["fee"],
-                                 payee=parsed["payee"], reference=parsed["reference"],
+                                 payee=parsed["payee"], account=parsed["account"], reference=parsed["reference"],
                                  paid_on=parsed["paid_on"], status="pending")
         db.add(payment)
         try:
@@ -178,14 +190,52 @@ class PaymentService:
         pending = (db.query(PendingPayment).filter(PendingPayment.user_id == user_id,
                                                    PendingPayment.status == "pending")
                    .order_by(PendingPayment.received_at.desc(), PendingPayment.id.desc()).all())
-        return {"payments": [PaymentService.out(p, PaymentService.suggest(db, user_id, p.payee, categories),
-                                                PaymentService.possible_duplicate(db, p),
-                                                PaymentService.suggest_recurring(db, user_id, p, items))
-                             for p in pending],
+        # Bank messages go to savings, whichever budget is active.
+        savings = PaymentService._savings_categories(db, user_id)
+        budgets = (db.query(Budget).filter(Budget.user_id == user_id, Budget.type == "savings")
+                   .order_by(Budget.name).all())
+
+        def out(p):
+            duplicate = PaymentService.possible_duplicate(db, p)
+            if SAVINGS.get(p.kind) == "deposit":
+                return PaymentService.out(p, duplicate=duplicate,
+                                          suggested_budget=budgets[0].id if len(budgets) == 1 else None)
+            if p.kind in SAVINGS:
+                return PaymentService.out(p, PaymentService._suggest_savings(db, user_id, p, savings), duplicate)
+            return PaymentService.out(p, PaymentService.suggest(db, user_id, p.payee, categories), duplicate,
+                                      PaymentService.suggest_recurring(db, user_id, p, items))
+        return {"payments": [out(p) for p in pending],
+                "savings_categories": [{"id": c.id, "name": c.name, "budget_name": budget_name,
+                                        "available": _money(available)}
+                                       for c, budget_name, available in savings],
+                "savings_budgets": [{"id": b.id, "name": b.name, "amount": _money(b.amount)} for b in budgets],
                 "categories": [{"id": cid, "name": name} for cid, name in sorted(categories.items(), key=lambda x: x[1].lower())],
                 "recurring": [{"id": i.id, "name": i.name, "amount": _money(i.amount), "category_id": i.category_id,
                                "category_name": categories.get(i.category_id, "")}
                               for i in sorted(items, key=lambda i: i.name.lower())]}
+
+    @staticmethod
+    def _savings_categories(db: Session, user_id: int) -> list:
+        """(category, budget name, allocated amount) for every savings category in a savings budget."""
+        return (db.query(Category, Budget.name, Allocation.allocated_amount)
+                .join(Allocation, Allocation.category_id == Category.id)
+                .join(Budget, Budget.id == Allocation.budget_id)
+                .filter(Category.user_id == user_id, Category.type == "savings",
+                        Budget.user_id == user_id, Budget.type == "savings")
+                .order_by(Budget.name, Category.name).all())
+
+    @staticmethod
+    def _rule_key(p: PendingPayment) -> Optional[str]:
+        """Card purchases are remembered by card (the merchant changes), transfers by bank."""
+        return p.account if p.kind == "card" else p.payee
+
+    @staticmethod
+    def _suggest_savings(db: Session, user_id: int, p: PendingPayment, savings: list) -> Optional[int]:
+        key = PaymentService._rule_key(p)
+        if not key:
+            return None
+        rule = db.query(PayeeRule).filter(PayeeRule.user_id == user_id, PayeeRule.payee == _payee_key(key)).first()
+        return rule.category_id if rule and rule.category_id in {c.id for c, _, _ in savings} else None
 
     @staticmethod
     def count_pending(db: Session, user_id: int) -> int:
@@ -202,6 +252,7 @@ class PaymentService:
         payment = PaymentService._get(db, user_id, payment_id)
         if payment.status != "pending":
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="This payment was already handled")
+        PaymentService._not_savings(payment)
         category = CategoryService.get_category_by_id(db=db, category_id=data.category_id, user_id=user_id)
         if not category:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not Found")
@@ -231,6 +282,108 @@ class PaymentService:
                 "month": month, "category_name": category.name, "fee_category": FEE_CATEGORY}
 
     @staticmethod
+    def _not_savings(payment: PendingPayment):
+        if payment.kind in SAVINGS:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail="This is a bank message. File it to savings.")
+
+    @staticmethod
+    def file_savings(db: Session, user_id: int, payment_id: int, data: SavingsIn) -> dict:
+        """A withdrawal lowers the savings budget and the category's allocation (as a withdrawal
+        entered by hand does); a deposit raises the savings budget's amount."""
+        payment = PaymentService._get(db, user_id, payment_id)
+        if payment.status != "pending":
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="This payment was already handled")
+        action = SAVINGS.get(payment.kind)
+        if action is None:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail="This is not a bank message. Approve it as a payment.")
+        amount = data.amount
+        if amount is None:
+            if payment.amount is None:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Enter the amount")
+            amount = Decimal(str(payment.amount))
+        if action == "deposit":
+            if data.budget_id is None:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Choose a savings budget")
+            budget = BudgetService.get_budget_by_id(db=db, budget_id=data.budget_id, user_id=user_id)
+            if not budget:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Budget not Found")
+            if budget.type != "savings":
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Choose a savings budget")
+            budget.amount = Decimal(str(budget.amount)) + amount
+            # Undo takes off what was added, so keep it.
+            payment.amount, payment.budget_id = amount, budget.id
+            message = f"Added {_ksh(amount)} to {budget.name}"
+        else:
+            if data.category_id is None:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Choose a savings category")
+            category = CategoryService.get_category_by_id(db=db, category_id=data.category_id, user_id=user_id)
+            if not category:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not Found")
+            if category.type != "savings":
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Choose a savings category")
+            allocation = PaymentService._savings_allocation(db, user_id, category.id)
+            if not allocation:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                    detail=f"{category.name} is not in a savings budget")
+            budget = allocation.budget
+            if Decimal(str(allocation.allocated_amount)) < amount:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                    detail=f"{category.name} has only {_ksh(allocation.allocated_amount)}")
+            if Decimal(str(budget.amount)) < amount:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                    detail=f"{budget.name} has only {_ksh(budget.amount)}")
+            now = datetime.utcnow()
+            expense = Expense(user_id=user_id, category_id=category.id, amount=amount,
+                              description=payment.payee or payment.account or "Bank withdrawal",
+                              month=(payment.paid_on or today()).strftime("%Y-%m"), type="withdrawal",
+                              created_at=now, updated_at=now)
+            db.add(expense)
+            db.flush()
+            budget.amount = Decimal(str(budget.amount)) - amount
+            allocation.allocated_amount = Decimal(str(allocation.allocated_amount)) - amount
+            payment.expense_id = expense.id
+            key = PaymentService._rule_key(payment)
+            if data.remember and key:
+                PaymentService._remember(db, user_id, key, category.id, None)
+            message = f"Withdrew {_ksh(amount)} from {category.name}"
+        payment.status = "approved"
+        PaymentService._forget_raw(payment)
+        db.commit()
+        return {"message": message + "."}
+
+    @staticmethod
+    def _savings_allocation(db: Session, user_id: int, category_id: int) -> Optional[Allocation]:
+        return (db.query(Allocation).join(Budget, Allocation.budget_id == Budget.id)
+                .filter(Allocation.category_id == category_id, Budget.user_id == user_id,
+                        Budget.type == "savings").first())
+
+    @staticmethod
+    def _undo_savings(db: Session, user_id: int, payment: PendingPayment):
+        """Put back what file_savings changed: the balances, and the withdrawal itself."""
+        if payment.budget_id is not None:
+            budget = BudgetService.get_budget_by_id(db=db, budget_id=payment.budget_id, user_id=user_id)
+            amount = Decimal(str(payment.amount or 0))
+            if budget:
+                if Decimal(str(budget.amount)) < amount:
+                    raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                                        detail=f"{budget.name} has only {_ksh(budget.amount)} left, "
+                                               "so this deposit cannot be taken off")
+                budget.amount = Decimal(str(budget.amount)) - amount
+            payment.budget_id = None
+        expense = (db.query(Expense).filter(Expense.id == payment.expense_id, Expense.user_id == user_id).first()
+                   if payment.expense_id else None)
+        if expense:
+            allocation = PaymentService._savings_allocation(db, user_id, expense.category_id)
+            if allocation:
+                allocation.budget.amount = Decimal(str(allocation.budget.amount)) + Decimal(str(expense.amount))
+                allocation.allocated_amount = Decimal(str(allocation.allocated_amount)) + Decimal(str(expense.amount))
+            db.delete(expense)
+        payment.status, payment.expense_id = "pending", None
+        db.commit()
+
+    @staticmethod
     def _remember(db: Session, user_id: int, payee: str, category_id: int, recurring_id: Optional[int]):
         key = _payee_key(payee)
         rule = db.query(PayeeRule).filter(PayeeRule.user_id == user_id, PayeeRule.payee == key).first()
@@ -245,6 +398,7 @@ class PaymentService:
         payment = PaymentService._get(db, user_id, payment_id)
         if payment.status != "pending":
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="This payment was already handled")
+        PaymentService._not_savings(payment)
         if payment.amount is None:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                                 detail="This message has no amount. Approve it as a normal payment.")
@@ -330,6 +484,8 @@ class PaymentService:
         recurring run it recorded); a usual fee it replaced gets its amount back. The original
         text stays cleared."""
         payment = PaymentService._get(db, user_id, payment_id)
+        if payment.kind in SAVINGS:
+            return PaymentService._undo_savings(db, user_id, payment)
 
         def expense(expense_id):
             return (db.query(Expense).filter(Expense.id == expense_id, Expense.user_id == user_id).first()

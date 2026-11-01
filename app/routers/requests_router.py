@@ -65,6 +65,7 @@ router.get("/payments",
 router.post("/payments/capture")(payment_handlers.capture_payment)
 router.post("/payments/{payment_id}/approve")(payment_handlers.approve_payment)
 router.post("/payments/{payment_id}/recurring")(payment_handlers.file_payment_recurring)
+router.post("/payments/{payment_id}/savings")(payment_handlers.file_payment_savings)
 router.post("/payments/{payment_id}/dismiss")(payment_handlers.dismiss_payment)
 router.post("/payments/{payment_id}/restore")(payment_handlers.restore_payment)
 router.get("/more",

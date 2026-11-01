@@ -90,6 +90,27 @@ async def file_payment_recurring(request: Request, payment_id: int, recurring_id
     return redirect_with_toast(PAGE, _detail(resp, "Could not record this payment."), "error")
 
 
+async def file_payment_savings(request: Request, payment_id: int, category_id: str = Form(""),
+                              budget_id: str = Form(""), amount: str = Form(""), remember: str = Form("")):
+    """A bank message: a withdrawal from a savings category, or a deposit into a savings budget."""
+    token = get_current_user(request)
+    payload = {"remember": remember in ("1", "on", "true")}
+    if category_id.strip().isdigit():
+        payload["category_id"] = int(category_id)
+    if budget_id.strip().isdigit():
+        payload["budget_id"] = int(budget_id)
+    if amount.strip():
+        try:
+            value = Decimal(amount.replace(",", "").strip())
+        except InvalidOperation:
+            return redirect_with_toast(PAGE, "Enter the amount as a number.", "error")
+        payload["amount"] = format(value.quantize(Decimal("0.01")), "f")
+    resp = await payment_service.file_savings(token, payment_id, payload)
+    if resp.status_code == status.HTTP_201_CREATED:
+        return redirect_with_toast(PAGE, resp.json().get("message", "Saved"), "success")
+    return redirect_with_toast(PAGE, _detail(resp, "Could not file this to savings."), "error")
+
+
 async def dismiss_payment(request: Request, payment_id: int):
     token = get_current_user(request)
     resp = await payment_service.dismiss(token, payment_id)

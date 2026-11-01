@@ -17,6 +17,15 @@ class ApproveIn(BaseModel):
     remember: bool = False
 
 
+class SavingsIn(BaseModel):
+    """File a bank message: a withdrawal from a savings category, or a deposit into a savings budget."""
+    category_id: Optional[int] = None
+    budget_id: Optional[int] = None
+    # Leave out to use the parsed amount.
+    amount: Optional[Decimal] = Field(default=None, gt=0, max_digits=14, decimal_places=2)
+    remember: bool = False
+
+
 class NewRecurringIn(BaseModel):
     name: str = Field(min_length=1, max_length=60)
     category_id: int
