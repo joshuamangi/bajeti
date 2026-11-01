@@ -636,7 +636,8 @@
   const SAMPLES = [
     'QXY78ZK2LM Confirmed. Ksh1,840.00 paid to Demo Supermarket. on 27/10/26 at 7:15 PM. New M-PESA balance is Ksh12,300.00. Transaction cost, Ksh0.00.',
     'QRT45UV6WX Confirmed. Ksh300.00 sent to DEMO WATER VENDOR 0700000000 on 27/10/26 at 9:02 AM. New M-PESA balance is Ksh8,743.00. Transaction cost, Ksh7.00.',
-    'Your payment of KES 3,500.00 to Demo Fibre Internet was successful. Reference: FBR20261027.'
+    'Your payment of KES 3,500.00 to Demo Fibre Internet was successful. Reference: FBR20261027.',
+    'Dear Client, KES 25000.00 was deposited to Acc. ending with 0000. For any queries call your bank.'
   ];
   let sampleIdx = 0;
   async function submitPaste(f) {
@@ -681,6 +682,20 @@
     }
     const id = f.dataset.id;
     return save(`/payments/${id}/approve`, fields, { undo: () => save(`/payments/${id}/restore`, {}, { success: 'Back in the inbox' }) });
+  }
+  function submitPaySavings(f) {
+    const err = f.querySelector('[data-err]'), deposit = f.dataset.kind === 'deposit';
+    const select = deposit ? f.budget_id : f.category_id;
+    if (!select) { err.textContent = deposit ? 'Create a savings budget first.' : 'Add a savings category first.'; return; }
+    if (!select.value) { err.textContent = deposit ? 'Choose a savings budget.' : 'Choose a savings category.'; select.focus(); return; }
+    const fields = { [select.name]: select.value, remember: f.remember && f.remember.checked ? '1' : '' };
+    if (f.amount) {
+      const amount = parseAmount(f.amount.value);
+      if (!(amount > 0)) { err.textContent = 'Enter the amount.'; f.amount.focus(); return; }
+      fields.amount = amount.toFixed(2);
+    }
+    const id = f.dataset.id;
+    return save(`/payments/${id}/savings`, fields, { undo: () => save(`/payments/${id}/restore`, {}, { success: 'Back in the inbox' }) });
   }
   function dismissPayment(el) {
     deferDelete({ url: `/payments/${el.dataset.id}/dismiss`, rows: rowsFor(`[data-pay="${el.dataset.id}"]`), message: `Dismissed ${esc(el.dataset.payee)}` });
@@ -784,7 +799,7 @@
   const FORMS = {
     'add-expense': submitAddExpense, 'expense-edit': submitExpenseEdit, category: submitCategory, transfer: submitTransfer,
     budget: submitBudget, 'inline-category': submitInlineCategory, target: submitTarget, recurring: submitRecurring,
-    paste: submitPaste, 'pay-approve': submitPayApprove
+    paste: submitPaste, 'pay-approve': submitPayApprove, 'pay-savings': submitPaySavings
   };
   document.addEventListener('click', e => {
     const el = e.target.closest('[data-act]'); if (!el) return;

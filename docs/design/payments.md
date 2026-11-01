@@ -14,6 +14,9 @@ Look and behaviour: Prototype A (`design/prototype-a/`, PORT-GUIDE §5.9). Manua
 | Sent to (to a person) | `QAB12CD3EG Confirmed. Ksh300.00 sent to DEMO PERSON 0700000000 on 27/10/26 at 9:02 AM. ... Transaction cost, Ksh7.00.` | same; the phone number is dropped | expense, into the inbox (dismiss it if it was not spending) |
 | Airtime | `QAB12CD3EH Confirmed. You bought Ksh100.00 of airtime on 27/10/26 ...` | reference, amount, date | expense, payee "Airtime" |
 | Received | `QAB12CD3EI Confirmed. You have received Ksh5,000.00 from DEMO PERSON ...` | | income: not added; the paste box says "This is money received, so it was not added" |
+| Received from a bank (added 2026-11-01) | `QAB12CD3EB Confirmed.You have received Ksh2,000.00 from B2C Demo Bank 000111 on 30/10/26 ...` | reference, amount, bank, date | savings withdrawal, into the inbox |
+| Bank card purchase (added 2026-11-01) | `Dear Client, a transaction of KES 1500.00 was made on card ending 0001 at Demo Motors Limited on 2026-10-29. ...` | amount, merchant, card's last 4 digits, date | savings withdrawal, into the inbox |
+| Bank deposit (added 2026-11-01) | `Dear Client, KES 10000.00 was deposited to Acc. ending with 0002. ...` | amount, account's last 4 digits | savings deposit, into the inbox |
 | Withdraw (agent) | `QAB12CD3EJ Confirmed. on 27/10/26 at 1:00 PM Withdraw Ksh2,000.00 from 123456 - Demo Agent ...` | | not added: cash is spent later; says so |
 | Fuliza | `QAB12CD3EK Confirmed. Fuliza M-PESA amount is Ksh500.00 ...` | | not added: the "paid to" message for the same payment is the expense |
 | Payment email | `Your payment of KES 3,500.00 to Demo Fibre Internet was successful. Reference: FBR20261027.` | amount, payee, reference | expense, into the inbox |
@@ -109,3 +112,18 @@ Step A (the share-sheet Shortcut) is built. Setup steps for the phone are in `do
 - **New recurring item:** named after the payee (you can edit it), with the amount paid, the category chosen on the card, monthly on the payment's day, and the message's fee as its usual fee. This month is recorded from the payment.
 - **Suggestions:** the card suggests an item when you remembered the payee as that item, or when exactly one active item has the same amount. It never files the payment by itself.
 - **Undo** removes what was added: the run (the month is due again), the expense and the fee. A replaced usual fee gets its old amount back. A new item created this way stays on the Recurring page; delete it there if needed.
+
+## Bank messages to savings (2026-11-01)
+
+Owner request: bank transfers to M-Pesa and card purchases are withdrawals from savings; bank deposits raise a savings budget's amount. Same inbox, same Shortcut and paste box; the server tells them apart.
+
+- **Which "received" messages count.** Only when the sender names a bank (`B2C ...` or the word "Bank"). Money from people and employers is still not added. The `B2C ` prefix is dropped from the name.
+- **Withdrawal** (`received`, `card`): pick a savings category (any savings budget, whatever budget is active). Approving does what a withdrawal entered by hand does: an expense of type `withdrawal`, and the savings budget's amount and the category's allocation go down by the amount. Refused if either has less. No fee.
+- **Deposit** (`deposit`): pick a savings budget; its amount goes up. The money is unallocated until you allocate it. If there is one savings budget it is suggested.
+- **Remember.** A card is remembered by card ("Card ending 0001"), since the merchant changes; a bank transfer by bank name. Both use `payee_rules`. Deposits are not remembered.
+- **Undo** reverses the balances: a withdrawal's amount goes back to the budget and allocation and the expense is deleted; a deposit's amount comes off the budget (refused with 409 if the budget now has less than that).
+- **Duplicates.** Bank SMS have no reference, so a repeat is flagged as a possible duplicate (same amount, payee, account, date), not refused.
+- **Privacy.** Only the last four digits of a card or account are stored (`pending_payments.account`). Tests and samples use made-up numbers.
+- **Endpoint:** `POST /api/payments/{id}/savings {category_id | budget_id, amount?, remember?}`. `approve` and `recurring` refuse bank messages with 400.
+- **Data:** migration `a7c9e1b3d5f6` adds `pending_payments.account` and `pending_payments.budget_id` (the deposit's budget, for Undo). Nullable columns only.
+

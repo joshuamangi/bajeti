@@ -13,7 +13,7 @@
   <h1>Payments</h1>
 
   <form class="p-card p-paste" method="POST" action="/payments/capture" data-form="paste" novalidate>
-    <label for="pPaste"><b>Paste a payment message</b><span class="p-small">An M-Pesa SMS or a payment email. Bajeti reads the amount, payee and reference.</span></label>
+    <label for="pPaste"><b>Paste a payment message</b><span class="p-small">An M-Pesa SMS, a bank SMS or a payment email. Bajeti reads the amount, payee and reference.</span></label>
     <textarea id="pPaste" name="raw" class="p-input" rows="3" maxlength="2000" placeholder="e.g. QAB12CD3EF Confirmed. Ksh450.00 paid to…"></textarea>
     <p class="p-error-text" data-err aria-live="polite"></p>
     <div class="p-paste-actions">
@@ -34,12 +34,59 @@
   <section aria-labelledby="pInboxH">
     <div class="p-section-head"><h2 id="pInboxH">Pending payments <span class="p-count">{{ payments | length }}</span></h2></div>
     {% if payments %}
-    {% if not inbox.categories %}
+    {% if not inbox.categories and payments | rejectattr('savings') | list %}
     <p class="p-inline-note"><i class="fa fa-circle-info" aria-hidden="true"></i><span>{{ b.name }} has no expense categories. Pick an expense budget above to file these payments.</span></p>
     {% endif %}
     <ul class="p-inbox">
       {% for p in payments %}
       <li class="p-pay-card" data-pay="{{ p.id }}">
+        {% if p.savings %}
+        {% set deposit = p.savings == 'deposit' %}
+        {% set title = ('Deposit to ' ~ (p.account or 'savings')) if deposit else (p.payee or p.account or 'Bank withdrawal') %}
+        <form data-form="pay-savings" data-id="{{ p.id }}" data-kind="{{ p.savings }}" data-payee="{{ title }}" novalidate>
+          <div class="p-pay-head">
+            <span class="p-pay-source"><i class="fa fa-building-columns" aria-hidden="true"></i> Bank · {{ p.received_at | short_date }}</span>
+            <span class="p-pay-amount">{% if p.amount is not none %}{{ money(p.amount) }}{% else %}Amount not found{% endif %}</span>
+          </div>
+          <div class="p-pay-payee">{{ title }} <span class="p-tag p-tag-info">{{ 'Deposit' if deposit else 'Withdrawal' }}</span>{% if p.possible_duplicate %} <span class="p-tag p-tag-warning" title="Same amount, account and date as an earlier message, and no reference to tell them apart">Possible duplicate</span>{% endif %}</div>
+          <div class="p-small">{% if p.account and not deposit %}{{ p.account }} · {% endif %}Ref {{ p.reference or 'none found' }}{% if p.paid_on %} · {{ p.paid_on | short_date }}{% endif %}</div>
+          {% if p.raw_text %}
+          <details class="p-pay-raw"><summary>Original message</summary><p class="sensitive">{{ p.raw_text }}</p></details>
+          {% endif %}
+          {% if p.amount is none %}
+          <label class="p-field"><span>Amount</span><input name="amount" class="p-money-input" inputmode="decimal" required></label>
+          {% endif %}
+          {% if deposit %}
+          {% if inbox.savings_budgets %}
+          <label class="p-field"><span>Add to savings budget{% if p.suggested_budget_id %} <span class="p-tag p-tag-info">Suggested</span>{% endif %}</span>
+            <select name="budget_id" required>
+              <option value="">Choose a savings budget</option>
+              {% for sb in inbox.savings_budgets %}<option value="{{ sb.id }}" {{ 'selected' if sb.id == p.suggested_budget_id }}>{{ sb.name }} · {{ money(sb.amount, bare=True) }}</option>{% endfor %}
+            </select></label>
+          <p class="p-small">Raises the budget's amount. Allocate it to categories from the budget page.</p>
+          {% else %}
+          <p class="p-inline-note"><i class="fa fa-circle-info" aria-hidden="true"></i><span>Create a savings budget to file deposits.</span></p>
+          {% endif %}
+          {% else %}
+          {% if inbox.savings_categories %}
+          <label class="p-field"><span>Withdraw from{% if p.suggested_category_id %} <span class="p-tag p-tag-info">Suggested</span>{% endif %}</span>
+            <select name="category_id" required>
+              <option value="">Choose a savings category</option>
+              {% for c in inbox.savings_categories %}<option value="{{ c.id }}" {{ 'selected' if c.id == p.suggested_category_id }}>{{ c.name }} ({{ c.budget_name }}) · {{ money(c.available, bare=True) }}</option>{% endfor %}
+            </select></label>
+          {% set key = p.account if p.account else p.payee %}
+          {% if key %}<label class="p-check"><input type="checkbox" name="remember" value="1"> Remember {{ key }} for next time</label>{% endif %}
+          {% else %}
+          <p class="p-inline-note"><i class="fa fa-circle-info" aria-hidden="true"></i><span>Add a savings category to a savings budget to file withdrawals.</span></p>
+          {% endif %}
+          {% endif %}
+          <p class="p-error-text" data-err aria-live="polite"></p>
+          <div class="p-pay-actions">
+            <button type="button" class="p-btn-ghost" data-act="pay-dismiss" data-id="{{ p.id }}" data-payee="{{ title }}" aria-label="Dismiss {{ title }}"><i class="fa fa-xmark" aria-hidden="true"></i> Dismiss</button>
+            <button type="submit" class="p-btn-primary" aria-label="{{ 'Add' if deposit else 'Withdraw' }} {{ title }}"><i class="fa {{ 'fa-arrow-down' if deposit else 'fa-arrow-up' }}" aria-hidden="true"></i> {{ 'Add to savings' if deposit else 'Withdraw' }}</button>
+          </div>
+        </form>
+        {% else %}
         <form data-form="pay-approve" data-id="{{ p.id }}" data-payee="{{ p.payee or 'payment' }}" novalidate>
           <div class="p-pay-head">
             {% set src = {'sms': ('fa-comment-sms', 'M-Pesa SMS'), 'email': ('fa-envelope', 'Email')}.get(p.source, ('fa-paste', 'Pasted')) %}
@@ -87,14 +134,15 @@
             <button type="submit" class="p-btn-primary" aria-label="Approve payment to {{ p.payee or 'unknown payee' }}"><i class="fa fa-check" aria-hidden="true"></i> Approve</button>
           </div>
         </form>
+        {% endif %}
       </li>
       {% endfor %}
     </ul>
     {% else %}
-    {% call empty_box('fa-inbox', 'All caught up', 'Paste an M-Pesa SMS or a payment email above and it appears here for you to file.') %}{% endcall %}
+    {% call empty_box('fa-inbox', 'All caught up', 'Paste an M-Pesa SMS, a bank SMS or a payment email above and it appears here for you to file.') %}{% endcall %}
     {% endif %}
   </section>
-  <p class="p-small">Money received, agent withdrawals and Fuliza notices are not added. The original message is deleted once you approve or dismiss a payment.</p>
+  <p class="p-small">Money from your bank and bank card or deposit messages go to savings. Money received from people, agent withdrawals and Fuliza notices are not added. The original message is deleted once you approve or dismiss a payment.</p>
   {% endif %}
 </div>
 {% endblock %}

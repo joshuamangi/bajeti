@@ -1,6 +1,6 @@
 # iPhone Shortcut: "Send to Bajeti"
 
-Sends an M-Pesa SMS to the Payments inbox from the share sheet. You approve it in Bajeti as usual. Design: `docs/design/payments.md` ("Phone capture").
+Sends an M-Pesa or bank SMS to the Payments inbox from the share sheet. Bank transfers to M-Pesa, card purchases and deposits arrive as savings items. You approve it in Bajeti as usual. Design: `docs/design/payments.md` ("Phone capture").
 
 `<BAJETI_URL>` below is the public address of your Bajeti, for example `https://<your-domain>`. Never put the real address or a token in this repository.
 
@@ -26,6 +26,8 @@ In the Shortcuts app, tap **+** and name it **Send to Bajeti**.
 4. Add **Get Dictionary Value**: get the value for `message` in **Contents of URL**.
 5. Add **If** Dictionary Value **has any value**: **Show Notification** with the Dictionary Value.
    **Otherwise**: **Get Dictionary Value** for `detail` in Contents of URL, then **Show Notification** with it. This covers an invalid token (401) or too many sends (429).
+
+The same Shortcut works for bank SMS: share the bank's message the same way. If you add a Message automation, add one trigger per sender (M-Pesa and your bank) that runs this Shortcut.
 
 Try it: in Messages, press and hold an M-Pesa message → **Share** (or select the text → Share) → **Send to Bajeti**. You should see "Added … Approve it in Bajeti." Send the same message again: you should see "Already captured: …".
 
