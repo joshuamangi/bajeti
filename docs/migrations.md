@@ -109,3 +109,32 @@ Pi by hand.
 Rollback (drops the table; every phone token stops working):
 
 docker compose exec bajeti_app alembic downgrade e7a1c3b5d9f2
+
+## M-Pesa fees and recurring links, f6a8b0c2d4e5
+
+Adds nullable columns for fees as their own expense and for filing a captured payment as recurring:
+`pending_payments.fee_expense_id`, `previous_fee`, `recurring_run_id`; `recurring_expenses.usual_fee`;
+`recurring_runs.fee_expense_id`; `payee_rules.recurring_id`. Existing rows are unchanged; past payments
+are not backfilled.
+
+Status: in production since 2026-10-31 (deploy of PR #156; the deploy log shows
+`Running upgrade e5f7a9c1d3b4 -> f6a8b0c2d4e5` and `alembic current` = f6a8b0c2d4e5). Not checked on the
+Pi by hand.
+
+Rollback (drops the columns; fee and recurring links on payments are lost, the expenses stay):
+
+docker compose exec bajeti_app alembic downgrade e5f7a9c1d3b4
+
+## Bank savings messages, a7c9e1b3d5f6
+
+Adds `pending_payments.account` (last four digits of a card or account) and `pending_payments.budget_id`
+(the savings budget a deposit was added to, for Undo). Nullable columns only. Tested on a scratch database
+in the f6a8b0c2d4e5 state: upgrade, downgrade, upgrade again; existing rows kept; one head.
+
+Status: in production since 2026-11-01 (deploy of PR #157; the deploy log shows
+`Running upgrade f6a8b0c2d4e5 -> a7c9e1b3d5f6` and `alembic current` = a7c9e1b3d5f6). Not checked on the
+Pi by hand.
+
+Rollback (drops the columns; Undo of an approved bank deposit no longer changes the budget):
+
+docker compose exec bajeti_app alembic downgrade f6a8b0c2d4e5
