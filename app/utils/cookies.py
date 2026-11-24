@@ -1,23 +1,25 @@
 """One place that sets and clears the browser cookies, so every code path has the same flags."""
 from fastapi import Response
 
-from app.config import IS_PRODUCTION, settings
+from app.config import IS_PRODUCTION
+from services.token_service import TokenService
 
 
-def _max_age() -> int:
+def _max_age(remember: bool = False) -> int:
     """The cookie lives exactly as long as the token inside it."""
-    return settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+    return int(TokenService.lifetime(remember).total_seconds())
 
 
 def _flags() -> dict:
     return {"httponly": True, "samesite": "lax", "secure": IS_PRODUCTION}
 
 
-def set_auth_cookies(response: Response, access_token: str) -> None:
+def set_auth_cookies(response: Response, access_token: str, remember: bool = False) -> None:
+    max_age = _max_age(remember)
     response.set_cookie(key="access_token", value=access_token,
-                        max_age=_max_age(), **_flags())
+                        max_age=max_age, **_flags())
     # show_menu is a UI hint, not a secret, so the page script may read it.
-    response.set_cookie(key="show_menu", value="1", max_age=_max_age(),
+    response.set_cookie(key="show_menu", value="1", max_age=max_age,
                         httponly=False, samesite="lax", secure=IS_PRODUCTION)
 
 

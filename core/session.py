@@ -1,23 +1,26 @@
 """Sliding session: a fresh cookie while the user is active, with a hard cap."""
 import time
-from typing import Optional
+from typing import Optional, Tuple
 
 from fastapi import Request
 from sqlalchemy.orm import Session
 
-from app.config import settings
 from app.utils.cookies import set_auth_cookies
 from data.db.db import get_db
 from services.token_service import TokenService
 from services.user_service import UserService
 
 SESSION_MAX_AGE_SECONDS = 14 * 86400  # the original login may not be extended past this
+REMEMBER_RENEW_AFTER_SECONDS = 86400  # a remembered token is renewed at most once a day
 
 _SKIP_PREFIXES = ("/api", "/static")
 
 
-def maybe_reissue(token: str, db: Session) -> Optional[str]:
-    """Return a new token if this one is past half its life, else None.
+def maybe_reissue(token: str, db: Session) -> Optional[Tuple[str, bool]]:
+    """Return (new token, remembered) if this one is due for renewal, else None.
+
+    A normal token is due past half its life. A remembered one (5 days) is due once it is a
+    day old, so 5 days without opening the app is what signs the user out.
 
     No new token for: an expired or invalid token, one without `auth_time` (issued before
     this existed; it simply runs out), one whose login is over 14 days old, or one whose
@@ -27,8 +30,10 @@ def maybe_reissue(token: str, db: Session) -> Optional[str]:
     if not payload:
         return None
     now = time.time()
-    lifetime = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
-    if payload.get("exp", 0) - now > lifetime / 2:
+    remember = bool(payload.get("rem"))
+    lifetime = TokenService.lifetime(remember).total_seconds()
+    renew_below = lifetime - REMEMBER_RENEW_AFTER_SECONDS if remember else lifetime / 2
+    if payload.get("exp", 0) - now > renew_below:
         return None
     auth_time = payload.get("auth_time")
     if auth_time is None or now - auth_time > SESSION_MAX_AGE_SECONDS:
@@ -37,12 +42,13 @@ def maybe_reissue(token: str, db: Session) -> Optional[str]:
     if (not user or user.email != payload.get("sub")
             or payload.get("ver", 0) != user.token_version):
         return None
-    from datetime import timedelta
-    return TokenService.create_access_token(
-        data={"sub": user.email, "user_id": user.id,
-              "auth_time": auth_time, "ver": user.token_version},
-        expires_delta=timedelta(seconds=lifetime),
-    )
+    data = {"sub": user.email, "user_id": user.id,
+            "auth_time": auth_time, "ver": user.token_version}
+    if remember:
+        data["rem"] = True
+    new_token = TokenService.create_access_token(
+        data=data, expires_delta=TokenService.lifetime(remember))
+    return new_token, remember
 
 
 def _sets_access_token(response) -> bool:
@@ -62,9 +68,10 @@ async def renew_session_cookie(request: Request, call_next):
     generator = db_dependency()
     db = next(generator)
     try:
-        new_token = maybe_reissue(token, db)
+        reissued = maybe_reissue(token, db)
     finally:
         generator.close()
-    if new_token:
-        set_auth_cookies(response, new_token)
+    if reissued:
+        new_token, remember = reissued
+        set_auth_cookies(response, new_token, remember=remember)
     return response

@@ -12,6 +12,7 @@
       <button type="button" data-act="toggle-pass" aria-label="Show password" aria-pressed="false"><i class="fa fa-eye" aria-hidden="true"></i></button>
     </div>
   </div>
+  <label class="p-check"><input type="checkbox" name="remember" value="1"{% if remember %} checked{% endif %}> Keep me signed in for 5 days</label>
   <button type="submit" class="p-btn-primary p-btn-block">Log in</button>
   <div class="p-auth-links">
     <a class="p-link" href="/forgot_password">Forgot password?</a>
