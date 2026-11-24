@@ -9,8 +9,17 @@ from app.config import settings
 
 logger = logging.getLogger("app.token_service")
 
+REMEMBER_ME_LIFETIME = timedelta(days=5)  # "Keep me signed in": the token and cookie last this long
+
 
 class TokenService:
+    @staticmethod
+    def lifetime(remember: bool = False) -> timedelta:
+        """How long one token lives: the setting, or 5 days for a remembered login."""
+        if remember:
+            return REMEMBER_ME_LIFETIME
+        return timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+
     @staticmethod
     def create_access_token(data: Dict, expires_delta: Optional[timedelta] = None) -> str:
         """Create a JWT access token with standard 'exp' claim."""

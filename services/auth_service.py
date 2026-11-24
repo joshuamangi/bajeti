@@ -1,7 +1,6 @@
 # services/auth_service.py
 import logging
 import time
-from datetime import timedelta
 from typing import Optional
 
 from fastapi import HTTPException, status
@@ -12,7 +11,6 @@ from services.user_service import UserService
 from services.token_service import TokenService
 from schema.user import UserCreate
 
-from app.config import settings
 
 logger = logging.getLogger("app.auth_service")
 
@@ -85,7 +83,7 @@ class AuthService:
 
     # ---------- Login ----------
     @staticmethod
-    def login(db: Session, email: str, password: str):
+    def login(db: Session, email: str, password: str, remember: bool = False):
         """
         Login user. Raises HTTPException(401) if authentication fails.
         Returns dict with access_token and token_type to match original router expectations.
@@ -98,17 +96,20 @@ class AuthService:
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-        return AuthService.issue_token(user)
+        return AuthService.issue_token(user, remember=remember)
 
     @staticmethod
-    def issue_token(user):
-        """A fresh token for the user's current token_version."""
-        expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    def issue_token(user, remember: bool = False):
+        """A fresh token for the user's current token_version.
+
+        A remembered login carries `rem`, so each renewal keeps the 5-day lifetime.
+        """
+        data = {"sub": user.email, "user_id": user.id,
+                "auth_time": int(time.time()), "ver": user.token_version}
+        if remember:
+            data["rem"] = True
         access_token = TokenService.create_access_token(
-            data={"sub": user.email, "user_id": user.id,
-                  "auth_time": int(time.time()), "ver": user.token_version},
-            expires_delta=expires
-        )
+            data=data, expires_delta=TokenService.lifetime(remember))
         return {"access_token": access_token, "token_type": "bearer"}
 
     # ---------- Log out everywhere ----------

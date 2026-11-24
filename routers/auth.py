@@ -1,6 +1,6 @@
 # api/auth.py (or data/api/auth.py as in your layout)
 import logging
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
@@ -27,14 +27,16 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/token", response_model=Token)
-async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(),
+                remember: bool = Form(False), db: Session = Depends(get_db)):
     """
     Login to get access token. Returns same payload and error message as original.
+    `remember=true` gives a 5-day token instead of ACCESS_TOKEN_EXPIRE_MINUTES.
     """
     ip = rate_limit.client_ip(request)
     rate_limit.check_login(ip, form_data.username)
     try:
-        token = AuthService.login(db, form_data.username, form_data.password)
+        token = AuthService.login(db, form_data.username, form_data.password, remember=remember)
     except HTTPException as exc:
         if exc.status_code == status.HTTP_401_UNAUTHORIZED:
             rate_limit.login_failed(ip, form_data.username)

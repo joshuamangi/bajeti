@@ -7,9 +7,13 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-async def login(username: str, password: str, client_ip: Optional[str] = None):
+async def login(username: str, password: str, client_ip: Optional[str] = None,
+                remember: bool = False):
     # posts to /auth/token as original
-    resp = await post("/auth/token", data={"username": username, "password": password},
+    data = {"username": username, "password": password}
+    if remember:
+        data["remember"] = "true"
+    resp = await post("/auth/token", data=data,
                       headers=forward_client_ip(client_ip))
     return resp
 

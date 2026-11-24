@@ -18,22 +18,24 @@ logger = logging.getLogger(__name__)
 HTMLResponse = HTMLResponse  # expose for router reference
 
 
-async def handle_authenticated_login(username: str, password: str, request: Request):
+async def handle_authenticated_login(username: str, password: str, request: Request,
+                                     remember: bool = False):
     """Handles the login for an authenticated user - same behaviour as before"""
-    response = await auth_login(username, password, client_ip=client_ip(request))
+    response = await auth_login(username, password, client_ip=client_ip(request), remember=remember)
     if response.status_code != status.HTTP_200_OK:
         too_many = response.status_code == status.HTTP_429_TOO_MANY_REQUESTS
         return await render_with_user("login.html", request, {
             "error": ("Too many attempts. Please wait a few minutes and try again."
                       if too_many else "Invalid credentials"),
             "username": username,
+            "remember": remember,
         })
     token_data = response.json()
     access_token = token_data["access_token"]
 
     rsp = RedirectResponse(
         url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
-    set_auth_cookies(rsp, access_token)
+    set_auth_cookies(rsp, access_token, remember=remember)
     clear_active_budget_cookie(rsp)
     return rsp
 
@@ -91,8 +93,10 @@ async def login_page(request: Request):
 
 async def login_user(request: Request,
                      username: str = Form(...),
-                     password: str = Form(...)):
-    return await handle_authenticated_login(username=username, password=password, request=request)
+                     password: str = Form(...),
+                     remember: str = Form("")):
+    return await handle_authenticated_login(username=username, password=password, request=request,
+                                            remember=remember in ("1", "on", "true"))
 
 
 def logout():
